@@ -11,7 +11,7 @@ object AICorrectionConfig {
 
     var aiModel: String by prefDelegate(
         PreferKey.aiCorrectionModel,
-        "MiniMax-Text-01"
+        "MiniMax-M2.7"
     )
 
     var apiKey: String by prefDelegate(
