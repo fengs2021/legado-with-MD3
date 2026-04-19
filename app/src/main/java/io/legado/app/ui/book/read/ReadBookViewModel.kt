@@ -15,6 +15,8 @@ import io.legado.app.data.entities.BookProgress
 import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.AppWebDav
 import io.legado.app.help.book.BookHelp
+import io.legado.app.help.book.AIContentCorrector
+import io.legado.app.ui.main.my.aiCorrection.AICorrectionConfig
 import io.legado.app.help.book.ContentProcessor
 import io.legado.app.help.book.isLocal
 import io.legado.app.help.book.isLocalModified
@@ -397,11 +399,17 @@ class ReadBookViewModel(application: Application) : BaseViewModel(application) {
      */
     fun saveContent(book: Book, content: String) {
         execute {
-            appDb.bookChapterDao.getChapter(book.bookUrl, ReadBook.durChapterIndex)
-                ?.let { chapter ->
-                    BookHelp.saveText(book, chapter, content)
-                    ReadBook.loadContent(ReadBook.durChapterIndex, resetPageOffset = false)
-                }
+            val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, ReadBook.durChapterIndex) ?: return@execute
+            val finalContent = if (AICorrectionConfig.enabled) {
+                AppLog.put("AI修正开始: ${chapter.title}")
+                val corrected = AIContentCorrector.correct(content, chapter.title)
+                AppLog.put("AI修正完成，结果长度: ${corrected.length}")
+                corrected
+            } else {
+                content
+            }
+            BookHelp.saveText(book, chapter, finalContent)
+            ReadBook.loadContent(ReadBook.durChapterIndex, resetPageOffset = false)
         }
     }
 
