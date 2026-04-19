@@ -90,6 +90,12 @@ class AICorrectionActivity : BaseComposeActivity() {
                         )
 
                         ClickableSettingItem(
+                            title = stringResource(R.string.ai_correction_api_key),
+                            description = if (AICorrectionConfig.apiKey.isNotBlank()) "******" else stringResource(R.string.ai_correction_api_key_empty),
+                            onClick = { showApiKeyDialog = true }
+                        )
+
+                        ClickableSettingItem(
                             title = stringResource(R.string.ai_correction_rules),
                             description = AICorrectionConfig.rules.ifBlank { stringResource(R.string.ai_correction_rules_desc) },
                             onClick = { showRulesDialog = true }
