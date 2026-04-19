@@ -8,7 +8,6 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.room)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.google.services)
 }
 
 apply(from = "download.gradle")
@@ -229,9 +228,9 @@ dependencies {
     implementation(libs.hutool.crypto)
     //noinspection GradleDependency
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
-    implementation(libs.firebase.perf)
-    implementation(libs.androidx.datastore.preferences)
+//    implementation(libs.firebase.analytics)
+//    implementation(libs.firebase.perf)
+//    implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.palette)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.startup.runtime)
