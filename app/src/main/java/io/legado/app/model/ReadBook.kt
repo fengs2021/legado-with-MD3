@@ -896,8 +896,11 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 .getContent(book, chapter, content, includeTitle = false)
             // AI 修正
             val finalTextList = if (AICorrectionConfig.enabled) {
+                AppLog.put("AI修正开始: ${chapter.title}")
                 val rawContent = bookContent.textList.joinToString("\n")
+                AppLog.put("AI修正原始内容长度: ${rawContent.length}")
                 val corrected = AIContentCorrector.correct(rawContent, chapter.title)
+                AppLog.put("AI修正完成，结果长度: ${corrected.length}")
                 if (corrected != rawContent) {
                     corrected.split("\n").map { it }
                 } else {
