@@ -1,6 +1,7 @@
 package io.legado.app.ui.main.my.aiCorrection
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -12,7 +13,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
@@ -26,8 +26,8 @@ import io.legado.app.ui.widget.components.AppScaffold
 import io.legado.app.ui.widget.components.AppTextField
 import io.legado.app.ui.widget.components.SplicedColumnGroup
 import io.legado.app.ui.widget.components.alert.AppAlertDialog
-import io.legado.app.ui.widget.components.settingItem.ClickableSettingItem
-import io.legado.app.ui.widget.components.settingItem.SwitchSettingItem
+import io.legado.app.ui.widget.components.settingitem.ClickableSettingItem
+import io.legado.app.ui.widget.components.settingitem.SwitchSettingItem
 import io.legado.app.ui.widget.components.topbar.GlassMediumFlexibleTopAppBar
 import io.legado.app.ui.widget.components.topbar.GlassTopAppBarDefaults
 import io.legado.app.utils.toastOnUi
@@ -96,21 +96,22 @@ class AICorrectionActivity : BaseComposeActivity() {
                         ClickableSettingItem(
                             title = stringResource(R.string.ai_correction_test),
                             description = stringResource(R.string.ai_correction_test_desc),
-                        onClick = {
-                                if (isTesting) return@clickableSettingItem
-                                if (AICorrectionConfig.apiKey.isBlank()) {
-                                    context.toastOnUi(context.getString(R.string.ai_correction_api_key_empty))
-                                    return@clickableSettingItem
-                                }
-                                isTesting = true
-                                scope.launch {
-                                    val testContent = "「你好。」他说。\n\n『你好。』她回答。\n\nhttps://example.com"
-                                    val result = AIContentCorrector.correct(testContent, "测试章节")
-                                    isTesting = false
-                                    if (result.isNotBlank() && result != testContent) {
-                                        context.toastOnUi(context.getString(R.string.ai_correction_test_success))
-                                    } else {
-                                        context.toastOnUi(context.getString(R.string.ai_correction_test_failed))
+                            onClick = {
+                                if (isTesting || AICorrectionConfig.apiKey.isBlank()) {
+                                    if (AICorrectionConfig.apiKey.isBlank()) {
+                                        context.toastOnUi(context.getString(R.string.ai_correction_api_key_empty))
+                                    }
+                                } else {
+                                    isTesting = true
+                                    scope.launch {
+                                        val testContent = "「你好。」他说。\n\n『你好。』她回答。\n\nhttps://example.com"
+                                        val result = AIContentCorrector.correct(testContent, "测试章节")
+                                        isTesting = false
+                                        if (result.isNotBlank() && result != testContent) {
+                                            context.toastOnUi(context.getString(R.string.ai_correction_test_success))
+                                        } else {
+                                            context.toastOnUi(context.getString(R.string.ai_correction_test_failed))
+                                        }
                                     }
                                 }
                             }
@@ -129,7 +130,7 @@ class AICorrectionActivity : BaseComposeActivity() {
                     AppTextField(
                         value = tempApiKey,
                         onValueChange = { tempApiKey = it },
-                        label = stringResource(R.string.please_input),
+                        label = "API Key",
                         backgroundColor = LegadoTheme.colorScheme.surface,
                         modifier = Modifier.fillMaxWidth()
                     )

@@ -1457,3 +1457,5 @@
     <string name="ai_correction_test_failed">Test failed, check API key</string>
     <string name="ai_correction_api_key_empty">API key cannot be empty</string>
 </resources>
+
+    <string name="ai_correction_api_key_empty">API key cannot be empty</string>

@@ -906,10 +906,6 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
             } else {
                 bookContent.textList
             }
-            val displayTitle = chapter.getDisplayTitle(
-                contentProcessor.getTitleReplaceRules(),
-                book.getUseReplaceRule()
-            )
             val textChapter = ChapterProvider.getTextChapterAsync(
                 this@ReadBook, book, chapter, displayTitle, BookContent(bookContent.sameTitleRemoved, finalTextList, bookContent.effectiveReplaceRules), simulatedChapterSize
             )
