@@ -399,6 +399,7 @@ class ReadBookViewModel(application: Application) : BaseViewModel(application) {
      */
     fun saveContent(book: Book, content: String) {
         execute {
+            AppLog.put("saveContent拦截: AICorrectionConfig.enabled=${AICorrectionConfig.enabled}")
             val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, ReadBook.durChapterIndex) ?: return@execute
             val finalContent = if (AICorrectionConfig.enabled) {
                 AppLog.put("AI修正开始: ${chapter.title}")
