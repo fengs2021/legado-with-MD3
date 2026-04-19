@@ -276,4 +276,9 @@ object PreferKey {
     const val selectVibrator = "selectVibrator"
     const val audioCacheCleanTime = "audioCacheCleanTime"
     const val audioPreDownloadNum = "audioPreDownloadNum"
+
+    const val aiCorrectionEnabled = "aiCorrectionEnabled"
+    const val aiCorrectionModel = "aiCorrectionModel"
+    const val aiCorrectionApiKey = "aiCorrectionApiKey"
+    const val aiCorrectionRules = "aiCorrectionRules"
 }

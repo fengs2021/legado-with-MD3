@@ -227,6 +227,11 @@
             android:name=".ui.book.source.manage.BookSourceActivity"
             android:enableOnBackInvokedCallback="false"
             android:launchMode="singleTop" />
+        <!-- AI修正配置 -->
+        <activity
+            android:name=".ui.main.my.aiCorrection.AICorrectionActivity"
+            android:enableOnBackInvokedCallback="true"
+            android:launchMode="singleTop" />
         <!-- 订阅源管理 -->
         <activity
             android:name=".ui.rss.source.manage.RssSourceActivity"
