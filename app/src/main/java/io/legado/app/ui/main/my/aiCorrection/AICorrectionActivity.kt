@@ -42,8 +42,10 @@ class AICorrectionActivity : BaseComposeActivity() {
 
         val scrollBehavior = GlassTopAppBarDefaults.defaultScrollBehavior()
         var showApiKeyDialog by remember { mutableStateOf(false) }
+        var showModelDialog by remember { mutableStateOf(false) }
         var showRulesDialog by remember { mutableStateOf(false) }
         var tempApiKey by remember { mutableStateOf(AICorrectionConfig.apiKey) }
+        var tempModel by remember { mutableStateOf(AICorrectionConfig.aiModel) }
         var tempRules by remember { mutableStateOf(AICorrectionConfig.rules) }
         var isTesting by remember { mutableStateOf(false) }
 
@@ -84,7 +86,7 @@ class AICorrectionActivity : BaseComposeActivity() {
                         ClickableSettingItem(
                             title = stringResource(R.string.ai_correction_model),
                             description = AICorrectionConfig.aiModel.ifBlank { stringResource(R.string.ai_correction_default_model) },
-                            onClick = { showApiKeyDialog = true }
+                            onClick = { showModelDialog = true }
                         )
 
                         ClickableSettingItem(
@@ -125,7 +127,7 @@ class AICorrectionActivity : BaseComposeActivity() {
             AppAlertDialog(
                 show = showApiKeyDialog,
                 onDismissRequest = { showApiKeyDialog = false },
-                title = stringResource(R.string.ai_correction_model),
+                title = stringResource(R.string.ai_correction_api_key),
                 content = {
                     AppTextField(
                         value = tempApiKey,
@@ -142,6 +144,30 @@ class AICorrectionActivity : BaseComposeActivity() {
                 },
                 dismissText = stringResource(R.string.cancel),
                 onDismiss = { showApiKeyDialog = false }
+            )
+        }
+
+        if (showModelDialog) {
+            AppAlertDialog(
+                show = showModelDialog,
+                onDismissRequest = { showModelDialog = false },
+                title = stringResource(R.string.ai_correction_model),
+                content = {
+                    AppTextField(
+                        value = tempModel,
+                        onValueChange = { tempModel = it },
+                        label = stringResource(R.string.ai_correction_model),
+                        backgroundColor = LegadoTheme.colorScheme.surface,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmText = stringResource(R.string.ok),
+                onConfirm = {
+                    AICorrectionConfig.aiModel = tempModel
+                    showModelDialog = false
+                },
+                dismissText = stringResource(R.string.cancel),
+                onDismiss = { showModelDialog = false }
             )
         }
 
