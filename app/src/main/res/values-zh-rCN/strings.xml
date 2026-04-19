@@ -1437,4 +1437,19 @@
 	<string name="subtitle_margin">次行距离</string>
 	<string name="heading_spacing">标题段距</string>
     <string name="follow_read_background">跟随阅读背景</string>
+
+    <string name="ai_correction">AI 修正</string>
+    <string name="ai_correction_enable">启用 AI 修正</string>
+    <string name="ai_correction_enable_desc">使用 AI 修正小说正文内容</string>
+    <string name="ai_correction_model">AI 模型</string>
+    <string name="ai_correction_default_model">MiniMax-Text-01</string>
+    <string name="ai_correction_api_key">API Key</string>
+    <string name="ai_correction_rules">修正规则</string>
+    <string name="ai_correction_rules_hint">输入修正规则</string>
+    <string name="ai_correction_rules_desc">额外的 AI 修正规则</string>
+    <string name="ai_correction_test">测试修正</string>
+    <string name="ai_correction_test_desc">点击测试 AI 修正功能</string>
+    <string name="ai_correction_test_success">测试成功！</string>
+    <string name="ai_correction_test_failed">测试失败，请检查 API Key</string>
+    <string name="ai_correction_api_key_empty">API Key 不能为空</string>
 </resources>
