@@ -230,7 +230,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
 //    implementation(libs.firebase.analytics)
 //    implementation(libs.firebase.perf)
-//    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.palette)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.startup.runtime)
