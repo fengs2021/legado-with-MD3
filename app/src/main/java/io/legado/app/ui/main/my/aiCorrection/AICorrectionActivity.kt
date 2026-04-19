@@ -26,8 +26,8 @@ import io.legado.app.ui.widget.components.AppScaffold
 import io.legado.app.ui.widget.components.AppTextField
 import io.legado.app.ui.widget.components.SplicedColumnGroup
 import io.legado.app.ui.widget.components.alert.AppAlertDialog
-import io.legado.app.ui.widget.components.settingitem.ClickableSettingItem
-import io.legado.app.ui.widget.components.settingitem.SwitchSettingItem
+import io.legado.app.ui.widget.components.settingItem.ClickableSettingItem
+import io.legado.app.ui.widget.components.settingItem.SwitchSettingItem
 import io.legado.app.ui.widget.components.topbar.GlassMediumFlexibleTopAppBar
 import io.legado.app.ui.widget.components.topbar.GlassTopAppBarDefaults
 import io.legado.app.utils.toastOnUi
@@ -78,7 +78,7 @@ class AICorrectionActivity : BaseComposeActivity() {
                             title = stringResource(R.string.ai_correction_enable),
                             description = stringResource(R.string.ai_correction_enable_desc),
                             checked = AICorrectionConfig.enabled,
-                            onCheckedChange = { AICorrectionConfig.enabled = it }
+                            onCheckedChange = { checked -> AICorrectionConfig.enabled = checked }
                         )
 
                         ClickableSettingItem(

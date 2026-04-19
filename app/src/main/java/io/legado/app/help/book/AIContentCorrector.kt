@@ -5,9 +5,9 @@ import io.legado.app.constant.PreferKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
@@ -55,7 +55,7 @@ object AIContentCorrector {
         }
 
         val requestBody = jsonBody.toString()
-            .toRequestBody("application/json".toMediaTypeOrNull())
+            .toRequestBody("application/json".toMediaType())
 
         val request = Request.Builder()
             .url(API_URL)
