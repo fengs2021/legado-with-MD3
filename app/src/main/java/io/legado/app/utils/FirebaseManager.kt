@@ -1,42 +1,20 @@
 package io.legado.app.utils
 
 import android.content.Context
-import com.google.firebase.FirebaseApp
-import com.google.firebase.analytics.FirebaseAnalytics
-import io.legado.app.help.config.AppConfig
 
+/**
+ * Firebase 已禁用，此文件为空实现
+ */
 object FirebaseManager {
 
-    var isEnabled: Boolean
-        get() = AppConfig.firebaseEnable
-        private set(value) {
-            AppConfig.firebaseEnable = value
-        }
+    var isEnabled: Boolean = false
+        private set
 
     fun init(context: Context) {
-        applyState(context, isEnabled)
+        // Firebase 已禁用，不做任何操作
     }
 
     fun setEnabled(context: Context, enabled: Boolean) {
-        applyState(context, enabled)
-    }
-
-    private fun applyState(context: Context, enabled: Boolean) {
-        if (enabled) {
-            if (FirebaseApp.getApps(context).isEmpty()) {
-                FirebaseApp.initializeApp(context)
-            }
-            FirebaseAnalytics.getInstance(context).setAnalyticsCollectionEnabled(true)
-        } else {
-            try {
-                if (FirebaseApp.getApps(context).isNotEmpty()) {
-                    FirebaseAnalytics.getInstance(context).setAnalyticsCollectionEnabled(false)
-                    FirebaseApp.getInstance().delete()
-                }
-            } catch (_: Exception) {
-                // 忽略异常
-            }
-        }
-        isEnabled = enabled
+        // Firebase 已禁用，不做任何操作
     }
 }
