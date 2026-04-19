@@ -16,6 +16,7 @@ import io.legado.app.help.book.BookHelp
 import io.legado.app.help.book.AIContentCorrector
 import io.legado.app.ui.main.my.aiCorrection.AICorrectionConfig
 import io.legado.app.help.book.ContentProcessor
+import io.legado.app.help.book.BookContent
 import io.legado.app.help.book.isImage
 import io.legado.app.help.book.isLocal
 import io.legado.app.help.book.isPdf
@@ -891,22 +892,26 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 contentProcessor.getTitleReplaceRules(),
                 book.getUseReplaceRule()
             )
-            val contents = contentProcessor
+            val bookContent = contentProcessor
                 .getContent(book, chapter, content, includeTitle = false)
             // AI 修正
-            val aiCorrectedContents = if (AICorrectionConfig.enabled) {
-                val rawContent = contents.joinToString("\n")
+            val finalTextList = if (AICorrectionConfig.enabled) {
+                val rawContent = bookContent.textList.joinToString("\n")
                 val corrected = AIContentCorrector.correct(rawContent, chapter.title)
                 if (corrected != rawContent) {
-                    corrected.split("\n").map { "$it" }
+                    corrected.split("\n").map { it }
                 } else {
-                    contents
+                    bookContent.textList
                 }
             } else {
-                contents
+                bookContent.textList
             }
+            val displayTitle = chapter.getDisplayTitle(
+                contentProcessor.getTitleReplaceRules(),
+                book.getUseReplaceRule()
+            )
             val textChapter = ChapterProvider.getTextChapterAsync(
-                this@ReadBook, book, chapter, displayTitle, contents, simulatedChapterSize
+                this@ReadBook, book, chapter, displayTitle, BookContent(bookContent.sameTitleRemoved, finalTextList, bookContent.effectiveReplaceRules), simulatedChapterSize
             )
             when (val offset = chapter.index - durChapterIndex) {
                 0 -> {

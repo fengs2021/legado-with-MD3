@@ -1,13 +1,11 @@
 package io.legado.app.ui.main.my.aiCorrection
 
-import io.legado.app.help.config.ReadConfig
-import io.legado.app.help.config.prefDelegate
 import io.legado.app.constant.PreferKey
+import io.legado.app.ui.config.prefDelegate
 import splitties.init.appCtx
 
 /**
  * AI 修正配置
- * 放在 ReadConfig 里持久化
  */
 object AICorrectionConfig {
 

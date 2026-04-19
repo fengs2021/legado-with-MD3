@@ -1,6 +1,5 @@
 package io.legado.app.ui.main.my.aiCorrection
 
-import android.content.Intent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -13,6 +12,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import io.legado.app.R
 import io.legado.app.base.BaseComposeActivity
 import io.legado.app.help.book.AIContentCorrector
@@ -48,12 +52,21 @@ class AICorrectionActivity : BaseComposeActivity() {
                 GlassMediumFlexibleTopAppBar(
                     title = stringResource(R.string.ai_correction),
                     scrollBehavior = scrollBehavior,
-                    onBackClick = { finish() }
+                    navigationIcon = {
+                        IconButton(onClick = { finish() }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = null
+                            )
+                        }
+                    }
                 )
             }
         ) { padding ->
             androidx.compose.foundation.lazy.LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
                 contentPadding = adaptiveContentPadding(
                     top = padding.calculateTopPadding(),
                     bottom = 120.dp
@@ -83,7 +96,7 @@ class AICorrectionActivity : BaseComposeActivity() {
                         ClickableSettingItem(
                             title = stringResource(R.string.ai_correction_test),
                             description = stringResource(R.string.ai_correction_test_desc),
-                            onClick = {
+                        onClick = {
                                 if (isTesting) return@clickableSettingItem
                                 if (AICorrectionConfig.apiKey.isBlank()) {
                                     context.toastOnUi(context.getString(R.string.ai_correction_api_key_empty))
@@ -111,7 +124,7 @@ class AICorrectionActivity : BaseComposeActivity() {
             AppAlertDialog(
                 show = showApiKeyDialog,
                 onDismissRequest = { showApiKeyDialog = false },
-                title = stringResource(R.string.ai_correction_api_key),
+                title = stringResource(R.string.ai_correction_model),
                 content = {
                     AppTextField(
                         value = tempApiKey,

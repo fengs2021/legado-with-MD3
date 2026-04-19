@@ -2,14 +2,13 @@ package io.legado.app.help.book
 
 import io.legado.app.ui.main.my.aiCorrection.AICorrectionConfig
 import io.legado.app.constant.PreferKey
-import io.legado.app.help.config.ReadConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
-import splitties.init.appCtx
 import java.util.concurrent.TimeUnit
 
 /**
@@ -55,19 +54,19 @@ object AIContentCorrector {
             put("temperature", 0.3)
         }
 
+        val requestBody = jsonBody.toString()
+            .toRequestBody("application/json".toMediaTypeOrNull())
+
         val request = Request.Builder()
             .url(API_URL)
             .addHeader("Authorization", "Bearer $apiKey")
             .addHeader("Content-Type", "application/json")
-            .post(okhttp3.RequestBody.create(
-                okhttp3.MediaType.parse("application/json"),
-                jsonBody.toString()
-            ))
+            .post(requestBody)
             .build()
 
         try {
             val response = client.newCall(request).execute()
-            val body = response.body()?.string() ?: return@withContext content
+            val body = response.body?.string() ?: return@withContext content
             val json = JSONObject(body)
             val choices = json.optJSONArray("choices") ?: return@withContext content
             if (choices.length() == 0) return@withContext content
@@ -84,11 +83,11 @@ object AIContentCorrector {
     private fun buildPrompt(content: String, chapterTitle: String, rules: String): String {
         val sb = StringBuilder()
         sb.append("你是一个专业的小说文本修正助手。\n\n")
-        
+
         if (chapterTitle.isNotBlank()) {
             sb.append("章节：$chapterTitle\n")
         }
-        
+
         sb.append("请修正以下正文中的问题（错别字、标点、格式等），并按照要求的规则处理。\n\n")
 
         if (rules.isNotBlank()) {
@@ -101,7 +100,7 @@ object AIContentCorrector {
         sb.append("【正文开始】\n")
         sb.append("修正后的内容...\n")
         sb.append("【正文结束】")
-        
+
         return sb.toString()
     }
 
@@ -111,11 +110,11 @@ object AIContentCorrector {
         val endMark = "【正文结束】"
         val startIdx = raw.indexOf(startMark)
         val endIdx = raw.indexOf(endMark)
-        
+
         if (startIdx >= 0 && endIdx >= 0) {
             return raw.substring(startIdx + startMark.length, endIdx).trim()
         }
-        
+
         // 如果没找到标记，尝试用 ``` 包裹的代码块
         val codeBlockPattern = Regex("```[\\s\\S]*?```")
         val matches = codeBlockPattern.findAll(raw).toList()
@@ -124,7 +123,7 @@ object AIContentCorrector {
             val lastBlock = matches.last().value
             return lastBlock.removeSurrounding("```").trim()
         }
-        
+
         // 降级：直接返回原始内容
         return raw.trim()
     }
