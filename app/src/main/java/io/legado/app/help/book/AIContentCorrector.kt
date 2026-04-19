@@ -5,11 +5,9 @@ import io.legado.app.constant.PreferKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import okhttp3.MediaType
-import okhttp3.Request
-import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONArray
+import okhttp3.Request
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
