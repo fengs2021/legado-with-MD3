@@ -1,5 +1,6 @@
 package io.legado.app.help.book
 
+import io.legado.app.constant.AppLog
 import io.legado.app.ui.main.my.aiCorrection.AICorrectionConfig
 import io.legado.app.constant.PreferKey
 import kotlinx.coroutines.Dispatchers
@@ -67,15 +68,30 @@ object AIContentCorrector {
 
         try {
             val response = client.newCall(request).execute()
-            val body = response.body?.string() ?: return@withContext content
+            val body = response.body?.string() ?: run {
+                AppLog.put("AI修正失败: 空响应")
+                return@withContext content
+            }
+            AppLog.put("AI修正响应: $body")
             val json = JSONObject(body)
-            val choices = json.optJSONArray("choices") ?: return@withContext content
+            val choices = json.optJSONArray("choices") ?: run {
+                AppLog.put("AI修正失败: 无choices")
+                return@withContext content
+            }
             if (choices.length() == 0) return@withContext content
             val message = choices.getJSONObject(0).optJSONObject("message")
-                ?: return@withContext content
-            val result = message.optString("content") ?: return@withContext content
+                ?: run {
+                    AppLog.put("AI修正失败: 无message")
+                    return@withContext content
+                }
+            val result = message.optString("content") ?: run {
+                AppLog.put("AI修正失败: 无content")
+                return@withContext content
+            }
+            AppLog.put("AI修正成功")
             parseResult(result)
         } catch (e: Exception) {
+            AppLog.put("AI修正异常: ${e.localizedMessage}")
             e.printStackTrace()
             content
         }
