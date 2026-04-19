@@ -1456,6 +1456,19 @@
     <string name="ai_correction_test_success">Test successful!</string>
     <string name="ai_correction_test_failed">Test failed, check API key</string>
     <string name="ai_correction_api_key_empty">API key cannot be empty</string>
-</resources>
 
+    <string name="ai_correction">AI Correction</string>
+    <string name="ai_correction_enable">Enable AI Correction</string>
+    <string name="ai_correction_enable_desc">Use AI to correct novel content</string>
+    <string name="ai_correction_model">AI Model</string>
+    <string name="ai_correction_default_model">MiniMax-Text-01</string>
+    <string name="ai_correction_api_key">API Key</string>
+    <string name="ai_correction_rules">Correction Rules</string>
+    <string name="ai_correction_rules_hint">Enter correction rules</string>
+    <string name="ai_correction_rules_desc">Additional AI correction rules</string>
+    <string name="ai_correction_test">Test Correction</string>
+    <string name="ai_correction_test_desc">Click to test AI correction</string>
+    <string name="ai_correction_test_success">Test successful!</string>
+    <string name="ai_correction_test_failed">Test failed, check API key</string>
     <string name="ai_correction_api_key_empty">API key cannot be empty</string>
+</resources>
