@@ -1,0 +1,96 @@
+name: Daily Build
+
+on:
+  schedule:
+    # 每天北京时间 08:00 = UTC 00:00
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle17-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: gradle17-
+
+      - name: Build APK
+        run: ./gradlew assembleRelease --no-daemon -x lintVitalAnalyzeRelease -x lintVitalReportRelease 2>&1 | tail -20
+
+      - name: Find APK
+        run: find . -name "*.apk" -type f | head -5
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: legado-md3-apk
+          path: app/build/outputs/apk/app/release/*.apk
+          retention-days: 2
+
+  notify:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: legado-md3-apk
+          path: ./apk
+
+      - name: Get APK info
+        id: apk
+        run: |
+          APK=$(find ./apk -name "*.apk" | head -1)
+          echo "path=$APK" >> $GITHUB_OUTPUT
+          echo "size=$(du -h $APK | cut -f1)" >> $GITHUB_OUTPUT
+          echo "name=$(basename $APK)" >> $GITHUB_OUTPUT
+          echo "date=$(date '+%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: daily-${{ steps.apk.outputs.date }}
+          name: Daily Build ${{ steps.apk.outputs.date }}
+          body: |
+            Legado MD3 Daily Build
+
+            📦 APK: ${{ steps.apk.outputs.name }}
+            📏 Size: ${{ steps.apk.outputs.size }}
+            🏗️ Branch: main
+
+            💬 Issue: https://github.com/fengs2021/legado-with-MD3/releases
+          files: ${{ steps.apk.outputs.path }}
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Send Feishu Notification
+        if: env.FEISHU_WEBHOOK != ''
+        run: |
+          curl -s -X POST "${{ vars.FEISHU_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "msg_type": "text",
+              "content": {
+                "text": "✅ Legado MD3 Daily Build 已完成\n📅 日期: '"${{ steps.apk.outputs.date }}"' 📦 大小: ${{ steps.apk.outputs.size }}\n⬇️ 下载: https://github.com/${{ github.repository }}/releases/tag/daily-${{ steps.apk.outputs.date }}"
+              }
+            }'
