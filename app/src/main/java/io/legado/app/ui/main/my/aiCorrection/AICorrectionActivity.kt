@@ -58,24 +58,22 @@ class AICorrectionActivity : BaseComposeActivity() {
         var tempRules by remember { mutableStateOf(AICorrectionConfig.rules) }
         var isTesting by remember { mutableStateOf(false) }
 
-        val modelDesc: String
-            get() = if (AICorrectionConfig.isCustom) {
-                (AICorrectionConfig.customModel.ifBlank { "（未设置）" })
-            } else {
-                AICorrectionConfig.model.ifBlank {
-                    when (AICorrectionConfig.provider) {
-                        "kimi" -> "moonshot-v1-8k"
-                        "kimi-code" -> "kimi-for-coding"
-                        "deepseek" -> "deepseek-chat"
-                        "qwen" -> "qwen-turbo"
-                        "openai" -> "gpt-4o-mini"
-                        else -> "MiniMax-Text-01"
-                    }
+        val modelDesc = if (AICorrectionConfig.isCustom) {
+            (AICorrectionConfig.customModel.ifBlank { "（未设置）" })
+        } else {
+            AICorrectionConfig.model.ifBlank {
+                when (AICorrectionConfig.provider) {
+                    "kimi" -> "moonshot-v1-8k"
+                    "kimi-code" -> "kimi-for-coding"
+                    "deepseek" -> "deepseek-chat"
+                    "qwen" -> "qwen-turbo"
+                    "openai" -> "gpt-4o-mini"
+                    else -> "MiniMax-Text-01"
                 }
             }
+        }
 
-        val customUrlDesc: String
-            get() = AICorrectionConfig.customApiUrl.ifBlank { "（未设置）" }
+        val customUrlDesc = AICorrectionConfig.customApiUrl.ifBlank { "（未设置）" }
 
         AppScaffold(
             topBar = {
