@@ -528,7 +528,7 @@ object CacheBook {
             // 背景进行AI修正并更新数据库的已保存内容
             if (!canceled && content.isNotBlank() && !content.startsWith("获取正文失败")) {
                 scope.launch(IO) {
-                    val cacheKey = "${book.id}#${chapter.index}"
+                    val cacheKey = "${book.bookUrl}#${chapter.index}"
                     if (cacheKey !in ReadBook.correctedChapterCache) {
                         val corrected = aiCorrectionMutex.withLock {
                             AIContentCorrector.correct(content, chapter.title)

@@ -815,7 +815,7 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
             )
             val contents = contentProcessor
                 .getContent(book, chapter, content, includeTitle = false)
-            val cacheKey = "${book.id}#${chapter.index}"
+            val cacheKey = "${book.bookUrl}#${chapter.index}"
             // AI 修正（互斥锁，已修正过或显示原文则跳过）
             val finalContents = if (AICorrectionConfig.isEffectiveEnabled && cacheKey !in correctedChapterCache) {
                 AppLog.put("AI修正开始: ${chapter.title}")
@@ -925,7 +925,7 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
             )
             val bookContent = contentProcessor
                 .getContent(book, chapter, content, includeTitle = false)
-            val cacheKey = "${book.id}#${chapter.index}"
+            val cacheKey = "${book.bookUrl}#${chapter.index}"
             // AI 修正（互斥锁，已修正过或显示原文则跳过）
             val finalTextList = if (AICorrectionConfig.isEffectiveEnabled && cacheKey !in correctedChapterCache) {
                 AppLog.put("AI修正开始: ${chapter.title}")
