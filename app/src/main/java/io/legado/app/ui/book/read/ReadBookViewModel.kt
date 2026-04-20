@@ -398,10 +398,15 @@ class ReadBookViewModel(application: Application) : BaseViewModel(application) {
      * 保存内容
      */
     fun saveContent(book: Book, content: String) {
+        AppLog.put("saveContent被调用, content长度=${content.length}")
         execute {
             try {
+                AppLog.put("saveContent.execute开始")
+                val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, ReadBook.durChapterIndex) ?: run {
+                    AppLog.put("saveContent chapter为null")
+                    return@execute
+                }
                 AppLog.put("saveContent拦截: AICorrectionConfig.enabled=${AICorrectionConfig.enabled}")
-                val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, ReadBook.durChapterIndex) ?: return@execute
                 val finalContent = if (AICorrectionConfig.enabled) {
                     AppLog.put("AI修正开始: ${chapter.title}")
                     val corrected = AIContentCorrector.correct(content, chapter.title)
