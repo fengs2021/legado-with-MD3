@@ -207,9 +207,7 @@ class AICorrectionActivity : BaseComposeActivity() {
                     }
                 },
                 confirmText = stringResource(R.string.cancel),
-                onConfirm = { showProviderDialog = false },
-                dismissText = null,
-                onDismiss = { showProviderDialog = false }
+                onConfirm = { showProviderDialog = false }
             )
         }
 
