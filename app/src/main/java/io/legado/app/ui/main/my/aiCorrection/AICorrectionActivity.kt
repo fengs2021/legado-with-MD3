@@ -9,11 +9,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
@@ -46,12 +49,33 @@ class AICorrectionActivity : BaseComposeActivity() {
         var showApiKeyDialog by remember { mutableStateOf(false) }
         var showProviderDialog by remember { mutableStateOf(false) }
         var showModelDialog by remember { mutableStateOf(false) }
+        var showCustomUrlDialog by remember { mutableStateOf(false) }
         var showRulesDialog by remember { mutableStateOf(false) }
         var tempApiKey by remember { mutableStateOf(AICorrectionConfig.apiKey) }
-        var tempProvider by remember { mutableStateOf(AICorrectionConfig.provider) }
         var tempModel by remember { mutableStateOf(AICorrectionConfig.model) }
+        var tempCustomUrl by remember { mutableStateOf(AICorrectionConfig.customApiUrl) }
+        var tempCustomModel by remember { mutableStateOf(AICorrectionConfig.customModel) }
         var tempRules by remember { mutableStateOf(AICorrectionConfig.rules) }
         var isTesting by remember { mutableStateOf(false) }
+
+        val modelDesc: String
+            get() = if (AICorrectionConfig.isCustom) {
+                (AICorrectionConfig.customModel.ifBlank { "（未设置）" })
+            } else {
+                AICorrectionConfig.model.ifBlank {
+                    when (AICorrectionConfig.provider) {
+                        "kimi" -> "moonshot-v1-8k"
+                        "kimi-code" -> "kimi-for-coding"
+                        "deepseek" -> "deepseek-chat"
+                        "qwen" -> "qwen-turbo"
+                        "openai" -> "gpt-4o-mini"
+                        else -> "MiniMax-Text-01"
+                    }
+                }
+            }
+
+        val customUrlDesc: String
+            get() = AICorrectionConfig.customApiUrl.ifBlank { "（未设置）" }
 
         AppScaffold(
             topBar = {
@@ -89,27 +113,29 @@ class AICorrectionActivity : BaseComposeActivity() {
 
                         ClickableSettingItem(
                             title = "AI 供应商",
-                            description = AICorrectionConfig.providerNames[AICorrectionConfig.provider] ?: AICorrectionConfig.provider,
+                            description = AICorrectionConfig.providerNames[AICorrectionConfig.provider]
+                                ?: AICorrectionConfig.provider,
                             onClick = { showProviderDialog = true }
                         )
 
+                        if (AICorrectionConfig.isCustom) {
+                            ClickableSettingItem(
+                                title = "API 接口地址",
+                                description = customUrlDesc,
+                                onClick = { showCustomUrlDialog = true }
+                            )
+                        }
+
                         ClickableSettingItem(
                             title = stringResource(R.string.ai_correction_model),
-                            description = (AICorrectionConfig.model.ifBlank {
-                                when (AICorrectionConfig.provider) {
-                                    "kimi" -> "moonshot-v1-8k"
-                                    "deepseek" -> "deepseek-chat"
-                                    "qwen" -> "qwen-turbo"
-                                    "openai" -> "gpt-4o-mini"
-                                    else -> "MiniMax-Text-01"
-                                }
-                            }),
+                            description = modelDesc,
                             onClick = { showModelDialog = true }
                         )
 
                         ClickableSettingItem(
                             title = stringResource(R.string.ai_correction_api_key),
-                            description = if (AICorrectionConfig.apiKey.isNotBlank()) "******" else stringResource(R.string.ai_correction_api_key_empty),
+                            description = if (AICorrectionConfig.apiKey.isNotBlank()) "******"
+                                          else stringResource(R.string.ai_correction_api_key_empty),
                             onClick = { showApiKeyDialog = true }
                         )
 
@@ -185,21 +211,25 @@ class AICorrectionActivity : BaseComposeActivity() {
                                         .fillMaxWidth()
                                         .clickable {
                                             AICorrectionConfig.provider = id
-                                            AICorrectionConfig.model = ""
+                                            if (id != "custom") {
+                                                AICorrectionConfig.model = ""
+                                            }
                                             showProviderDialog = false
                                         }
                                         .padding(vertical = 8.dp),
-                                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     RadioButton(
                                         selected = AICorrectionConfig.provider == id,
                                         onClick = {
                                             AICorrectionConfig.provider = id
-                                            AICorrectionConfig.model = ""
+                                            if (id != "custom") {
+                                                AICorrectionConfig.model = ""
+                                            }
                                             showProviderDialog = false
                                         }
                                     )
-                                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(horizontal = 4.dp))
+                                    Spacer(modifier = Modifier.padding(horizontal = 4.dp))
                                     androidx.compose.material3.Text(name)
                                 }
                             }
@@ -218,8 +248,14 @@ class AICorrectionActivity : BaseComposeActivity() {
                 title = stringResource(R.string.ai_correction_model),
                 content = {
                     AppTextField(
-                        value = tempModel,
-                        onValueChange = { tempModel = it },
+                        value = if (AICorrectionConfig.isCustom) tempCustomModel else tempModel,
+                        onValueChange = {
+                            if (AICorrectionConfig.isCustom) {
+                                tempCustomModel = it
+                            } else {
+                                tempModel = it
+                            }
+                        },
                         label = "模型名称",
                         backgroundColor = LegadoTheme.colorScheme.surface,
                         modifier = Modifier.fillMaxWidth()
@@ -227,11 +263,39 @@ class AICorrectionActivity : BaseComposeActivity() {
                 },
                 confirmText = stringResource(R.string.ok),
                 onConfirm = {
-                    AICorrectionConfig.model = tempModel
+                    if (AICorrectionConfig.isCustom) {
+                        AICorrectionConfig.customModel = tempCustomModel
+                    } else {
+                        AICorrectionConfig.model = tempModel
+                    }
                     showModelDialog = false
                 },
                 dismissText = stringResource(R.string.cancel),
                 onDismiss = { showModelDialog = false }
+            )
+        }
+
+        if (showCustomUrlDialog) {
+            AppAlertDialog(
+                show = showCustomUrlDialog,
+                onDismissRequest = { showCustomUrlDialog = false },
+                title = "自定义 API 接口地址",
+                content = {
+                    AppTextField(
+                        value = tempCustomUrl,
+                        onValueChange = { tempCustomUrl = it },
+                        label = "API URL（如 https://api.example.com/v1/chat/completions）",
+                        backgroundColor = LegadoTheme.colorScheme.surface,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmText = stringResource(R.string.ok),
+                onConfirm = {
+                    AICorrectionConfig.customApiUrl = tempCustomUrl
+                    showCustomUrlDialog = false
+                },
+                dismissText = stringResource(R.string.cancel),
+                onDismiss = { showCustomUrlDialog = false }
             )
         }
 

@@ -29,6 +29,16 @@ object AICorrectionConfig {
         ""
     )
 
+    var customApiUrl: String by prefDelegate(
+        PreferKey.aiCorrectionCustomApiUrl,
+        ""
+    )
+
+    var customModel: String by prefDelegate(
+        PreferKey.aiCorrectionCustomModel,
+        ""
+    )
+
     var rules: String by prefDelegate(
         PreferKey.aiCorrectionRules,
         """
@@ -50,6 +60,44 @@ object AICorrectionConfig {
         "kimi-code" to "Kimi Code (kimi.com/code)",
         "deepseek" to "DeepSeek",
         "qwen" to "通义千问 (Qwen)",
-        "openai" to "OpenAI"
+        "openai" to "OpenAI",
+        "custom" to "自定义 (Custom)"
     )
+
+    val isCustom: Boolean get() = provider == "custom"
+
+    fun getEffectiveApiUrl(): String = when (provider) {
+        "custom" -> customApiUrl.ifBlank { "" }
+        else -> getApiUrl(provider)
+    }
+
+    fun getEffectiveModel(): String = when (provider) {
+        "custom" -> customModel.ifBlank { "" }
+        else -> model.ifBlank { getDefaultModel(provider) }
+    }
+
+    private fun getApiUrl(provider: String): String = when (provider) {
+        "kimi" -> API_URL_KIMI
+        "kimi-code" -> API_URL_KIMI_CODE
+        "deepseek" -> API_URL_DEEPSEEK
+        "qwen" -> API_URL_QWEN
+        "openai" -> API_URL_OPENAI
+        else -> API_URL_MINIMAX
+    }
+
+    private fun getDefaultModel(provider: String): String = when (provider) {
+        "kimi" -> "moonshot-v1-8k"
+        "kimi-code" -> "kimi-for-coding"
+        "deepseek" -> "deepseek-chat"
+        "qwen" -> "qwen-turbo"
+        "openai" -> "gpt-4o-mini"
+        else -> "MiniMax-Text-01"
+    }
+
+    private const val API_URL_MINIMAX = "https://api.minimaxi.com/v1/text/chatcompletion_v2"
+    private const val API_URL_KIMI = "https://api.moonshot.cn/v1/chat/completions"
+    private const val API_URL_KIMI_CODE = "https://api.kimi.com/coding/v1/chat/completions"
+    private const val API_URL_DEEPSEEK = "https://api.deepseek.com/chat/completions"
+    private const val API_URL_QWEN = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+    private const val API_URL_OPENAI = "https://api.openai.com/v1/chat/completions"
 }

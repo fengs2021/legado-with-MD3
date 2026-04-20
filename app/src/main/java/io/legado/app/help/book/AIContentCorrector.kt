@@ -30,24 +30,6 @@ object AIContentCorrector {
     private const val API_URL_QWEN = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
     private const val API_URL_OPENAI = "https://api.openai.com/v1/chat/completions"
 
-    private fun getApiUrl(provider: String): String = when (provider) {
-        "kimi" -> API_URL_KIMI
-        "kimi-code" -> API_URL_KIMI_CODE
-        "deepseek" -> API_URL_DEEPSEEK
-        "qwen" -> API_URL_QWEN
-        "openai" -> API_URL_OPENAI
-        else -> API_URL_MINIMAX
-    }
-
-    private fun getDefaultModel(provider: String): String = when (provider) {
-        "kimi" -> "moonshot-v1-8k"
-        "kimi-code" -> "kimi-for-coding"
-        "deepseek" -> "deepseek-chat"
-        "qwen" -> "qwen-turbo"
-        "openai" -> "gpt-4o-mini"
-        else -> "MiniMax-Text-01"
-    }
-
     /**
      * 修正正文内容
      * @param content 原始正文
@@ -57,11 +39,11 @@ object AIContentCorrector {
     suspend fun correct(content: String, chapterTitle: String = ""): String = withContext(Dispatchers.IO) {
         val apiKey = AICorrectionConfig.apiKey
         val provider = AICorrectionConfig.provider
-        val model = AICorrectionConfig.model.ifBlank { getDefaultModel(provider) }
+        val model = AICorrectionConfig.getEffectiveModel()
         val rules = AICorrectionConfig.rules
-        val apiUrl = getApiUrl(provider)
+        val apiUrl = AICorrectionConfig.getEffectiveApiUrl()
 
-        if (apiKey.isBlank()) {
+        if (apiKey.isBlank() || apiUrl.isBlank()) {
             return@withContext content
         }
 

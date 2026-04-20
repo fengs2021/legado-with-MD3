@@ -280,6 +280,8 @@ object PreferKey {
     const val aiCorrectionEnabled = "aiCorrectionEnabled"
     const val aiCorrectionProvider = "aiCorrectionProvider"
     const val aiCorrectionModel = "aiCorrectionModel"
+    const val aiCorrectionCustomApiUrl = "aiCorrectionCustomApiUrl"
+    const val aiCorrectionCustomModel = "aiCorrectionCustomModel"
     const val aiCorrectionApiKey = "aiCorrectionApiKey"
     const val aiCorrectionRules = "aiCorrectionRules"
 }
