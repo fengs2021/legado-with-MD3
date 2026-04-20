@@ -38,7 +38,10 @@ import io.legado.app.utils.mapParallelSafe
 import io.legado.app.utils.postEvent
 import io.legado.app.utils.toStringArray
 import io.legado.app.utils.toastOnUi
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
@@ -54,6 +57,7 @@ import kotlin.coroutines.coroutineContext
  * 阅读界面数据处理
  */
 class ReadBookViewModel(application: Application) : BaseViewModel(application) {
+    private val ioScope = CoroutineScope(Dispatchers.IO)
     val permissionDenialLiveData = MutableLiveData<Int>()
     var isInitFinish = false
     var searchContentQuery = ""
@@ -399,12 +403,12 @@ class ReadBookViewModel(application: Application) : BaseViewModel(application) {
      */
     fun saveContent(book: Book, content: String) {
         AppLog.put("saveContent被调用, content长度=${content.length}")
-        execute {
+        ioScope.launch {
             try {
-                AppLog.put("saveContent.execute开始")
+                AppLog.put("saveContent.ioScope.launch开始")
                 val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, ReadBook.durChapterIndex) ?: run {
                     AppLog.put("saveContent chapter为null")
-                    return@execute
+                    return@launch
                 }
                 AppLog.put("saveContent拦截: AICorrectionConfig.enabled=${AICorrectionConfig.enabled}")
                 val finalContent = if (AICorrectionConfig.enabled) {
