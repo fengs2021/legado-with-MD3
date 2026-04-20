@@ -25,6 +25,9 @@ import androidx.compose.material3.RadioButton
 import io.legado.app.R
 import io.legado.app.base.BaseComposeActivity
 import io.legado.app.help.book.AIContentCorrector
+import io.legado.app.constant.AppLog
+import io.legado.app.model.ReadBook
+import io.legado.app.ui.about.AppLogDialog
 import io.legado.app.ui.theme.LegadoTheme
 import io.legado.app.ui.theme.adaptiveContentPadding
 import io.legado.app.ui.widget.components.AppScaffold
@@ -35,6 +38,7 @@ import io.legado.app.ui.widget.components.settingItem.ClickableSettingItem
 import io.legado.app.ui.widget.components.settingItem.SwitchSettingItem
 import io.legado.app.ui.widget.components.topbar.GlassMediumFlexibleTopAppBar
 import io.legado.app.ui.widget.components.topbar.GlassTopAppBarDefaults
+import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.toastOnUi
 import kotlinx.coroutines.launch
 
@@ -164,6 +168,23 @@ class AICorrectionActivity : BaseComposeActivity() {
                                         }
                                     }
                                 }
+                            }
+                        )
+
+                        ClickableSettingItem(
+                            title = "查看日志",
+                            description = "查看AI修正的详细日志",
+                            onClick = {
+                                context.showDialogFragment<AppLogDialog>()
+                            }
+                        )
+
+                        ClickableSettingItem(
+                            title = stringResource(R.string.ai_correction_clear_cache),
+                            description = stringResource(R.string.ai_correction_clear_cache_desc),
+                            onClick = {
+                                ReadBook.clearCorrectionCache()
+                                context.toastOnUi(context.getString(R.string.ai_correction_cleared))
                             }
                         )
                     }

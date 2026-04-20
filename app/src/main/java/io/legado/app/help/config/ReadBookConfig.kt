@@ -196,11 +196,6 @@ object ReadBookConfig {
             field = value
             appCtx.putPrefBoolean(PreferKey.aiCorrectionInReader, value)
         }
-    var aiShowOriginal = appCtx.getPrefBoolean(PreferKey.aiShowOriginal, false)
-        set(value) {
-            field = value
-            appCtx.putPrefBoolean(PreferKey.aiShowOriginal, value)
-        }
     var autoReadSpeed = appCtx.getPrefInt(PreferKey.autoReadSpeed, 10)
         set(value) {
             field = value

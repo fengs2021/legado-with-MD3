@@ -1456,10 +1456,8 @@
     <string name="ai_correction_test_success">Test successful!</string>
     <string name="ai_correction_test_failed">Test failed, check API key</string>
     <string name="ai_correction_api_key_empty">API key cannot be empty</string>
-    <string name="ai_correction_in_reader">AI Correction In Reader</string>
-    <string name="ai_correction_in_reader_desc">Apply AI correction while reading</string>
-    <string name="ai_show_original">Show Original Text</string>
-    <string name="ai_show_original_desc">Display original text instead of AI-corrected version</string>
+    <string name="ai_correction_in_reader">阅读时启用AI修正</string>
+    <string name="ai_correction_in_reader_desc">开启后阅读时自动对正文进行AI修正</string>
     <string name="ai_correction_clear_cache">Clear Correction Cache</string>
     <string name="ai_correction_clear_cache_desc">Clear cached AI-corrected chapters</string>
     <string name="ai_correction_cleared">Correction history cleared</string>
