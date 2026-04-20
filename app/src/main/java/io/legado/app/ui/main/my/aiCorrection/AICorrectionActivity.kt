@@ -175,7 +175,7 @@ class AICorrectionActivity : BaseComposeActivity() {
                             title = "查看日志",
                             description = "查看AI修正的详细日志",
                             onClick = {
-                                context.showDialogFragment<AppLogDialog>()
+                                showDialogFragment<AppLogDialog>()
                             }
                         )
 
