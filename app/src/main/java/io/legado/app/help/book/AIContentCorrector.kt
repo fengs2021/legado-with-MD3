@@ -2,7 +2,6 @@ package io.legado.app.help.book
 
 import io.legado.app.constant.AppLog
 import io.legado.app.ui.main.my.aiCorrection.AICorrectionConfig
-import io.legado.app.constant.PreferKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -24,7 +23,27 @@ object AIContentCorrector {
         .readTimeout(120, TimeUnit.SECONDS)
         .build()
 
-    private const val API_URL = "https://api.minimaxi.com/v1/text/chatcompletion_v2"
+    private const val API_URL_MINIMAX = "https://api.minimaxi.com/v1/text/chatcompletion_v2"
+    private const val API_URL_KIMI = "https://api.moonshot.cn/v1/chat/completions"
+    private const val API_URL_DEEPSEEK = "https://api.deepseek.com/chat/completions"
+    private const val API_URL_QWEN = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+    private const val API_URL_OPENAI = "https://api.openai.com/v1/chat/completions"
+
+    private fun getApiUrl(provider: String): String = when (provider) {
+        "kimi" -> API_URL_KIMI
+        "deepseek" -> API_URL_DEEPSEEK
+        "qwen" -> API_URL_QWEN
+        "openai" -> API_URL_OPENAI
+        else -> API_URL_MINIMAX
+    }
+
+    private fun getDefaultModel(provider: String): String = when (provider) {
+        "kimi" -> "moonshot-v1-8k"
+        "deepseek" -> "deepseek-chat"
+        "qwen" -> "qwen-turbo"
+        "openai" -> "gpt-4o-mini"
+        else -> "MiniMax-Text-01"
+    }
 
     /**
      * 修正正文内容
@@ -34,14 +53,15 @@ object AIContentCorrector {
      */
     suspend fun correct(content: String, chapterTitle: String = ""): String = withContext(Dispatchers.IO) {
         val apiKey = AICorrectionConfig.apiKey
-        val model = AICorrectionConfig.aiModel.ifBlank { "MiniMax-Text-01" }
+        val provider = AICorrectionConfig.provider
+        val model = AICorrectionConfig.model.ifBlank { getDefaultModel(provider) }
         val rules = AICorrectionConfig.rules
+        val apiUrl = getApiUrl(provider)
 
         if (apiKey.isBlank()) {
             return@withContext content
         }
 
-        // 构建 prompt
         val prompt = buildPrompt(content, chapterTitle, rules)
 
         val jsonBody = JSONObject().apply {
@@ -60,7 +80,7 @@ object AIContentCorrector {
             .toRequestBody("application/json".toMediaType())
 
         val request = Request.Builder()
-            .url(API_URL)
+            .url(apiUrl)
             .addHeader("Authorization", "Bearer $apiKey")
             .addHeader("Content-Type", "application/json")
             .post(requestBody)
@@ -122,7 +142,6 @@ object AIContentCorrector {
     }
 
     private fun parseResult(raw: String): String {
-        // 尝试从【正文开始】和【正文结束】之间提取内容
         val startMark = "【正文开始】"
         val endMark = "【正文结束】"
         val startIdx = raw.indexOf(startMark)
@@ -132,16 +151,13 @@ object AIContentCorrector {
             return raw.substring(startIdx + startMark.length, endIdx).trim()
         }
 
-        // 如果没找到标记，尝试用 ``` 包裹的代码块
         val codeBlockPattern = Regex("```[\\s\\S]*?```")
         val matches = codeBlockPattern.findAll(raw).toList()
         if (matches.any()) {
-            // 取最后一个代码块（通常是最终结果）
             val lastBlock = matches.last().value
             return lastBlock.removeSurrounding("```").trim()
         }
 
-        // 降级：直接返回原始内容
         return raw.trim()
     }
 }

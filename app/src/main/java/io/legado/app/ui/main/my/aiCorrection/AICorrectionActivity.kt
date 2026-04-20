@@ -1,5 +1,6 @@
 package io.legado.app.ui.main.my.aiCorrection
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.RadioButton
 import io.legado.app.R
 import io.legado.app.base.BaseComposeActivity
 import io.legado.app.help.book.AIContentCorrector
@@ -42,10 +44,12 @@ class AICorrectionActivity : BaseComposeActivity() {
 
         val scrollBehavior = GlassTopAppBarDefaults.defaultScrollBehavior()
         var showApiKeyDialog by remember { mutableStateOf(false) }
+        var showProviderDialog by remember { mutableStateOf(false) }
         var showModelDialog by remember { mutableStateOf(false) }
         var showRulesDialog by remember { mutableStateOf(false) }
         var tempApiKey by remember { mutableStateOf(AICorrectionConfig.apiKey) }
-        var tempModel by remember { mutableStateOf(AICorrectionConfig.aiModel) }
+        var tempProvider by remember { mutableStateOf(AICorrectionConfig.provider) }
+        var tempModel by remember { mutableStateOf(AICorrectionConfig.model) }
         var tempRules by remember { mutableStateOf(AICorrectionConfig.rules) }
         var isTesting by remember { mutableStateOf(false) }
 
@@ -84,8 +88,22 @@ class AICorrectionActivity : BaseComposeActivity() {
                         )
 
                         ClickableSettingItem(
+                            title = "AI 供应商",
+                            description = AICorrectionConfig.providerNames[AICorrectionConfig.provider] ?: AICorrectionConfig.provider,
+                            onClick = { showProviderDialog = true }
+                        )
+
+                        ClickableSettingItem(
                             title = stringResource(R.string.ai_correction_model),
-                            description = AICorrectionConfig.aiModel.ifBlank { stringResource(R.string.ai_correction_default_model) },
+                            description = (AICorrectionConfig.model.ifBlank {
+                                when (AICorrectionConfig.provider) {
+                                    "kimi" -> "moonshot-v1-8k"
+                                    "deepseek" -> "deepseek-chat"
+                                    "qwen" -> "qwen-turbo"
+                                    "openai" -> "gpt-4o-mini"
+                                    else -> "MiniMax-Text-01"
+                                }
+                            }),
                             onClick = { showModelDialog = true }
                         )
 
@@ -97,7 +115,7 @@ class AICorrectionActivity : BaseComposeActivity() {
 
                         ClickableSettingItem(
                             title = stringResource(R.string.ai_correction_rules),
-                            description = AICorrectionConfig.rules.ifBlank { stringResource(R.string.ai_correction_rules_desc) },
+                            description = stringResource(R.string.ai_correction_rules_desc),
                             onClick = { showRulesDialog = true }
                         )
 
@@ -153,6 +171,48 @@ class AICorrectionActivity : BaseComposeActivity() {
             )
         }
 
+        if (showProviderDialog) {
+            AppAlertDialog(
+                show = showProviderDialog,
+                onDismissRequest = { showProviderDialog = false },
+                title = "选择 AI 供应商",
+                content = {
+                    androidx.compose.foundation.lazy.LazyColumn {
+                        AICorrectionConfig.providerNames.forEach { (id, name) ->
+                            item {
+                                androidx.compose.foundation.layout.Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            AICorrectionConfig.provider = id
+                                            AICorrectionConfig.model = ""
+                                            showProviderDialog = false
+                                        }
+                                        .padding(vertical = 8.dp),
+                                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                                ) {
+                                    RadioButton(
+                                        selected = AICorrectionConfig.provider == id,
+                                        onClick = {
+                                            AICorrectionConfig.provider = id
+                                            AICorrectionConfig.model = ""
+                                            showProviderDialog = false
+                                        }
+                                    )
+                                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(horizontal = 4.dp))
+                                    androidx.compose.material3.Text(name)
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmText = stringResource(R.string.cancel),
+                onConfirm = { showProviderDialog = false },
+                dismissText = null,
+                onDismiss = { showProviderDialog = false }
+            )
+        }
+
         if (showModelDialog) {
             AppAlertDialog(
                 show = showModelDialog,
@@ -162,14 +222,14 @@ class AICorrectionActivity : BaseComposeActivity() {
                     AppTextField(
                         value = tempModel,
                         onValueChange = { tempModel = it },
-                        label = stringResource(R.string.ai_correction_model),
+                        label = "模型名称",
                         backgroundColor = LegadoTheme.colorScheme.surface,
                         modifier = Modifier.fillMaxWidth()
                     )
                 },
                 confirmText = stringResource(R.string.ok),
                 onConfirm = {
-                    AICorrectionConfig.aiModel = tempModel
+                    AICorrectionConfig.model = tempModel
                     showModelDialog = false
                 },
                 dismissText = stringResource(R.string.cancel),

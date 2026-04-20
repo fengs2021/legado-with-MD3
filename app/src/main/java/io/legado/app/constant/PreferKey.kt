@@ -278,6 +278,7 @@ object PreferKey {
     const val audioPreDownloadNum = "audioPreDownloadNum"
 
     const val aiCorrectionEnabled = "aiCorrectionEnabled"
+    const val aiCorrectionProvider = "aiCorrectionProvider"
     const val aiCorrectionModel = "aiCorrectionModel"
     const val aiCorrectionApiKey = "aiCorrectionApiKey"
     const val aiCorrectionRules = "aiCorrectionRules"
