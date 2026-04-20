@@ -19,8 +19,8 @@ object AIContentCorrector {
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(120, TimeUnit.SECONDS)
+        .writeTimeout(120, TimeUnit.SECONDS)
+        .readTimeout(300, TimeUnit.SECONDS)
         .build()
 
     private const val API_URL_MINIMAX = "https://api.minimaxi.com/v1/text/chatcompletion_v2"
