@@ -164,6 +164,14 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
 
+      - name: Clear Gradle Cache
+        run: |
+          echo "清理残留缓存"
+          rm -rf ~/.gradle/caches/transforms-* ~/.gradle/caches/jars-* ~/.gradle/caches/build-cache-* ~/.gradle/caches/journal-* ~/.gradle/caches/modules-*/files-* 2>/dev/null || true
+          rm -rf $GITHUB_WORKSPACE/.gradle 2>/dev/null || true
+          rm -rf $GITHUB_WORKSPACE/app/build 2>/dev/null || true
+          echo "缓存已清理"
+
       - name: Build With Gradle
         run: |
           echo "开始${{ env.product }}${{ env.type }}构建"
