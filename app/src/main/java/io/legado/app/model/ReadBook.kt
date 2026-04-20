@@ -89,6 +89,7 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
     private val prevChapterLoadingLock = Mutex()
     private val curChapterLoadingLock = Mutex()
     private val nextChapterLoadingLock = Mutex()
+    private val aiCorrectionMutex = Mutex()
     var readStartTime: Long = System.currentTimeMillis()
 
     /* 跳转进度前进度记录 */
@@ -629,11 +630,13 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
         resetPageOffset: Boolean,
         success: (() -> Unit)? = null
     ) {
+        // 顺序加载：当前 → 下一章 → 上一章
         loadContent(durChapterIndex, resetPageOffset = resetPageOffset) {
+            loadContent(durChapterIndex + 1, resetPageOffset = resetPageOffset) {
+                loadContent(durChapterIndex - 1, resetPageOffset = resetPageOffset)
+            }
             success?.invoke()
         }
-        loadContent(durChapterIndex + 1, resetPageOffset = resetPageOffset)
-        loadContent(durChapterIndex - 1, resetPageOffset = resetPageOffset)
     }
 
     fun loadOrUpContent(success: (() -> Unit)? = null) {
@@ -806,12 +809,14 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
             )
             val contents = contentProcessor
                 .getContent(book, chapter, content, includeTitle = false)
-            // AI 修正
+            // AI 修正（互斥锁保证顺序修正）
             val finalContents = if (AICorrectionConfig.enabled) {
                 AppLog.put("AI修正开始: ${chapter.title}")
                 val rawText = contents.textList.joinToString("\n")
                 AppLog.put("AI修正原始内容长度: ${rawText.length}")
-                val corrected = AIContentCorrector.correct(rawText, chapter.title)
+                val corrected = aiCorrectionMutex.withLock {
+                    AIContentCorrector.correct(rawText, chapter.title)
+                }
                 AppLog.put("AI修正完成，结果长度: ${corrected.length}")
                 if (corrected != rawText) {
                     BookContent(contents.sameTitleRemoved, corrected.split("\n"), contents.effectiveReplaceRules)
