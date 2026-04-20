@@ -1,6 +1,7 @@
 package io.legado.app.ui.main.my.aiCorrection
 
 import io.legado.app.constant.PreferKey
+import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.ui.config.prefDelegate
 import splitties.init.appCtx
 
@@ -97,6 +98,14 @@ object AICorrectionConfig {
     private const val API_URL_MINIMAX = "https://api.minimaxi.com/v1/text/chatcompletion_v2"
     private const val API_URL_KIMI = "https://api.moonshot.cn/v1/chat/completions"
     private const val API_URL_KIMI_CODE = "https://api.kimi.com/coding/v1/chat/completions"
+
+    /**
+     * 综合判断当前是否应该进行AI修正
+     * 需要全局开关开启 AND 阅读器内开关开启 AND 不是显示原文模式
+     */
+    val isEffectiveEnabled: Boolean
+        get() = enabled && ReadBookConfig.aiCorrectionInReader && !ReadBookConfig.aiShowOriginal
+
     private const val API_URL_DEEPSEEK = "https://api.deepseek.com/chat/completions"
     private const val API_URL_QWEN = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
     private const val API_URL_OPENAI = "https://api.openai.com/v1/chat/completions"

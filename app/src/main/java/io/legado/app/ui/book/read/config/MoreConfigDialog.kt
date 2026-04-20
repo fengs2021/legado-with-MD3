@@ -136,6 +136,16 @@ class MoreConfigDialog : BaseBottomSheetDialogFragment(R.layout.dialog_more_conf
                 PreferKey.paddingDisplayCutouts -> {
                     postEvent(EventBus.UP_CONFIG, arrayListOf(2))
                 }
+
+                PreferKey.aiCorrectionInReader -> {
+                    ReadBookConfig.aiCorrectionInReader = getPrefBoolean(key)
+                }
+
+                PreferKey.aiShowOriginal -> {
+                    ReadBookConfig.aiShowOriginal = getPrefBoolean(key)
+                    // 刷新当前章节显示
+                    ReadBook.loadContent(false)
+                }
             }
         }
 

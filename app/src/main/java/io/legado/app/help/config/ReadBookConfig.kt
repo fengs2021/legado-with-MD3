@@ -191,6 +191,16 @@ object ReadBookConfig {
 
     //配置写入读取
     var readBodyToLh = appCtx.getPrefBoolean(PreferKey.readBodyToLh, true)
+    var aiCorrectionInReader = appCtx.getPrefBoolean(PreferKey.aiCorrectionInReader, true)
+        set(value) {
+            field = value
+            appCtx.putPrefBoolean(PreferKey.aiCorrectionInReader, value)
+        }
+    var aiShowOriginal = appCtx.getPrefBoolean(PreferKey.aiShowOriginal, false)
+        set(value) {
+            field = value
+            appCtx.putPrefBoolean(PreferKey.aiShowOriginal, value)
+        }
     var autoReadSpeed = appCtx.getPrefInt(PreferKey.autoReadSpeed, 10)
         set(value) {
             field = value

@@ -284,4 +284,6 @@ object PreferKey {
     const val aiCorrectionCustomModel = "aiCorrectionCustomModel"
     const val aiCorrectionApiKey = "aiCorrectionApiKey"
     const val aiCorrectionRules = "aiCorrectionRules"
+    const val aiCorrectionInReader = "aiCorrectionInReader"
+    const val aiShowOriginal = "aiShowOriginal"
 }

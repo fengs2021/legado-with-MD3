@@ -241,8 +241,17 @@
 
         <io.legado.app.lib.prefs.SwitchPreference
             android:defaultValue="true"
-            android:key="showReadTitleAddition"
-            android:title="@string/show_read_title_addition" />
+            android:key="aiCorrectionInReader"
+            android:title="@string/ai_correction_in_reader"
+            android:summary="@string/ai_correction_in_reader_desc"
+            app:isBottomBackground="true" />
+
+        <io.legado.app.lib.prefs.SwitchPreference
+            android:defaultValue="false"
+            android:key="aiShowOriginal"
+            android:title="@string/ai_show_original"
+            android:summary="@string/ai_show_original_desc"
+            app:isBottomBackground="true" />
 
     </io.legado.app.lib.prefs.PreferenceCategory>
 

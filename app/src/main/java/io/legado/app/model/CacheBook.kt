@@ -12,6 +12,7 @@ import io.legado.app.exception.ConcurrentException
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.book.isLocal
 import io.legado.app.help.config.AppConfig
+import io.legado.app.ui.main.my.aiCorrection.AICorrectionConfig
 import io.legado.app.help.coroutine.CompositeCoroutine
 import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.model.webBook.WebBook
@@ -23,6 +24,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -68,6 +70,7 @@ object CacheBook {
     val cacheBookMap = ConcurrentHashMap<String, CacheBookModel>()
     private val workingState = MutableStateFlow(true)
     private val mutex = Mutex()
+    private val aiCorrectionMutex = Mutex()
     val totalCount: Int
         get() {
             var total = 0
@@ -425,13 +428,13 @@ object CacheBook {
                 executeContext = context
             ).onSuccess { content ->
                 onSuccess(chapter)
-                downloadFinish(chapter, content)
+                downloadFinish(chapter, content, scope)
             }.onError {
                 onPreError(chapter, it)
                 //出现错误等待一秒后重新加入待下载列表
                 delay(1000)
                 onPostError(chapter, it)
-                downloadFinish(chapter, "获取正文失败\n${it.localizedMessage}")
+                downloadFinish(chapter, "获取正文失败\n${it.localizedMessage}", scope)
             }.onCancel {
                 onCancel(chapterIndex)
             }.onFinally {
@@ -489,15 +492,15 @@ object CacheBook {
                 onSuccess(chapter)
                 ReadBook.downloadedChapters.add(chapter.index)
                 ReadBook.downloadFailChapters.remove(chapter.index)
-                downloadFinish(chapter, content, resetPageOffset)
+                downloadFinish(chapter, content, scope, resetPageOffset)
             }.onError {
                 onError(chapter, it)
                 ReadBook.downloadFailChapters[chapter.index] =
                     (ReadBook.downloadFailChapters[chapter.index] ?: 0) + 1
-                downloadFinish(chapter, "获取正文失败\n${it.localizedMessage}", resetPageOffset)
+                downloadFinish(chapter, "获取正文失败\n${it.localizedMessage}", scope, resetPageOffset)
             }.onCancel {
                 onCancel(chapter.index)
-                downloadFinish(chapter, "download canceled", resetPageOffset, true)
+                downloadFinish(chapter, "download canceled", scope, resetPageOffset, true)
             }.onFinally {
                 postEvent(EventBus.UP_DOWNLOAD, book.bookUrl)
             }.start()
@@ -506,15 +509,36 @@ object CacheBook {
         private fun downloadFinish(
             chapter: BookChapter,
             content: String,
+            scope: CoroutineScope,
             resetPageOffset: Boolean = false,
             canceled: Boolean = false
         ) {
+            // 立即保存原始内容到数据库
+            if (!canceled && content.isNotBlank() && !content.startsWith("获取正文失败")) {
+                BookHelp.saveContent(bookSource, book, chapter, content)
+            }
             if (ReadBook.book?.bookUrl == book.bookUrl) {
                 ReadBook.contentLoadFinish(
                     book, chapter, content,
                     resetPageOffset = resetPageOffset,
                     canceled = canceled
                 )
+            }
+            // 背景进行AI修正并更新数据库的已保存内容
+            if (!canceled && content.isNotBlank() && !content.startsWith("获取正文失败")) {
+                scope.launch(IO) {
+                    val cacheKey = "${book.id}#${chapter.index}"
+                    if (cacheKey !in ReadBook.correctedChapterCache) {
+                        val corrected = aiCorrectionMutex.withLock {
+                            AIContentCorrector.correct(content, chapter.title)
+                        }
+                        ReadBook.correctedChapterCache.add(cacheKey)
+                        if (corrected != content) {
+                            BookHelp.saveContent(bookSource, book, chapter, corrected)
+                            AppLog.put("AI预修正完成并保存: ${chapter.title}")
+                        }
+                    }
+                }
             }
         }
 
