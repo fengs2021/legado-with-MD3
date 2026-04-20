@@ -168,19 +168,21 @@ jobs:
         run: |
           echo "清理残留缓存"
           rm -rf ~/.gradle/caches/transforms-* ~/.gradle/caches/jars-* ~/.gradle/caches/build-cache-* ~/.gradle/caches/journal-* ~/.gradle/caches/modules-*/files-* 2>/dev/null || true
+          rm -rf ~/.gradle/daemon 2>/dev/null || true
           rm -rf $GITHUB_WORKSPACE/.gradle 2>/dev/null || true
           rm -rf $GITHUB_WORKSPACE/app/build 2>/dev/null || true
           echo "缓存已清理"
 
       - name: Build With Gradle
         run: |
+          chmod +x gradlew
+          ./gradlew --stop 2>/dev/null || true
           echo "开始${{ env.product }}${{ env.type }}构建"
           echo "VersionName: $APP_VERSION_NAME"
           echo "VersionCode (Commit Number): $COMMIT_NUMBER"
-          chmod +x gradlew
           # 将 type 首字母大写以匹配 Gradle Task
           TYPE_CAP=$(echo ${{ env.type }} | awk '{print toupper(substr($0,1,1))substr($0,2)}')
-          ./gradlew assemble${{ env.product }}${TYPE_CAP}
+          ./gradlew assemble${{ env.product }}${TYPE_CAP} --no-daemon
         env:
           COMMIT_NUMBER: ${{ env.COMMIT_NUMBER_VAL }}
           APP_VERSION_NAME: ${{ env.VERSIONL }}
