@@ -529,11 +529,13 @@ object CacheBook {
             if (!canceled && content.isNotBlank() && !content.startsWith("获取正文失败")) {
                 scope.launch(IO) {
                     val cacheKey = "${book.bookUrl}#${chapter.index}"
-                    if (cacheKey !in ReadBook.correctedChapterCache) {
+                    if (ReadBook.correctedChapterCache[cacheKey] == null) {
+                        // 先标记为正在修正，防止 contentLoadFinish 同时开始修正
+                        ReadBook.correctedChapterCache[cacheKey] = -1L // -1 表示修正中
                         val corrected = aiCorrectionMutex.withLock {
                             AIContentCorrector.correct(content, chapter.title)
                         }
-                        ReadBook.correctedChapterCache.add(cacheKey)
+                        ReadBook.correctedChapterCache[cacheKey] = System.currentTimeMillis()
                         if (corrected != content) {
                             BookHelp.saveContent(bookSource, book, chapter, corrected)
                             AppLog.put("AI预修正完成并保存: ${chapter.title}")

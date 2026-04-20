@@ -90,7 +90,7 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
     private val curChapterLoadingLock = Mutex()
     private val nextChapterLoadingLock = Mutex()
     private val aiCorrectionMutex = Mutex()
-    internal val correctedChapterCache = hashSetOf<String>()  // bookId#chapterIndex
+    internal val correctedChapterCache = hashMapOf<String, Long>()  // bookUrl#chapterIndex -> timestamp of when correction was added
 
     /** 清除AI修正缓存，下一次读时会重新修正 */
     fun clearCorrectionCache() {
@@ -816,8 +816,8 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
             val contents = contentProcessor
                 .getContent(book, chapter, content, includeTitle = false)
             val cacheKey = "${book.bookUrl}#${chapter.index}"
-            // AI 修正（互斥锁，已修正过或显示原文则跳过）
-            val finalContents = if (AICorrectionConfig.isEffectiveEnabled && cacheKey !in correctedChapterCache) {
+            // AI 修正（互斥锁，已修正过则跳过）
+            val finalContents = if (AICorrectionConfig.isEffectiveEnabled && correctedChapterCache[cacheKey] == null) {
                 AppLog.put("AI修正开始: ${chapter.title}")
                 val rawText = contents.textList.joinToString("\n")
                 AppLog.put("AI修正原始内容长度: ${rawText.length}")
@@ -825,15 +825,15 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                     AIContentCorrector.correct(rawText, chapter.title)
                 }
                 AppLog.put("AI修正完成，结果长度: ${corrected.length}")
-                correctedChapterCache.add(cacheKey)
+                correctedChapterCache[cacheKey] = System.currentTimeMillis()
                 if (corrected != rawText) {
                     BookContent(contents.sameTitleRemoved, corrected.split("\n"), contents.effectiveReplaceRules)
                 } else {
                     contents
                 }
             } else {
-                if (AICorrectionConfig.enabled && cacheKey in correctedChapterCache) {
-                    AppLog.put("AI修正跳过（已修正过或显示原文）: ${chapter.title}")
+                if (AICorrectionConfig.enabled && correctedChapterCache[cacheKey] != null) {
+                    AppLog.put("AI修正跳过（已修正过）: ${chapter.title}")
                 }
                 contents
             }
@@ -926,22 +926,22 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
             val bookContent = contentProcessor
                 .getContent(book, chapter, content, includeTitle = false)
             val cacheKey = "${book.bookUrl}#${chapter.index}"
-            // AI 修正（互斥锁，已修正过或显示原文则跳过）
-            val finalTextList = if (AICorrectionConfig.isEffectiveEnabled && cacheKey !in correctedChapterCache) {
+            // AI 修正（互斥锁，已修正过则跳过）
+            val finalTextList = if (AICorrectionConfig.isEffectiveEnabled && correctedChapterCache[cacheKey] == null) {
                 AppLog.put("AI修正开始: ${chapter.title}")
                 val rawContent = bookContent.textList.joinToString("\n")
                 AppLog.put("AI修正原始内容长度: ${rawContent.length}")
                 val corrected = AIContentCorrector.correct(rawContent, chapter.title)
                 AppLog.put("AI修正完成，结果长度: ${corrected.length}")
-                correctedChapterCache.add(cacheKey)
+                correctedChapterCache[cacheKey] = System.currentTimeMillis()
                 if (corrected != rawContent) {
                     corrected.split("\n").map { it }
                 } else {
                     bookContent.textList
                 }
             } else {
-                if (AICorrectionConfig.enabled && cacheKey in correctedChapterCache) {
-                    AppLog.put("AI修正跳过（已修正过或显示原文）: ${chapter.title}")
+                if (AICorrectionConfig.enabled && correctedChapterCache[cacheKey] != null) {
+                    AppLog.put("AI修正跳过（已修正过）: ${chapter.title}")
                 }
                 bookContent.textList
             }
