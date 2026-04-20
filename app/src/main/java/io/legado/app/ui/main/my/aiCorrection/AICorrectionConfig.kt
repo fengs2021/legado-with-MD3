@@ -46,7 +46,8 @@ object AICorrectionConfig {
 
     val providerNames = mapOf(
         "minimax" to "MiniMax",
-        "kimi" to "月之暗面 (Kimi)",
+        "kimi" to "Moonshot (Kimi 开放平台)",
+        "kimi-code" to "Kimi Code (kimi.com/code)",
         "deepseek" to "DeepSeek",
         "qwen" to "通义千问 (Qwen)",
         "openai" to "OpenAI"

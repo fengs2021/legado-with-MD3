@@ -25,12 +25,14 @@ object AIContentCorrector {
 
     private const val API_URL_MINIMAX = "https://api.minimaxi.com/v1/text/chatcompletion_v2"
     private const val API_URL_KIMI = "https://api.moonshot.cn/v1/chat/completions"
+    private const val API_URL_KIMI_CODE = "https://api.kimi.com/coding/v1/chat/completions"
     private const val API_URL_DEEPSEEK = "https://api.deepseek.com/chat/completions"
     private const val API_URL_QWEN = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
     private const val API_URL_OPENAI = "https://api.openai.com/v1/chat/completions"
 
     private fun getApiUrl(provider: String): String = when (provider) {
         "kimi" -> API_URL_KIMI
+        "kimi-code" -> API_URL_KIMI_CODE
         "deepseek" -> API_URL_DEEPSEEK
         "qwen" -> API_URL_QWEN
         "openai" -> API_URL_OPENAI
@@ -39,6 +41,7 @@ object AIContentCorrector {
 
     private fun getDefaultModel(provider: String): String = when (provider) {
         "kimi" -> "moonshot-v1-8k"
+        "kimi-code" -> "kimi-for-coding"
         "deepseek" -> "deepseek-chat"
         "qwen" -> "qwen-turbo"
         "openai" -> "gpt-4o-mini"
