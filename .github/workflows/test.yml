@@ -125,8 +125,8 @@ jobs:
     strategy:
       matrix:
         product: [ app ]
-        # 如果是正式版，只构建 release；如果是测试版，构建 release 和 noR8
-        type: ${{ (needs.prepare.outputs.is_release == 'true') && fromJSON('["release"]') || fromJSON('["release", "noR8"]') }}
+        # 只构建 release，不构建 noR8
+        type: ["release"]
       fail-fast: false
     runs-on: ubuntu-latest
     env:
