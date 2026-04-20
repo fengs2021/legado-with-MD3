@@ -59,7 +59,7 @@ class AICorrectionActivity : BaseComposeActivity() {
         var isTesting by remember { mutableStateOf(false) }
 
         val modelDesc: String
-            @Composable get() = if (AICorrectionConfig.isCustom) {
+            get() = if (AICorrectionConfig.isCustom) {
                 (AICorrectionConfig.customModel.ifBlank { "（未设置）" })
             } else {
                 AICorrectionConfig.model.ifBlank {
@@ -75,7 +75,7 @@ class AICorrectionActivity : BaseComposeActivity() {
             }
 
         val customUrlDesc: String
-            @Composable get() = AICorrectionConfig.customApiUrl.ifBlank { "（未设置）" }
+            get() = AICorrectionConfig.customApiUrl.ifBlank { "（未设置）" }
 
         AppScaffold(
             topBar = {
