@@ -399,18 +399,22 @@ class ReadBookViewModel(application: Application) : BaseViewModel(application) {
      */
     fun saveContent(book: Book, content: String) {
         execute {
-            AppLog.put("saveContent拦截: AICorrectionConfig.enabled=${AICorrectionConfig.enabled}")
-            val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, ReadBook.durChapterIndex) ?: return@execute
-            val finalContent = if (AICorrectionConfig.enabled) {
-                AppLog.put("AI修正开始: ${chapter.title}")
-                val corrected = AIContentCorrector.correct(content, chapter.title)
-                AppLog.put("AI修正完成，结果长度: ${corrected.length}")
-                corrected
-            } else {
-                content
+            try {
+                AppLog.put("saveContent拦截: AICorrectionConfig.enabled=${AICorrectionConfig.enabled}")
+                val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, ReadBook.durChapterIndex) ?: return@execute
+                val finalContent = if (AICorrectionConfig.enabled) {
+                    AppLog.put("AI修正开始: ${chapter.title}")
+                    val corrected = AIContentCorrector.correct(content, chapter.title)
+                    AppLog.put("AI修正完成，结果长度: ${corrected.length}")
+                    corrected
+                } else {
+                    content
+                }
+                BookHelp.saveText(book, chapter, finalContent)
+                ReadBook.loadContent(ReadBook.durChapterIndex, resetPageOffset = false)
+            } catch (e: Exception) {
+                AppLog.put("saveContent异常: ${e.localizedMessage}")
             }
-            BookHelp.saveText(book, chapter, finalContent)
-            ReadBook.loadContent(ReadBook.durChapterIndex, resetPageOffset = false)
         }
     }
 
