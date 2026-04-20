@@ -708,7 +708,14 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
             try {
                 val book = book!!
                 val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, index)!!
-                val content = BookHelp.getContent(book, chapter) ?: downloadAwait(chapter)
+                val dbContent = BookHelp.getContent(book, chapter)
+                val content = dbContent ?: run {
+                    AppLog.put("loadContent DB为空，下载章节: ${chapter.title}")
+                    downloadAwait(chapter)
+                }
+                if (dbContent != null) {
+                    AppLog.put("loadContent 从DB读取: ${chapter.title} len=${dbContent.length}")
+                }
                 contentLoadFinishAwait(book, chapter, content, upContent, resetPageOffset)
                 success?.invoke()
             } catch (e: Exception) {
@@ -926,9 +933,10 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
             val bookContent = contentProcessor
                 .getContent(book, chapter, content, includeTitle = false)
             val cacheKey = "${book.bookUrl}#${chapter.index}"
+            val cacheVal = correctedChapterCache[cacheKey]
             // AI 修正（互斥锁，已修正过则跳过）
-            val finalTextList = if (AICorrectionConfig.isEffectiveEnabled && correctedChapterCache[cacheKey] == null) {
-                AppLog.put("AI修正开始: ${chapter.title}")
+            val finalTextList = if (AICorrectionConfig.isEffectiveEnabled && cacheVal == null) {
+                AppLog.put("contentLoadFinish AI修正开始: ${chapter.title} contentLen=${content.length}")
                 val rawContent = bookContent.textList.joinToString("\n")
                 AppLog.put("AI修正原始内容长度: ${rawContent.length}")
                 val corrected = AIContentCorrector.correct(rawContent, chapter.title)
@@ -940,8 +948,8 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                     bookContent.textList
                 }
             } else {
-                if (AICorrectionConfig.enabled && correctedChapterCache[cacheKey] != null) {
-                    AppLog.put("AI修正跳过（已修正过）: ${chapter.title}")
+                if (AICorrectionConfig.enabled) {
+                    AppLog.put("contentLoadFinish AI修正跳过: ${chapter.title} cacheVal=$cacheVal contentLen=${content.length}")
                 }
                 bookContent.textList
             }
