@@ -42,6 +42,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
 
@@ -70,8 +72,10 @@ object CacheBook {
 
     val cacheBookMap = ConcurrentHashMap<String, CacheBookModel>()
     private val workingState = MutableStateFlow(true)
-    private val mutex = Mutex()
+    private val aiCorrectionScope = CoroutineScope(SupervisorJob() + IO)
     private val aiCorrectionMutex = Mutex()
+
+    // 预缓存AI修正完成后不立即标记，而是等保存完成再标记，防止退出页面后修正被取消
     val totalCount: Int
         get() {
             var total = 0
@@ -527,11 +531,10 @@ object CacheBook {
             }
             // 背景进行AI修正并更新数据库的已保存内容
             if (!canceled && content.isNotBlank() && !content.startsWith("获取正文失败")) {
-                scope.launch(IO) {
+                aiCorrectionScope.launch(IO) {
                     val cacheKey = "${book.bookUrl}#${chapter.index}"
                     AppLog.put("预缓存AI修正开始: ${chapter.title} cacheKey=$cacheKey")
                     if (ReadBook.correctedChapterCache[cacheKey] == null) {
-                        // 先标记为正在修正，防止 contentLoadFinish 同时开始修正
                         ReadBook.correctedChapterCache[cacheKey] = -1L // -1 表示修正中
                         val corrected = aiCorrectionMutex.withLock {
                             AIContentCorrector.correct(content, chapter.title)
