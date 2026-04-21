@@ -840,11 +840,13 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                         AIContentCorrector.correct(rawText, chapter.title)
                     }
                     AppLog.put("AI修正完成，结果长度: ${corrected.length}")
-                    correctedChapterCache[cacheKey] = System.currentTimeMillis()
                     if (corrected != rawText) {
+                        correctedChapterCache[cacheKey] = System.currentTimeMillis()
                         BookHelp.saveCorrectedContent(book, chapter, corrected)
                         BookContent(contents.sameTitleRemoved, corrected.split("\n"), contents.effectiveReplaceRules)
                     } else {
+                        AppLog.put("AI修正完成(无变化): ${chapter.title}")
+                        correctedChapterCache[cacheKey] = System.currentTimeMillis()
                         contents
                     }
                 } catch (e: Exception) {

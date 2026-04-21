@@ -17,6 +17,9 @@ import java.util.concurrent.TimeUnit
  */
 object AIContentCorrector {
 
+    /** 修正失败时抛出的异常 */
+    class CorrectionException(msg: String) : Exception(msg)
+
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(120, TimeUnit.SECONDS)
@@ -75,30 +78,41 @@ object AIContentCorrector {
             val response = client.newCall(request).execute()
             val body = response.body?.string() ?: run {
                 AppLog.put("AI修正失败: 空响应")
-                return@withContext content
+                throw CorrectionException("空响应")
             }
             AppLog.put("AI修正响应: $body")
+            // 检测API错误（如overloaded、timeout等）
+            if (body.contains("overloaded_error") || body.contains("timeout") || body.contains("rate_limit")) {
+                val errMsg = if (body.contains("overloaded_error")) "API服务器过载(overloaded)" 
+                    else if (body.contains("timeout")) "API超时(timeout)"
+                    else "API限流(rate_limit)"
+                AppLog.put("AI修正失败: $errMsg")
+                throw CorrectionException(errMsg)
+            }
             val json = JSONObject(body)
             val choices = json.optJSONArray("choices") ?: run {
                 AppLog.put("AI修正失败: 无choices")
-                return@withContext content
+                throw CorrectionException("无choices")
             }
-            if (choices.length() == 0) return@withContext content
+            if (choices.length() == 0) throw CorrectionException("无choices")
             val message = choices.getJSONObject(0).optJSONObject("message")
                 ?: run {
                     AppLog.put("AI修正失败: 无message")
-                    return@withContext content
+                    throw CorrectionException("无message")
                 }
             val result = message.optString("content") ?: run {
                 AppLog.put("AI修正失败: 无content")
-                return@withContext content
+                throw CorrectionException("无content")
             }
             AppLog.put("AI修正成功")
             parseResult(result)
+        } catch (e: CorrectionException) {
+            AppLog.put("AI修正失败: ${e.message}")
+            throw e
         } catch (e: Exception) {
             AppLog.put("AI修正异常: ${e.localizedMessage}")
             e.printStackTrace()
-            content
+            throw CorrectionException("网络异常: ${e.localizedMessage}")
         }
     }
 
