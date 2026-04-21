@@ -28,6 +28,7 @@ import com.jaredrummler.android.colorpicker.ColorPickerDialogListener
 import com.script.rhino.runScriptWithContext
 import io.legado.app.BuildConfig
 import io.legado.app.R
+import io.legado.app.ui.main.my.aiCorrection.AICorrectionConfig
 import io.legado.app.constant.AppLog
 import io.legado.app.constant.BookType
 import io.legado.app.constant.EventBus
@@ -512,7 +513,7 @@ class ReadBookActivity : BaseReadBookActivity(),
                 else -> when (item.itemId) {
                     R.id.menu_enable_replace -> item.isChecked = book.getUseReplaceRule()
                     R.id.menu_re_segment -> item.isChecked = book.getReSegment()
-                    R.id.menu_ai_correction -> item.isChecked = AppConfig.aiCorrectionEnabled
+                    R.id.menu_ai_correction -> item.isChecked = AICorrectionConfig.enabled
 //                    R.id.menu_enable_review -> {
 //                        item.isVisible = BuildConfig.DEBUG
 //                        item.isChecked = AppConfig.enableReview
@@ -643,8 +644,8 @@ class ReadBookActivity : BaseReadBookActivity(),
             }
 
             R.id.menu_ai_correction -> {
-                AppConfig.aiCorrectionEnabled = !AppConfig.aiCorrectionEnabled
-                item.isChecked = AppConfig.aiCorrectionEnabled
+                AICorrectionConfig.enabled = !AICorrectionConfig.enabled
+                item.isChecked = AICorrectionConfig.enabled
             }
 
             R.id.menu_tool_button -> {
