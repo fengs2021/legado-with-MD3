@@ -535,18 +535,25 @@ object CacheBook {
                     val cacheKey = "${book.bookUrl}#${chapter.index}"
                     AppLog.put("预缓存AI修正开始: ${chapter.title} cacheKey=$cacheKey")
                     if (ReadBook.correctedChapterCache[cacheKey] == null) {
-                        ReadBook.correctedChapterCache[cacheKey] = -1L // -1 表示修正中
                         try {
                             val corrected = aiCorrectionMutex.withLock {
+                                // 双重检查
+                                if (ReadBook.correctedChapterCache[cacheKey] != null) {
+                                    return@withLock null
+                                }
+                                ReadBook.correctedChapterCache[cacheKey] = -1L
                                 AIContentCorrector.correct(content, chapter.title)
                             }
-                            if (corrected != content) {
-                                ReadBook.correctedChapterCache[cacheKey] = System.currentTimeMillis()
-                                BookHelp.saveContent(bookSource, book, chapter, corrected)
-                                AppLog.put("AI预修正完成并保存: ${chapter.title}, 长度${corrected.length}")
+                            if (corrected == null) {
+                                AppLog.put("AI预修正跳过(已被标记): ${chapter.title}")
                             } else {
                                 ReadBook.correctedChapterCache[cacheKey] = System.currentTimeMillis()
-                                AppLog.put("AI预修正完成(无变化): ${chapter.title}")
+                                if (corrected != content) {
+                                    BookHelp.saveContent(bookSource, book, chapter, corrected)
+                                    AppLog.put("AI预修正完成并保存: ${chapter.title}, 长度${corrected.length}")
+                                } else {
+                                    AppLog.put("AI预修正完成(无变化): ${chapter.title}")
+                                }
                             }
                         } catch (e: Exception) {
                             AppLog.put("AI预修正失败: ${chapter.title} ${e.localizedMessage}")

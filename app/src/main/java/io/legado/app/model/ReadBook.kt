@@ -839,17 +839,27 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 AppLog.put("AI修正原始内容长度: ${rawText.length}")
                 try {
                     val corrected = aiCorrectionMutex.withLock {
+                        // 双重检查：拿到锁后可能已被另一路径标记
+                        if (correctedChapterCache[cacheKey] != null) {
+                            return@withLock null
+                        }
+                        correctedChapterCache[cacheKey] = -1L
                         AIContentCorrector.correct(rawText, chapter.title)
                     }
-                    AppLog.put("AI修正完成，结果长度: ${corrected.length}")
-                    if (corrected != rawText) {
-                        correctedChapterCache[cacheKey] = System.currentTimeMillis()
-                        BookHelp.saveCorrectedContent(book, chapter, corrected)
-                        BookContent(contents.sameTitleRemoved, corrected.split("\n"), contents.effectiveReplaceRules)
-                    } else {
-                        AppLog.put("AI修正完成(无变化): ${chapter.title}")
-                        correctedChapterCache[cacheKey] = System.currentTimeMillis()
+                    if (corrected == null) {
+                        // 已被预下载修正标记，跳过
+                        AppLog.put("AI修正跳过(预下载已标记): ${chapter.title}")
                         contents
+                    } else {
+                        AppLog.put("AI修正完成，结果长度: ${corrected.length}")
+                        correctedChapterCache[cacheKey] = System.currentTimeMillis()
+                        if (corrected != rawText) {
+                            BookHelp.saveCorrectedContent(book, chapter, corrected)
+                            BookContent(contents.sameTitleRemoved, corrected.split("\n"), contents.effectiveReplaceRules)
+                        } else {
+                            AppLog.put("AI修正完成(无变化): ${chapter.title}")
+                            contents
+                        }
                     }
                 } catch (e: Exception) {
                     AppLog.put("AI修正失败: ${chapter.title} ${e.localizedMessage}")
@@ -1152,27 +1162,38 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
             val cacheKey = "${b.bookUrl}#${chapter.index}"
             if (correctedChapterCache[cacheKey] != null) continue
             val originalContent = BookHelp.getContent(b, chapter) ?: continue
-            correctedChapterCache[cacheKey] = -1L
-            var success = false
             // 重试2次
             repeat(3) { attempt ->
                 if (!isActive) return
                 try {
                     val corrected = aiCorrectionMutex.withLock {
+                        // 双重检查：拿到锁后可能已被contentLoadFinish标记
+                        if (correctedChapterCache[cacheKey] != null && correctedChapterCache[cacheKey] != -1L) {
+                            return@withLock null
+                        }
+                        correctedChapterCache[cacheKey] = -1L
                         AIContentCorrector.correct(originalContent, chapter.title)
                     }
-                    correctedChapterCache[cacheKey] = System.currentTimeMillis()
-                    if (corrected != originalContent) {
-                        BookHelp.saveCorrectedContent(b, chapter, corrected)
-                        AppLog.put("预下载AI修正完成(${attempt + 1}次尝试): ${chapter.title}, 长度${corrected.length}")
+                    if (corrected == null) {
+                        AppLog.put("预下载AI修正跳过(已被标记): ${chapter.title}")
+                        success = true
                     } else {
-                        AppLog.put("预下载AI修正完成(无变化): ${chapter.title}")
+                        correctedChapterCache[cacheKey] = System.currentTimeMillis()
+                        if (corrected != originalContent) {
+                            BookHelp.saveCorrectedContent(b, chapter, corrected)
+                            AppLog.put("预下载AI修正完成(${attempt + 1}次尝试): ${chapter.title}, 长度${corrected.length}")
+                        } else {
+                            AppLog.put("预下载AI修正完成(无变化): ${chapter.title}")
+                        }
+                        success = true
                     }
-                    success = true
                 } catch (e: Exception) {
                     AppLog.put("预下载AI修正失败第${attempt + 1}次: ${chapter.title} ${e.localizedMessage}")
-                    if (attempt < 2) {
-                        // 不是最后一次，重试前等3秒
+                    // 重试前先检查是否已被另一方标记完成
+                    if (correctedChapterCache[cacheKey] != null && correctedChapterCache[cacheKey] != -1L) {
+                        AppLog.put("预下载AI修正跳过(已被标记完成): ${chapter.title}")
+                        success = true
+                    } else if (attempt < 2) {
                         kotlinx.coroutines.delay(3000)
                     }
                 }
