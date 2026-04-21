@@ -1162,6 +1162,7 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
             val cacheKey = "${b.bookUrl}#${chapter.index}"
             if (correctedChapterCache[cacheKey] != null) continue
             val originalContent = BookHelp.getContent(b, chapter) ?: continue
+            var success = false
             // 重试2次
             repeat(3) { attempt ->
                 if (!isActive) return
