@@ -536,15 +536,21 @@ object CacheBook {
                     AppLog.put("预缓存AI修正开始: ${chapter.title} cacheKey=$cacheKey")
                     if (ReadBook.correctedChapterCache[cacheKey] == null) {
                         ReadBook.correctedChapterCache[cacheKey] = -1L // -1 表示修正中
-                        val corrected = aiCorrectionMutex.withLock {
-                            AIContentCorrector.correct(content, chapter.title)
-                        }
-                        ReadBook.correctedChapterCache[cacheKey] = System.currentTimeMillis()
-                        if (corrected != content) {
-                            BookHelp.saveContent(bookSource, book, chapter, corrected)
-                            AppLog.put("AI预修正完成并保存: ${chapter.title}, 长度${corrected.length}")
-                        } else {
-                            AppLog.put("AI预修正完成(无变化): ${chapter.title}")
+                        try {
+                            val corrected = aiCorrectionMutex.withLock {
+                                AIContentCorrector.correct(content, chapter.title)
+                            }
+                            if (corrected != content) {
+                                ReadBook.correctedChapterCache[cacheKey] = System.currentTimeMillis()
+                                BookHelp.saveContent(bookSource, book, chapter, corrected)
+                                AppLog.put("AI预修正完成并保存: ${chapter.title}, 长度${corrected.length}")
+                            } else {
+                                ReadBook.correctedChapterCache[cacheKey] = System.currentTimeMillis()
+                                AppLog.put("AI预修正完成(无变化): ${chapter.title}")
+                            }
+                        } catch (e: Exception) {
+                            AppLog.put("AI预修正失败: ${chapter.title} ${e.localizedMessage}")
+                            ReadBook.correctedChapterCache.remove(cacheKey)
                         }
                     } else {
                         AppLog.put("AI预修正跳过(已有缓存): ${chapter.title}")
