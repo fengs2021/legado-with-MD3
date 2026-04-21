@@ -190,13 +190,18 @@ object BookHelp {
                 AppLog.put("修改本地TXT失败: ${e.localizedMessage}", e)
             }
         }
-    // 保存阅读缓存文本(.nb)
+        // 保存阅读缓存文本(.nb)
         FileUtils.createFileIfNotExist(
             downloadDir,
             cacheFolderName,
             book.getFolderName(),
             bookChapter.getFileName(),
         ).writeText(content)
+        if (book.isOnLineTxt && AppConfig.tocCountWords) {
+            val wordCount = StringUtils.wordCountFormat(content.length)
+            bookChapter.wordCount = wordCount
+            appDb.bookChapterDao.update(bookChapter)
+        }
     }
 
     /**
@@ -227,13 +232,6 @@ object BookHelp {
             "${bookChapter.getFileName()}.corrected",
         )
         return if (file.exists()) file.readText() else null
-    }
-
-    /**    if (book.isOnLineTxt && AppConfig.tocCountWords) {
-            val wordCount = StringUtils.wordCountFormat(content.length)
-            bookChapter.wordCount = wordCount
-            appDb.bookChapterDao.update(bookChapter)
-        }
     }
 
     private fun saveToLocalTxt(book: Book, bookChapter: BookChapter, content: String) {
