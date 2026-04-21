@@ -225,8 +225,7 @@ object BookHelp {
      * 读取AI修正后的正文
      */
     fun getCorrectedContent(book: Book, bookChapter: BookChapter): String? {
-        val file = FileUtils.getFile(
-            downloadDir,
+        val file = downloadDir.getFile(
             cacheFolderName,
             book.getFolderName(),
             "${bookChapter.getFileName()}.corrected",
