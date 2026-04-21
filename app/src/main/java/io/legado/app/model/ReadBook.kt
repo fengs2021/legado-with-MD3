@@ -1139,19 +1139,21 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                         downloadIndex(i)
                     }
                 }
-                // 预下载完成后，如果开启了AI修正选项，进行AI修正
-                if (AppConfig.preDownloadAiCorrect) {
-                    aiCorrectionScope.launch {
-                        preDownloadAiCorrect()
-                    }
-                }
+                // 预下载完成后AI修正已移除，改由CacheBook预缓存时修正
+                // if (AppConfig.preDownloadAiCorrect) {
+                //     aiCorrectionScope.launch {
+                //         preDownloadAiCorrect()
+                //     }
+                // }
             }
         }
     }
 
     /**
      * 预下载完成后，对已下载章节进行AI修正（顺序执行，失败重试2次）
+     * 已禁用：改由CacheBook预缓存时修正，阅读时只修当前章节
      */
+    @Deprecated("Use CacheBook pre-correction instead")
     private suspend fun preDownloadAiCorrect() {
         val b = book ?: return
         val maxChapterIndex = min(durChapterIndex + AppConfig.preDownloadNum, chapterSize)
