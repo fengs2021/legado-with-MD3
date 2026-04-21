@@ -232,11 +232,15 @@ fun OtherConfigScreen(
                     onValueChange = { OtherConfig.preDownloadNum = it.toInt() }
                 )
 
+                var preDownloadAiCorrect by remember { mutableStateOf(AppConfig.preDownloadAiCorrect) }
                 SwitchSettingItem(
                     title = stringResource(R.string.pre_download_ai_correct),
                     description = stringResource(R.string.pre_download_ai_correct_s),
-                    checked = AppConfig.preDownloadAiCorrect,
-                    onCheckedChange = { AppConfig.preDownloadAiCorrect = it }
+                    checked = preDownloadAiCorrect,
+                    onCheckedChange = {
+                        AppConfig.preDownloadAiCorrect = it
+                        preDownloadAiCorrect = it
+                    }
                 )
 
                 SwitchSettingItem(
