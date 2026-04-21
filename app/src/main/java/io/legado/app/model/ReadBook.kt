@@ -835,15 +835,21 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 AppLog.put("AI修正开始: ${chapter.title}")
                 val rawText = contents.textList.joinToString("\n")
                 AppLog.put("AI修正原始内容长度: ${rawText.length}")
-                val corrected = aiCorrectionMutex.withLock {
-                    AIContentCorrector.correct(rawText, chapter.title)
-                }
-                AppLog.put("AI修正完成，结果长度: ${corrected.length}")
-                correctedChapterCache[cacheKey] = System.currentTimeMillis()
-                if (corrected != rawText) {
-                    BookHelp.saveCorrectedContent(book, chapter, corrected)
-                    BookContent(contents.sameTitleRemoved, corrected.split("\n"), contents.effectiveReplaceRules)
-                } else {
+                try {
+                    val corrected = aiCorrectionMutex.withLock {
+                        AIContentCorrector.correct(rawText, chapter.title)
+                    }
+                    AppLog.put("AI修正完成，结果长度: ${corrected.length}")
+                    correctedChapterCache[cacheKey] = System.currentTimeMillis()
+                    if (corrected != rawText) {
+                        BookHelp.saveCorrectedContent(book, chapter, corrected)
+                        BookContent(contents.sameTitleRemoved, corrected.split("\n"), contents.effectiveReplaceRules)
+                    } else {
+                        contents
+                    }
+                } catch (e: Exception) {
+                    AppLog.put("AI修正失败: ${chapter.title} ${e.localizedMessage}")
+                    correctedChapterCache.remove(cacheKey)
                     contents
                 }
             } else {
@@ -1139,15 +1145,20 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
             val originalContent = BookHelp.getContent(b, chapter) ?: continue
             AppLog.put("预下载AI修正开始: ${chapter.title}")
             correctedChapterCache[cacheKey] = -1L
-            val corrected = aiCorrectionMutex.withLock {
-                AIContentCorrector.correct(originalContent, chapter.title)
-            }
-            correctedChapterCache[cacheKey] = System.currentTimeMillis()
-            if (corrected != originalContent) {
-                BookHelp.saveCorrectedContent(b, chapter, corrected)
-                AppLog.put("预下载AI修正完成: ${chapter.title}, 长度${corrected.length}")
-            } else {
-                AppLog.put("预下载AI修正完成(无变化): ${chapter.title}")
+            try {
+                val corrected = aiCorrectionMutex.withLock {
+                    AIContentCorrector.correct(originalContent, chapter.title)
+                }
+                correctedChapterCache[cacheKey] = System.currentTimeMillis()
+                if (corrected != originalContent) {
+                    BookHelp.saveCorrectedContent(b, chapter, corrected)
+                    AppLog.put("预下载AI修正完成: ${chapter.title}, 长度${corrected.length}")
+                } else {
+                    AppLog.put("预下载AI修正完成(无变化): ${chapter.title}")
+                }
+            } catch (e: Exception) {
+                AppLog.put("预下载AI修正失败: ${chapter.title} ${e.localizedMessage}")
+                correctedChapterCache.remove(cacheKey)
             }
         }
     }
