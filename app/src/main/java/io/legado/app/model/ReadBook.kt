@@ -1140,35 +1140,45 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
     }
 
     /**
-     * 预下载完成后，对已下载章节进行AI修正
+     * 预下载完成后，对已下载章节进行AI修正（顺序执行，失败重试2次）
      */
     private suspend fun preDownloadAiCorrect() {
         val b = book ?: return
-        val bs = bookSource ?: return
         val maxChapterIndex = min(durChapterIndex + AppConfig.preDownloadNum, chapterSize)
         val minChapterIndex = max(0, durChapterIndex - min(5, AppConfig.preDownloadNum))
         for (i in minChapterIndex..maxChapterIndex) {
             if (!isActive) return
             val chapter = appDb.bookChapterDao.getChapter(b.bookUrl, i) ?: continue
             val cacheKey = "${b.bookUrl}#${chapter.index}"
-            // 只修正未修正过的章节
             if (correctedChapterCache[cacheKey] != null) continue
             val originalContent = BookHelp.getContent(b, chapter) ?: continue
-            AppLog.put("预下载AI修正开始: ${chapter.title}")
             correctedChapterCache[cacheKey] = -1L
-            try {
-                val corrected = aiCorrectionMutex.withLock {
-                    AIContentCorrector.correct(originalContent, chapter.title)
+            var success = false
+            // 重试2次
+            repeat(3) { attempt ->
+                if (!isActive) return
+                try {
+                    val corrected = aiCorrectionMutex.withLock {
+                        AIContentCorrector.correct(originalContent, chapter.title)
+                    }
+                    correctedChapterCache[cacheKey] = System.currentTimeMillis()
+                    if (corrected != originalContent) {
+                        BookHelp.saveCorrectedContent(b, chapter, corrected)
+                        AppLog.put("预下载AI修正完成(${attempt + 1}次尝试): ${chapter.title}, 长度${corrected.length}")
+                    } else {
+                        AppLog.put("预下载AI修正完成(无变化): ${chapter.title}")
+                    }
+                    success = true
+                } catch (e: Exception) {
+                    AppLog.put("预下载AI修正失败第${attempt + 1}次: ${chapter.title} ${e.localizedMessage}")
+                    if (attempt < 2) {
+                        // 不是最后一次，重试前等3秒
+                        kotlinx.coroutines.delay(3000)
+                    }
                 }
-                correctedChapterCache[cacheKey] = System.currentTimeMillis()
-                if (corrected != originalContent) {
-                    BookHelp.saveCorrectedContent(b, chapter, corrected)
-                    AppLog.put("预下载AI修正完成: ${chapter.title}, 长度${corrected.length}")
-                } else {
-                    AppLog.put("预下载AI修正完成(无变化): ${chapter.title}")
-                }
-            } catch (e: Exception) {
-                AppLog.put("预下载AI修正失败: ${chapter.title} ${e.localizedMessage}")
+            }
+            if (!success) {
+                AppLog.put("预下载AI修正跳过(重试耗尽): ${chapter.title}")
                 correctedChapterCache.remove(cacheKey)
             }
         }
