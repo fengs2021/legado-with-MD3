@@ -719,6 +719,8 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 if (dbContent != null) {
                     if (correctedContent != null) {
                         AppLog.put("loadContent 从已修正文件读取: ${chapter.title} len=${correctedContent.length}")
+                        // 标记为已修正，避免contentLoadFinishAwait重复修正
+                        correctedChapterCache["${book.bookUrl}#${chapter.index}"] = System.currentTimeMillis()
                     } else {
                         AppLog.put("loadContent 从DB读取: ${chapter.title} len=${dbContent.length}")
                     }
