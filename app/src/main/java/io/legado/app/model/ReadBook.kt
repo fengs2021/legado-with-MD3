@@ -955,12 +955,19 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 AppLog.put("contentLoadFinish AI修正开始: ${chapter.title} contentLen=${content.length}")
                 val rawContent = bookContent.textList.joinToString("\n")
                 AppLog.put("AI修正原始内容长度: ${rawContent.length}")
-                val corrected = AIContentCorrector.correct(rawContent, chapter.title)
-                AppLog.put("AI修正完成，结果长度: ${corrected.length}")
-                correctedChapterCache[cacheKey] = System.currentTimeMillis()
-                if (corrected != rawContent) {
-                    corrected.split("\n").map { it }
-                } else {
+                try {
+                    val corrected = AIContentCorrector.correct(rawContent, chapter.title)
+                    AppLog.put("AI修正完成，结果长度: ${corrected.length}")
+                    correctedChapterCache[cacheKey] = System.currentTimeMillis()
+                    if (corrected != rawContent) {
+                        BookHelp.saveCorrectedContent(book, chapter, corrected)
+                        corrected.split("\n")
+                    } else {
+                        bookContent.textList
+                    }
+                } catch (e: Exception) {
+                    AppLog.put("contentLoadFinish AI修正失败: ${chapter.title} ${e.localizedMessage}")
+                    correctedChapterCache.remove(cacheKey)
                     bookContent.textList
                 }
             } else {
