@@ -90,6 +90,7 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
     private val curChapterLoadingLock = Mutex()
     private val nextChapterLoadingLock = Mutex()
     private val aiCorrectionMutex = Mutex()
+    private val aiCorrectionScope = CoroutineScope(SupervisorJob() + IO)
     internal val correctedChapterCache = hashMapOf<String, Long>()  // bookUrl#chapterIndex -> timestamp of when correction was added
 
     /** 清除AI修正缓存，下一次读时会重新修正 */
@@ -709,12 +710,18 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 val book = book!!
                 val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, index)!!
                 val dbContent = BookHelp.getContent(book, chapter)
-                val content = dbContent ?: run {
+                // 优先读取已修正的内容（如果存在）
+                val correctedContent = BookHelp.getCorrectedContent(book, chapter)
+                val content = correctedContent ?: dbContent ?: run {
                     AppLog.put("loadContent DB为空，下载章节: ${chapter.title}")
                     downloadAwait(chapter)
                 }
                 if (dbContent != null) {
-                    AppLog.put("loadContent 从DB读取: ${chapter.title} len=${dbContent.length}")
+                    if (correctedContent != null) {
+                        AppLog.put("loadContent 从已修正文件读取: ${chapter.title} len=${correctedContent.length}")
+                    } else {
+                        AppLog.put("loadContent 从DB读取: ${chapter.title} len=${dbContent.length}")
+                    }
                 }
                 contentLoadFinishAwait(book, chapter, content, upContent, resetPageOffset)
                 success?.invoke()
@@ -834,6 +841,7 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 AppLog.put("AI修正完成，结果长度: ${corrected.length}")
                 correctedChapterCache[cacheKey] = System.currentTimeMillis()
                 if (corrected != rawText) {
+                    BookHelp.saveCorrectedContent(book, chapter, corrected)
                     BookContent(contents.sameTitleRemoved, corrected.split("\n"), contents.effectiveReplaceRules)
                 } else {
                     contents
@@ -1104,6 +1112,42 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                         downloadIndex(i)
                     }
                 }
+                // 预下载完成后，如果开启了AI修正选项，进行AI修正
+                if (AppConfig.preDownloadAiCorrect) {
+                    aiCorrectionScope.launch {
+                        preDownloadAiCorrect()
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 预下载完成后，对已下载章节进行AI修正
+     */
+    private suspend fun preDownloadAiCorrect() {
+        val b = book ?: return
+        val bs = bookSource ?: return
+        val maxChapterIndex = min(durChapterIndex + AppConfig.preDownloadNum, chapterSize)
+        val minChapterIndex = max(0, durChapterIndex - min(5, AppConfig.preDownloadNum))
+        for (i in minChapterIndex..maxChapterIndex) {
+            if (!isActive) return
+            val chapter = appDb.bookChapterDao.getChapter(b.bookUrl, i) ?: continue
+            val cacheKey = "${b.bookUrl}#${chapter.index}"
+            // 只修正未修正过的章节
+            if (correctedChapterCache[cacheKey] != null) continue
+            val originalContent = BookHelp.getContent(b, chapter) ?: continue
+            AppLog.put("预下载AI修正开始: ${chapter.title}")
+            correctedChapterCache[cacheKey] = -1L
+            val corrected = aiCorrectionMutex.withLock {
+                AIContentCorrector.correct(originalContent, chapter.title)
+            }
+            correctedChapterCache[cacheKey] = System.currentTimeMillis()
+            if (corrected != originalContent) {
+                BookHelp.saveCorrectedContent(b, chapter, corrected)
+                AppLog.put("预下载AI修正完成: ${chapter.title}, 长度${corrected.length}")
+            } else {
+                AppLog.put("预下载AI修正完成(无变化): ${chapter.title}")
             }
         }
     }

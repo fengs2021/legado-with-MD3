@@ -190,14 +190,46 @@ object BookHelp {
                 AppLog.put("修改本地TXT失败: ${e.localizedMessage}", e)
             }
         }
-        // 保存阅读缓存文本(.nb)
+    // 保存阅读缓存文本(.nb)
         FileUtils.createFileIfNotExist(
             downloadDir,
             cacheFolderName,
             book.getFolderName(),
             bookChapter.getFileName(),
         ).writeText(content)
-        if (book.isOnLineTxt && AppConfig.tocCountWords) {
+    }
+
+    /**
+     * 保存AI修正后的正文到 .nb.corrected 文件
+     */
+    fun saveCorrectedContent(
+        book: Book,
+        bookChapter: BookChapter,
+        correctedContent: String
+    ) {
+        if (correctedContent.isEmpty()) return
+        FileUtils.createFileIfNotExist(
+            downloadDir,
+            cacheFolderName,
+            book.getFolderName(),
+            "${bookChapter.getFileName()}.corrected",
+        ).writeText(correctedContent)
+    }
+
+    /**
+     * 读取AI修正后的正文
+     */
+    fun getCorrectedContent(book: Book, bookChapter: BookChapter): String? {
+        val file = FileUtils.getFile(
+            downloadDir,
+            cacheFolderName,
+            book.getFolderName(),
+            "${bookChapter.getFileName()}.corrected",
+        )
+        return if (file.exists()) file.readText() else null
+    }
+
+    /**    if (book.isOnLineTxt && AppConfig.tocCountWords) {
             val wordCount = StringUtils.wordCountFormat(content.length)
             bookChapter.wordCount = wordCount
             appDb.bookChapterDao.update(bookChapter)

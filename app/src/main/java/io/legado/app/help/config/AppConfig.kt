@@ -568,6 +568,12 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             appCtx.putPrefInt(PreferKey.preDownloadNum, value)
         }
 
+    var preDownloadAiCorrect
+        get() = appCtx.getPrefBoolean(PreferKey.preDownloadAiCorrect, false)
+        set(value) {
+            appCtx.putPrefBoolean(PreferKey.preDownloadAiCorrect, value)
+        }
+
     val syncBookProgress get() = appCtx.getPrefBoolean(PreferKey.syncBookProgress, true)
 
     val syncBookProgressPlus get() = appCtx.getPrefBoolean(PreferKey.syncBookProgressPlus, false)

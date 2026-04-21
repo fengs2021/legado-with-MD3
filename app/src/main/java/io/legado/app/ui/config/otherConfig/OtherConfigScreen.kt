@@ -232,6 +232,13 @@ fun OtherConfigScreen(
                 )
 
                 SwitchSettingItem(
+                    title = stringResource(R.string.pre_download_ai_correct),
+                    description = stringResource(R.string.pre_download_ai_correct_s),
+                    checked = AppConfig.preDownloadAiCorrect,
+                    onCheckedChange = { AppConfig.preDownloadAiCorrect = it }
+                )
+
+                SwitchSettingItem(
                     title = stringResource(R.string.replace_enable_default_t),
                     description = stringResource(R.string.replace_enable_default_s),
                     checked = OtherConfig.replaceEnableDefault,
