@@ -637,7 +637,7 @@ class ReadBookActivity : BaseReadBookActivity(),
             }
             R.id.menu_re_ai_correct -> {
                 ReadBook.book?.let { book ->
-                    ReadBook.curChapter?.let { chapter ->
+                    ReadBook.curTextChapter?.chapter?.let { chapter ->
                         val cacheKey = "${book.bookUrl}#${chapter.index}"
                         ReadBook.correctedChapterCache.remove(cacheKey)
                         // 删除已修正文件，强制重新获取原始内容
