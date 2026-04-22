@@ -647,7 +647,8 @@ class ReadBookActivity : BaseReadBookActivity(),
                             correctedFile.delete()
                         }
                         appCtx.toastOnUi("Re-correcting: ${chapter.title}")
-                        ReadBook.loadContent(false)
+                        // 只重载当前章节，完成后刷新视图
+                        ReadBook.loadContent(ReadBook.durChapterIndex)
                     }
                 }
             }
