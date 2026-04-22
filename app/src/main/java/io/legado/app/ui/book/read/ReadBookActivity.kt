@@ -141,6 +141,7 @@ import io.legado.app.utils.themeColor
 import io.legado.app.utils.throttle
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.visible
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
@@ -633,6 +634,21 @@ class ReadBookActivity : BaseReadBookActivity(),
                     MobiFile.clear()
                 }
                 loadChapterList(it)
+            }
+            R.id.menu_re_ai_correct -> {
+                ReadBook.book?.let { book ->
+                    ReadBook.curChapter?.let { chapter ->
+                        val cacheKey = "${book.bookUrl}#${chapter.index}"
+                        ReadBook.correctedChapterCache.remove(cacheKey)
+                        // 删除已修正文件，强制重新获取原始内容
+                        val correctedFile = BookHelp.getCorrectedFile(book, chapter)
+                        if (correctedFile.exists()) {
+                            correctedFile.delete()
+                        }
+                        appCtx.toastOnUi("Re-correcting: ${chapter.title}")
+                        ReadBook.loadContent(false)
+                    }
+                }
             }
             R.id.menu_enable_replace -> {
                 changeReplaceRuleState()

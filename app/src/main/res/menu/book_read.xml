@@ -160,6 +160,11 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/menu_re_ai_correct"
+        android:title="@string/re_ai_correct_chapter"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/menu_log"
         android:title="@string/log"
         app:showAsAction="never" />

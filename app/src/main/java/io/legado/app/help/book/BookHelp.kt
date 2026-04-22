@@ -233,6 +233,14 @@ object BookHelp {
         return if (file.exists()) file.readText() else null
     }
 
+    fun getCorrectedFile(book: Book, bookChapter: BookChapter): File {
+        return downloadDir.getFile(
+            cacheFolderName,
+            book.getFolderName(),
+            "${bookChapter.getFileName()}.corrected",
+        )
+    }
+
     private fun saveToLocalTxt(book: Book, bookChapter: BookChapter, content: String) {
         val start = bookChapter.start ?: return
         val end = bookChapter.end ?: return
