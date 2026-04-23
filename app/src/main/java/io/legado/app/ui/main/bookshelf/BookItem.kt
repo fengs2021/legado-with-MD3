@@ -36,7 +36,7 @@ import io.legado.app.data.entities.BookGroup
 import io.legado.app.ui.config.bookshelfConfig.BookshelfConfig
 import io.legado.app.ui.theme.LegadoTheme
 import io.legado.app.ui.widget.components.card.TextCard
-import io.legado.app.ui.widget.components.cover.BookCover
+import io.legado.app.ui.widget.components.cover.CoilBookCover
 import io.legado.app.ui.widget.components.cover.BookshelfCover
 import io.legado.app.ui.widget.components.text.AppText
 import io.legado.app.utils.toTimeAgo
@@ -54,6 +54,7 @@ fun BookshelfItem(
     cover: @Composable (Modifier) -> Unit,
     title: String,
     modifier: Modifier = Modifier,
+    isSelected: Boolean = false,
     subTitle: String? = null,
     desc: String? = null,
     extra: @Composable (RowScope.() -> Unit)? = null,
@@ -64,10 +65,16 @@ fun BookshelfItem(
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
+    val selectedColor = if (isSelected) {
+        LegadoTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f)
+    } else {
+        Color.Transparent
+    }
     if (isGrid) {
         Box(
             modifier = modifier
                 .clip(MaterialTheme.shapes.small)
+                .background(selectedColor)
                 .combinedClickable(
                     onClick = onClick,
                     onLongClick = onLongClick
@@ -138,6 +145,8 @@ fun BookshelfItem(
             Row(
                 modifier = modifier
                     .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.small)
+                    .background(selectedColor)
                     .combinedClickable(
                         onClick = onClick,
                         onLongClick = onLongClick
@@ -213,7 +222,7 @@ fun BookGroupCover(
             .background(LegadoTheme.colorScheme.surfaceContainer)
     ) {
         if (!coverPath.isNullOrBlank()) {
-            BookCover(
+            CoilBookCover(
                 name = null,
                 author = null,
                 path = coverPath,
@@ -229,7 +238,7 @@ fun BookGroupCover(
                             .padding(1.dp)
                     ) {
                         books.getOrNull(0)?.let {
-                            BookCover(
+                            CoilBookCover(
                                 name = it.name,
                                 author = it.author,
                                 path = it.getDisplayCover(),
@@ -244,7 +253,7 @@ fun BookGroupCover(
                             .padding(1.dp)
                     ) {
                         books.getOrNull(1)?.let {
-                            BookCover(
+                            CoilBookCover(
                                 name = it.name,
                                 author = it.author,
                                 path = it.getDisplayCover(),
@@ -261,7 +270,7 @@ fun BookGroupCover(
                             .padding(1.dp)
                     ) {
                         books.getOrNull(2)?.let {
-                            BookCover(
+                            CoilBookCover(
                                 name = it.name,
                                 author = it.author,
                                 path = it.getDisplayCover(),
@@ -276,7 +285,7 @@ fun BookGroupCover(
                             .padding(1.dp)
                     ) {
                         books.getOrNull(3)?.let {
-                            BookCover(
+                            CoilBookCover(
                                 name = it.name,
                                 author = it.author,
                                 path = it.getDisplayCover(),
@@ -377,6 +386,7 @@ fun BookItem(
     book: BookShelfItem,
     layoutMode: Int,
     modifier: Modifier = Modifier,
+    isSelected: Boolean = false,
     gridStyle: Int = 0,
     isCompact: Boolean = false,
     isUpdating: Boolean = false,
@@ -404,6 +414,7 @@ fun BookItem(
         isGrid = layoutMode != 0,
         gridStyle = gridStyle,
         isCompact = isCompact,
+        isSelected = isSelected,
         modifier = modifier,
         cover = { modifier ->
             BookshelfCover(
