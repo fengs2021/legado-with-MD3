@@ -132,6 +132,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- AI修正配置 -->
+        <activity
+            android:name=".ui.main.my.aiCorrection.AICorrectionActivity"
+            android:enableOnBackInvokedCallback="true"
+            android:launchMode="singleTop" />
         <activity
             android:name=".ui.welcome.WelcomeActivity"
             android:enableOnBackInvokedCallback="true"

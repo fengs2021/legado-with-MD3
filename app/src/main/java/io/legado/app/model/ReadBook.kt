@@ -86,6 +86,11 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
     private val prevChapterLoadingLock = Mutex()
     private val curChapterLoadingLock = Mutex()
     private val nextChapterLoadingLock = Mutex()
+    internal val correctedChapterCache = hashMapOf<String, Long>()  // bookUrl#chapterIndex -> timestamp
+    /** 清除AI修正缓存，下一次读时会重新修正 */
+    fun clearCorrectionCache() {
+        correctedChapterCache.clear()
+    }
     var readStartTime: Long = System.currentTimeMillis()
 
     /* 跳转进度前进度记录 */
