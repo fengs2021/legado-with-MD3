@@ -23,6 +23,8 @@ import io.legado.app.help.book.simulatedTotalChapterNum
 import io.legado.app.help.book.update
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.ReadBookConfig
+import io.legado.app.help.book.AIContentCorrector
+import io.legado.app.ui.main.my.aiCorrection.AICorrectionConfig
 import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.help.globalExecutor
 import io.legado.app.model.localBook.TextFile
@@ -801,13 +803,31 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
         }
         chapterLoadingJobs[chapter.index]?.cancel()
         val job = Coroutine.async(this, start = CoroutineStart.LAZY) {
+            // AI 修正处理
+            val useAiCorrection = AICorrectionConfig.isEffectiveEnabled
+            val cacheKey = "${book.bookUrl}#${chapter.index}"
+            var finalContent = content
+            if (useAiCorrection) {
+                val cached = BookHelp.getCorrectedContent(book, chapter)
+                if (cached != null) {
+                    finalContent = cached
+                } else {
+                    kotlin.runCatching {
+                        val corrected = AIContentCorrector.correct(content, chapter.title)
+                        if (corrected.isNotBlank() && corrected != content) {
+                            BookHelp.saveCorrectedContent(book, chapter, corrected)
+                            finalContent = corrected
+                        }
+                    }
+                }
+            }
             val contentProcessor = ContentProcessor.get(book.name, book.origin)
             val displayTitle = chapter.getDisplayTitle(
                 contentProcessor.getTitleReplaceRules(),
                 book.getUseReplaceRule()
             )
             val contents = contentProcessor
-                .getContent(book, chapter, content, includeTitle = false)
+                .getContent(book, chapter, finalContent, includeTitle = false)
             ensureActive()
             val textChapter = ChapterProvider.getTextChapterAsync(
                 this, book, chapter, displayTitle, contents, simulatedChapterSize
@@ -889,13 +909,30 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
             return
         }
         kotlin.runCatching {
+            // AI 修正处理
+            val useAiCorrection = AICorrectionConfig.isEffectiveEnabled
+            var finalContent = content
+            if (useAiCorrection) {
+                val cached = BookHelp.getCorrectedContent(book, chapter)
+                if (cached != null) {
+                    finalContent = cached
+                } else {
+                    kotlin.runCatching {
+                        val corrected = AIContentCorrector.correct(content, chapter.title)
+                        if (corrected.isNotBlank() && corrected != content) {
+                            BookHelp.saveCorrectedContent(book, chapter, corrected)
+                            finalContent = corrected
+                        }
+                    }
+                }
+            }
             val contentProcessor = ContentProcessor.get(book.name, book.origin)
             val displayTitle = chapter.getDisplayTitle(
                 contentProcessor.getTitleReplaceRules(),
                 book.getUseReplaceRule()
             )
             val contents = contentProcessor
-                .getContent(book, chapter, content, includeTitle = false)
+                .getContent(book, chapter, finalContent, includeTitle = false)
             val textChapter = ChapterProvider.getTextChapterAsync(
                 this@ReadBook, book, chapter, displayTitle, contents, simulatedChapterSize
             )
