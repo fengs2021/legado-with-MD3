@@ -276,4 +276,13 @@ object PreferKey {
     const val selectVibrator = "selectVibrator"
     const val audioCacheCleanTime = "audioCacheCleanTime"
     const val audioPreDownloadNum = "audioPreDownloadNum"
+
+    // AI修正配置
+    const val aiCorrectionEnabled = "aiCorrectionEnabled"
+    const val aiCorrectionProvider = "aiCorrectionProvider"
+    const val aiCorrectionModel = "aiCorrectionModel"
+    const val aiCorrectionApiKey = "aiCorrectionApiKey"
+    const val aiCorrectionCustomApiUrl = "aiCorrectionCustomApiUrl"
+    const val aiCorrectionCustomModel = "aiCorrectionCustomModel"
+    const val aiCorrectionRules = "aiCorrectionRules"
 }
