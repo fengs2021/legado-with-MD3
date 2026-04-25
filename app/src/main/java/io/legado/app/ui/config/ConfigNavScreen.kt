@@ -25,7 +25,8 @@ fun ConfigNavScreen(
     onNavigateToRead: () -> Unit,
     onNavigateToCover: () -> Unit,
     onNavigateToTheme: () -> Unit,
-    onNavigateToBackup: () -> Unit
+    onNavigateToBackup: () -> Unit,
+    onNavigateToAICorrection: () -> Unit
 ) {
     val scrollBehavior = GlassTopAppBarDefaults.defaultScrollBehavior()
 
@@ -69,6 +70,10 @@ fun ConfigNavScreen(
                     ClickableSettingItem(
                         title = stringResource(R.string.backup_restore),
                         onClick = onNavigateToBackup
+                    )
+                    ClickableSettingItem(
+                        title = stringResource(R.string.ai_correction),
+                        onClick = onNavigateToAICorrection
                     )
                 }
             }

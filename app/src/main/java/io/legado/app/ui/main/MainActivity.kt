@@ -58,6 +58,7 @@ import io.legado.app.ui.config.mainConfig.MainConfig
 import io.legado.app.ui.config.otherConfig.OtherConfigScreen
 import io.legado.app.ui.config.readConfig.ReadConfigScreen
 import io.legado.app.ui.config.themeConfig.ThemeConfigScreen
+import io.legado.app.ui.main.my.aiCorrection.AICorrectionActivity
 import io.legado.app.ui.rss.article.MainRouteRssSort
 import io.legado.app.ui.rss.article.RssSortRouteScreen
 import io.legado.app.ui.rss.read.MainRouteRssRead
@@ -222,6 +223,8 @@ open class MainActivity : BaseComposeActivity() {
 
     @Serializable
     private data object MainRouteSettingsBackup : MainRoute
+
+    private data object MainRouteAICorrection : MainRoute
 
     @Serializable
     private data object MainRouteImportLocal : MainRoute
@@ -427,7 +430,8 @@ open class MainActivity : BaseComposeActivity() {
                         onNavigateToRead = { backStack.add(MainRouteSettingsRead) },
                         onNavigateToCover = { backStack.add(MainRouteSettingsCover) },
                         onNavigateToTheme = { backStack.add(MainRouteSettingsTheme) },
-                        onNavigateToBackup = { backStack.add(MainRouteSettingsBackup) }
+                        onNavigateToBackup = { backStack.add(MainRouteSettingsBackup) },
+                        onNavigateToAICorrection = { startActivity<AICorrectionActivity>() }
                     )
                 }
 
