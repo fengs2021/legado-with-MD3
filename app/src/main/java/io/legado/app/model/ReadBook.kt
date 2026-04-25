@@ -813,14 +813,16 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 if (cached != null) {
                     finalContent = cached
                 } else {
+                    // AI 修正：5分钟超时保护，校验失败则不保存
                     val correctionResult = withContext(IO) {
-                        withTimeoutOrNull(30_000L) {
+                        withTimeoutOrNull(300_000L) {
                             kotlin.runCatching {
                                 AIContentCorrector.correct(content, chapter.title)
                             }.getOrNull()
                         }
                     }
                     if (!isActive) return@async
+                    // 修正结果必须：非空、非原文、校验通过（correctionResult不为null表示校验通过）
                     if (correctionResult != null && correctionResult.isNotBlank() && correctionResult != content) {
                         BookHelp.saveCorrectedContent(book, chapter, correctionResult)
                         finalContent = correctionResult
@@ -897,6 +899,8 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
             AppLog.put("ChapterProvider ERROR", it)
             appCtx.toastOnUi("ChapterProvider ERROR:\n${it.stackTraceStr}")
         }.onSuccess {
+            // 触发后台预修正（不阻塞）
+            preCorrect()
             success?.invoke()
         }
         chapterLoadingJobs[chapter.index] = job
@@ -923,14 +927,16 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 if (cached != null) {
                     finalContent = cached
                 } else {
+                    // AI 修正：5分钟超时保护，校验失败则不保存
                     val correctionResult = withContext(IO) {
-                        withTimeoutOrNull(30_000L) {
+                        withTimeoutOrNull(300_000L) {
                             kotlin.runCatching {
                                 AIContentCorrector.correct(content, chapter.title)
                             }.getOrNull()
                         }
                     }
                     if (!isActive) return@async
+                    // 修正结果必须：非空、非原文、校验通过（correctionResult不为null表示校验通过）
                     if (correctionResult != null && correctionResult.isNotBlank() && correctionResult != content) {
                         BookHelp.saveCorrectedContent(book, chapter, correctionResult)
                         finalContent = correctionResult
@@ -998,6 +1004,8 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 }
             }
 
+            // 触发后台预修正（不阻塞）
+            preCorrect()
             return
         }.onFailure {
             if (it is CancellationException) {
@@ -1093,6 +1101,39 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                         if (downloadedChapters.contains(i)) continue
                         if ((downloadFailChapters[i] ?: 0) >= 3) continue
                         downloadIndex(i)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 后台预修正：章节内容加载成功后，异步对后续章节进行AI修正（不阻塞阅读）
+     * 5分钟超时，校验失败不保存，结果供下次阅读使用
+     */
+    private fun preCorrect() {
+        if (!AICorrectionConfig.isEffectiveEnabled) return
+        val b = book ?: return
+        launch(IO) {
+            // 对当前章节之后预下载范围内的章节进行预修正
+            val maxChapterIndex = min(durChapterIndex + AppConfig.preDownloadNum, chapterSize)
+            for (i in durChapterIndex.plus(1)..maxChapterIndex) {
+                val chapter = appDb.bookChapterDao.getChapter(b.bookUrl, i) ?: continue
+                // 已有缓存则跳过
+                if (BookHelp.getCorrectedContent(b, chapter) != null) continue
+                // 没有原始内容则跳过
+                if (!BookHelp.hasContent(b, chapter)) continue
+                // 触发修正（fire-and-forget，不等待结果）
+                launch {
+                    val originalContent = BookHelp.getContent(b, chapter) ?: return@launch
+                    kotlin.runCatching {
+                        withTimeoutOrNull(300_000L) {
+                            val result = AIContentCorrector.correct(originalContent, chapter.title)
+                            // 校验通过且与原文不同才保存
+                            if (!result.isNullOrBlank() && result != originalContent) {
+                                BookHelp.saveCorrectedContent(b, chapter, result)
+                            }
+                        }
                     }
                 }
             }
