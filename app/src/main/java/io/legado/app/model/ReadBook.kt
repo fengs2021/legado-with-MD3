@@ -935,7 +935,7 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                             }.getOrNull()
                         }
                     }
-                    if (!isActive) return@async
+                    if (!isActive) return
                     // 修正结果必须：非空、非原文、校验通过（correctionResult不为null表示校验通过）
                     if (correctionResult != null && correctionResult.isNotBlank() && correctionResult != content) {
                         BookHelp.saveCorrectedContent(book, chapter, correctionResult)
