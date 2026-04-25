@@ -127,7 +127,7 @@ object LifecycleHelp : Application.ActivityLifecycleCallbacks {
         appFinishedListener?.invoke()
     }
 
-    companion object {
-        const val EVENT_APP_FOREGROUND = "app_foreground"
-    }
 }
+
+// 定义成顶层常量
+const val EVENT_APP_FOREGROUND = "app_foreground"

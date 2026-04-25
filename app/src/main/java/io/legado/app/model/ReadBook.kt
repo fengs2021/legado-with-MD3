@@ -124,7 +124,7 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
     init {
         // 监听app回到前台事件，触发AI修正重试
         com.jeremyliao.liveeventbus.LiveEventBus.get(
-            io.legado.app.help.LifecycleHelp.EVENT_APP_FOREGROUND,
+            io.legado.app.help.EVENT_APP_FOREGROUND,
             Boolean::class.java
         ).observeStickyForever { _ ->
             if (AICorrectionConfig.isEffectiveEnabled) {
@@ -1174,7 +1174,7 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
         val b = book ?: return
         val failed = failedCorrectionChapters.entries.toList()
         if (failed.isEmpty()) return
-        AppLog.put("[${b.bookTitle}] App回到前台，重试 ${failed.size} 个失败章节")
+        AppLog.put("[${b.name}] App回到前台，重试 ${failed.size} 个失败章节")
         launch(IO) {
             for ((key, _) in failed) {
                 val parts = key.split("#")
