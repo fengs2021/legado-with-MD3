@@ -1441,4 +1441,23 @@
 	<string name="subtitle_margin">Subtitle margin</string>
 	<string name="heading_spacing">Heading spacing</string>
 	<string name="follow_read_background">Follow Background</string>
+	<string name="ai_correction">AI Correction</string>
+	<string name="ai_correction_enable">Enable AI Correction</string>
+	<string name="ai_correction_enable_desc">Use AI to correct novel content</string>
+	<string name="ai_correction_model">AI Model</string>
+	<string name="ai_correction_default_model">MiniMax-Text-01</string>
+	<string name="ai_correction_api_key">API Key</string>
+	<string name="ai_correction_rules">Correction Rules</string>
+	<string name="ai_correction_rules_hint">Enter correction rules</string>
+	<string name="ai_correction_rules_desc">Additional AI correction rules</string>
+	<string name="ai_correction_test">Test Correction</string>
+	<string name="ai_correction_test_desc">Click to test AI correction</string>
+	<string name="ai_correction_test_success">Test successful!</string>
+	<string name="ai_correction_test_failed">Test failed, check API key</string>
+	<string name="ai_correction_api_key_empty">API key cannot be empty</string>
+	<string name="ai_correction_in_reader">阅读时启用AI修正</string>
+	<string name="ai_correction_in_reader_desc">开启后阅读时自动对正文进行AI修正</string>
+	<string name="ai_correction_clear_cache">Clear Correction Cache</string>
+	<string name="ai_correction_clear_cache_desc">Clear cached AI-corrected chapters</string>
+	<string name="ai_correction_cleared">Correction history cleared</string>
 </resources>
