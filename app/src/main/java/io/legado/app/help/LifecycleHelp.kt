@@ -5,6 +5,7 @@ import android.app.Application
 import android.os.Bundle
 import io.legado.app.base.BaseService
 import io.legado.app.utils.LogUtils
+import com.jeremyliao.liveeventbus.LiveEventBus
 import java.lang.ref.WeakReference
 
 /**
@@ -18,6 +19,7 @@ object LifecycleHelp : Application.ActivityLifecycleCallbacks {
     private val activities: MutableList<WeakReference<Activity>> = arrayListOf()
     private val services: MutableList<WeakReference<BaseService>> = arrayListOf()
     private var appFinishedListener: (() -> Unit)? = null
+    private var appIsBackground = true
 
     fun activitySize(): Int {
         return activities.size
@@ -63,6 +65,11 @@ object LifecycleHelp : Application.ActivityLifecycleCallbacks {
 
     override fun onActivityResumed(activity: Activity) {
         LogUtils.d(TAG, "${activity::class.simpleName} onResume")
+        // 从后台回到前台：广播事件，触发超时章节重试
+        if (appIsBackground) {
+            appIsBackground = false
+            LiveEventBus.get(EVENT_APP_FOREGROUND, Boolean::class.java).post(true)
+        }
     }
 
     override fun onActivityStarted(activity: Activity) {
@@ -88,6 +95,7 @@ object LifecycleHelp : Application.ActivityLifecycleCallbacks {
 
     override fun onActivityStopped(activity: Activity) {
         LogUtils.d(TAG, "${activity::class.simpleName} onStop")
+        appIsBackground = true
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
@@ -117,5 +125,9 @@ object LifecycleHelp : Application.ActivityLifecycleCallbacks {
 
     private fun onAppFinished() {
         appFinishedListener?.invoke()
+    }
+
+    companion object {
+        const val EVENT_APP_FOREGROUND = "app_foreground"
     }
 }
