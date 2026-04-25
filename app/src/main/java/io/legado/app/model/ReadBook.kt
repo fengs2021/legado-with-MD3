@@ -51,6 +51,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
@@ -812,12 +813,17 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 if (cached != null) {
                     finalContent = cached
                 } else {
-                    kotlin.runCatching {
-                        val corrected = AIContentCorrector.correct(content, chapter.title)
-                        if (corrected.isNotBlank() && corrected != content) {
-                            BookHelp.saveCorrectedContent(book, chapter, corrected)
-                            finalContent = corrected
+                    val correctionResult = withContext(IO) {
+                        withTimeoutOrNull(30_000L) {
+                            kotlin.runCatching {
+                                AIContentCorrector.correct(content, chapter.title)
+                            }.getOrNull()
                         }
+                    }
+                    if (!isActive) return@async
+                    if (correctionResult != null && correctionResult.isNotBlank() && correctionResult != content) {
+                        BookHelp.saveCorrectedContent(book, chapter, correctionResult)
+                        finalContent = correctionResult
                     }
                 }
             }
@@ -917,12 +923,17 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 if (cached != null) {
                     finalContent = cached
                 } else {
-                    kotlin.runCatching {
-                        val corrected = AIContentCorrector.correct(content, chapter.title)
-                        if (corrected.isNotBlank() && corrected != content) {
-                            BookHelp.saveCorrectedContent(book, chapter, corrected)
-                            finalContent = corrected
+                    val correctionResult = withContext(IO) {
+                        withTimeoutOrNull(30_000L) {
+                            kotlin.runCatching {
+                                AIContentCorrector.correct(content, chapter.title)
+                            }.getOrNull()
                         }
+                    }
+                    if (!isActive) return@async
+                    if (correctionResult != null && correctionResult.isNotBlank() && correctionResult != content) {
+                        BookHelp.saveCorrectedContent(book, chapter, correctionResult)
+                        finalContent = correctionResult
                     }
                 }
             }
