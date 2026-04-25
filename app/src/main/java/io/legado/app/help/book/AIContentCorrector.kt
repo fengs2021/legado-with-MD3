@@ -86,44 +86,48 @@ object AIContentCorrector {
         try {
             val response = client.newCall(request).execute()
             val body = response.body?.string() ?: run {
-                AppLog.put("AI修正失败: 空响应")
+                AppLog.put("[${chapterTitle}] AI修正失败: 空响应")
                 throw CorrectionException("空响应")
             }
-            AppLog.put("AI修正响应: $body")
+            AppLog.put("[${chapterTitle}] AI修正响应: ${body.take(200)}")
             // 检测API错误（如overloaded、timeout等）
             if (body.contains("overloaded_error") || body.contains("timeout") || body.contains("rate_limit")) {
                 val errMsg = if (body.contains("overloaded_error")) "API服务器过载(overloaded)" 
                     else if (body.contains("timeout")) "API超时(timeout)"
                     else "API限流(rate_limit)"
-                AppLog.put("AI修正失败: $errMsg")
+                AppLog.put("[${chapterTitle}] AI修正失败: $errMsg")
                 throw CorrectionException(errMsg)
             }
             val json = JSONObject(body)
             val choices = json.optJSONArray("choices") ?: run {
-                AppLog.put("AI修正失败: 无choices")
+                AppLog.put("[${chapterTitle}] AI修正失败: 无choices")
                 throw CorrectionException("无choices")
             }
-            if (choices.length() == 0) throw CorrectionException("无choices")
+            if (choices.length() == 0) {
+                AppLog.put("[${chapterTitle}] AI修正失败: choices为空")
+                throw CorrectionException("choices为空")
+            }
             val message = choices.getJSONObject(0).optJSONObject("message")
                 ?: run {
-                    AppLog.put("AI修正失败: 无message")
+                    AppLog.put("[${chapterTitle}] AI修正失败: 无message")
                     throw CorrectionException("无message")
                 }
             val result = message.optString("content") ?: run {
-                AppLog.put("AI修正失败: 无content")
+                AppLog.put("[${chapterTitle}] AI修正失败: 无content")
                 throw CorrectionException("无content")
             }
-            AppLog.put("AI修正成功")
-            validateResult(result, content)
+            AppLog.put("[${chapterTitle}] AI修正成功")
+            AppLog.put("[${chapterTitle}] AI修正校验通过: 长度 ${result.trim().length}")
+            validateResult(result, content, chapterTitle)
             parseResult(result)
         } catch (e: ValidationException) {
-            AppLog.put("AI修正校验失败: ${e.message}")
+            AppLog.put("[${chapterTitle}] AI修正校验失败: ${e.message}")
             throw e
         } catch (e: CorrectionException) {
-            AppLog.put("AI修正失败: ${e.message}")
+            AppLog.put("[${chapterTitle}] AI修正失败: ${e.message}")
             throw e
         } catch (e: Exception) {
-            AppLog.put("AI修正异常: ${e.localizedMessage}")
+            AppLog.put("[${chapterTitle}] AI修正异常: ${e.localizedMessage}")
             e.printStackTrace()
             throw CorrectionException("网络异常: ${e.localizedMessage}")
         }
@@ -135,25 +139,25 @@ object AIContentCorrector {
      * @param originalContent 原始正文（用于长度对比）
      * @throws ValidationException 校验失败时抛出
      */
-    private fun validateResult(raw: String, originalContent: String) {
+    private fun validateResult(raw: String, originalContent: String, chapterTitle: String = "") {
         val trimmed = raw.trim()
 
         // 1. 非空检查
         if (trimmed.isEmpty()) {
-            AppLog.put("AI修正校验失败: 返回内容为空")
+            AppLog.put("[${chapterTitle}] AI修正校验失败: 返回内容为空")
             throw ValidationException("返回内容为空")
         }
 
         // 2. 最小长度检查
         if (trimmed.length < MIN_VALID_LENGTH) {
-            AppLog.put("AI修正校验失败: 返回内容过短 (${trimmed.length} < $MIN_VALID_LENGTH)")
+            AppLog.put("[${chapterTitle}] AI修正校验失败: 返回内容过短 (${trimmed.length} < $MIN_VALID_LENGTH)")
             throw ValidationException("返回内容过短")
         }
 
         // 3. 长度上限检查（防止 AI 无限膨胀正文）
         val maxLength = (originalContent.length * MAX_RESULT_LENGTH_MULTIPLIER).toInt()
         if (trimmed.length > maxLength) {
-            AppLog.put("AI修正校验失败: 返回内容过长 (${trimmed.length} > $maxLength)")
+            AppLog.put("[${chapterTitle}] AI修正校验失败: 返回内容过长 (${trimmed.length} > $maxLength)")
             throw ValidationException("返回内容过长，可能为异常输出")
         }
 
@@ -171,12 +175,10 @@ object AIContentCorrector {
         // 如果开头是这些内容，且长度很短，说明 AI 可能没做修正
         for (marker in nonContentMarkers) {
             if (trimmed.startsWith(marker) && trimmed.length < 200) {
-                AppLog.put("AI修正校验失败: 检测到AI未执行修正，标记为 '$marker'")
+                AppLog.put("[${chapterTitle}] AI修正校验失败: 检测到AI未执行修正，标记为 '$marker'")
                 throw ValidationException("AI 未执行修正")
             }
         }
-
-        AppLog.put("AI修正校验通过: 长度 ${trimmed.length}")
     }
 
     private fun buildPrompt(content: String, chapterTitle: String, rules: String): String {
