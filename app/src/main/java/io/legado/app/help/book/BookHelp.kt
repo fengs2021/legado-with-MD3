@@ -205,6 +205,48 @@ object BookHelp {
         }
     }
 
+    /**
+     * 保存AI修正后的正文到 .nb.corrected 文件
+     */
+    fun saveCorrectedContent(
+        book: Book,
+        bookChapter: BookChapter,
+        correctedContent: String
+    ) {
+        if (correctedContent.isEmpty()) return
+        val wc = bookChapter.wordCount?.toIntOrNull() ?: 0
+        if (wc > 0 && correctedContent.length > wc * 5) {
+            AppLog.put("AI修正保存拒绝: 内容长度异常 (${correctedContent.length} vs 章节字数 $wc)")
+            return
+        }
+        FileUtils.createFileIfNotExist(
+            downloadDir,
+            cacheFolderName,
+            book.getFolderName(),
+            "${bookChapter.getFileName()}.corrected",
+        ).writeText(correctedContent)
+    }
+
+    /**
+     * 读取AI修正后的正文
+     */
+    fun getCorrectedContent(book: Book, bookChapter: BookChapter): String? {
+        val file = downloadDir.getFile(
+            cacheFolderName,
+            book.getFolderName(),
+            "${bookChapter.getFileName()}.corrected",
+        )
+        return if (file.exists()) file.readText() else null
+    }
+
+    fun getCorrectedFile(book: Book, bookChapter: BookChapter): File {
+        return downloadDir.getFile(
+            cacheFolderName,
+            book.getFolderName(),
+            "${bookChapter.getFileName()}.corrected",
+        )
+    }
+
     private fun saveToLocalTxt(book: Book, bookChapter: BookChapter, content: String) {
         val start = bookChapter.start ?: return
         val end = bookChapter.end ?: return
