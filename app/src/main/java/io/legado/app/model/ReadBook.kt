@@ -90,6 +90,8 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
     private val curChapterLoadingLock = Mutex()
     private val nextChapterLoadingLock = Mutex()
     internal val correctedChapterCache = hashMapOf<String, Long>()  // bookUrl#chapterIndex -> timestamp
+    /** 记录AI修正失败的章节，app回前台时重试 */
+    private val failedCorrectionChapters = ConcurrentHashMap<String, Int>()  // "bookUrl#chapterIndex" -> failCount
     /** 清除AI修正缓存，下一次读时会重新修正 */
     fun clearCorrectionCache() {
         correctedChapterCache.clear()
@@ -118,6 +120,18 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
     private var currentActiveSession: ReadRecordSession? = null
     //占位
     private var currentReadLength: Long = 10L
+
+    init {
+        // 监听app回到前台事件，触发AI修正重试
+        com.jeremyliao.liveeventbus.LiveEventBus.get(
+            io.legado.app.help.LifecycleHelp.EVENT_APP_FOREGROUND,
+            Boolean::class.java
+        ).observeStickyForever { _ ->
+            if (AICorrectionConfig.isEffectiveEnabled) {
+                retryFailedCorrections()
+            }
+        }
+    }
     private const val AUTO_SAVE_INTERVAL = 120 * 1000L
 
     private const val MIN_READ_DURATION = 10 * 1000L
@@ -826,6 +840,9 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                     if (correctionResult != null && correctionResult.isNotBlank() && correctionResult != content) {
                         BookHelp.saveCorrectedContent(book, chapter, correctionResult)
                         finalContent = correctionResult
+                    } else {
+                        // 修正失败（超时/null），记录等待重试
+                        failedCorrectionChapters["${book.bookUrl}#${chapter.index}"] = 1
                     }
                 }
             }
@@ -940,6 +957,9 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                     if (correctionResult != null && correctionResult.isNotBlank() && correctionResult != content) {
                         BookHelp.saveCorrectedContent(book, chapter, correctionResult)
                         finalContent = correctionResult
+                    } else {
+                        // 修正失败（超时/null），记录等待重试
+                        failedCorrectionChapters["${book.bookUrl}#${chapter.index}"] = 1
                     }
                 }
             }
@@ -1144,6 +1164,50 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
         if (contentLoadFinish) {
             preDownloadTask?.cancel()
             downloadScope.coroutineContext.cancelChildren()
+        }
+    }
+
+    /**
+     * App回到前台时重试之前失败的AI修正
+     */
+    private fun retryFailedCorrections() {
+        val b = book ?: return
+        val failed = failedCorrectionChapters.entries.toList()
+        if (failed.isEmpty()) return
+        AppLog.put("[${b.bookTitle}] App回到前台，重试 ${failed.size} 个失败章节")
+        launch(IO) {
+            for ((key, _) in failed) {
+                val parts = key.split("#")
+                if (parts.size != 2) continue
+                val chapterIndex = parts[1].toIntOrNull() ?: continue
+                val chapter = appDb.bookChapterDao.getChapter(b.bookUrl, chapterIndex) ?: continue
+                // 已有缓存则移除，不再重试
+                if (BookHelp.getCorrectedContent(b, chapter) != null) {
+                    failedCorrectionChapters.remove(key)
+                    continue
+                }
+                val originalContent = BookHelp.getContent(b, chapter) ?: continue
+                val result = withContext(IO) {
+                    withTimeoutOrNull(300_000L) {
+                        kotlin.runCatching {
+                            AIContentCorrector.correct(originalContent, chapter.title)
+                        }.getOrNull()
+                    }
+                }
+                if (result != null && result.isNotBlank() && result != originalContent) {
+                    BookHelp.saveCorrectedContent(b, chapter, result)
+                    failedCorrectionChapters.remove(key)
+                    AppLog.put("[${chapter.title}] AI修正重试成功")
+                } else {
+                    val count = failedCorrectionChapters[key] ?: 0
+                    if (count >= 2) {
+                        failedCorrectionChapters.remove(key)
+                        AppLog.put("[${chapter.title}] AI修正重试次数用尽，放弃")
+                    } else {
+                        failedCorrectionChapters[key] = count + 1
+                    }
+                }
+            }
         }
     }
 
