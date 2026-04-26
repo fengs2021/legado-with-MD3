@@ -46,9 +46,10 @@ object AIContentCorrector {
      * 修正正文内容
      * @param content 原始正文
      * @param chapterTitle 章节标题（用于对话提示）
+     * @param source 调用来源标识，用于日志区分不同触发点
      * @return 修正后的正文
      */
-    suspend fun correct(content: String, chapterTitle: String = ""): String = withContext(Dispatchers.IO) {
+    suspend fun correct(content: String, chapterTitle: String = "", source: String = ""): String = withContext(Dispatchers.IO) {
         val apiKey = AICorrectionConfig.apiKey
         val provider = AICorrectionConfig.provider
         val model = AICorrectionConfig.getEffectiveModel()
@@ -116,8 +117,8 @@ object AIContentCorrector {
                 AppLog.put("[${chapterTitle}] AI修正失败: 无content")
                 throw CorrectionException("无content")
             }
-            AppLog.put("[${chapterTitle}] AI修正成功")
-            AppLog.put("[${chapterTitle}] AI修正校验通过: 长度 ${result.trim().length}")
+            AppLog.put("[${chapterTitle}] AI修正成功 (来源: $source)")
+            AppLog.put("[${chapterTitle}] AI修正校验通过: 长度 ${result.trim().length} (来源: $source)")
             validateResult(result, content, chapterTitle)
             parseResult(result)
         } catch (e: ValidationException) {

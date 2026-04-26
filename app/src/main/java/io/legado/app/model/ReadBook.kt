@@ -908,7 +908,7 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                     val correctionResult = withContext(IO) {
                         withTimeoutOrNull(300_000L) {
                             kotlin.runCatching {
-                                AIContentCorrector.correct(content, chapter.title)
+                                AIContentCorrector.correct(content, chapter.title, "contentLoadFinish")
                             }.getOrNull()
                         }
                     }
@@ -1043,7 +1043,7 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                     val correctionResult = withContext(IO) {
                         withTimeoutOrNull(300_000L) {
                             kotlin.runCatching {
-                                AIContentCorrector.correct(content, chapter.title)
+                                AIContentCorrector.correct(content, chapter.title, "contentLoadFinishAwait")
                             }.getOrNull()
                         }
                     }
@@ -1241,7 +1241,7 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                     val originalContent = BookHelp.getContent(b, chapter) ?: return@launch
                     kotlin.runCatching {
                         withTimeoutOrNull(300_000L) {
-                            val result = AIContentCorrector.correct(originalContent, chapter.title)
+                            val result = AIContentCorrector.correct(originalContent, chapter.title, "preCorrect")
                             // 校验通过且与原文不同才保存
                             if (!result.isNullOrBlank() && result != originalContent) {
                                 BookHelp.saveCorrectedContent(b, chapter, result)
@@ -1283,7 +1283,7 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 val result = withContext(IO) {
                     withTimeoutOrNull(300_000L) {
                         kotlin.runCatching {
-                            AIContentCorrector.correct(originalContent, chapter.title)
+                            AIContentCorrector.correct(originalContent, chapter.title, "retryFailedCorrections")
                         }.getOrNull()
                     }
                 }
