@@ -49,6 +49,7 @@ import io.legado.app.ui.book.source.manage.BookSourceActivity
 import io.legado.app.ui.book.toc.rule.TxtTocRuleActivity
 import io.legado.app.ui.dict.rule.DictRuleActivity
 import io.legado.app.ui.file.FileManageActivity
+import io.legado.app.ui.main.my.aiCorrection.AICorrectionActivity
 import io.legado.app.ui.replace.ReplaceRuleActivity
 import io.legado.app.ui.theme.adaptiveContentPadding
 import io.legado.app.ui.widget.components.AppScaffold
@@ -144,6 +145,15 @@ fun MyScreen(
                         onClick = {
                             onNavigate(
                                 PrefClickEvent.StartActivity(DictRuleActivity::class.java)
+                            )
+                        }
+                    )
+                    ClickableSettingItem(
+                        title = stringResource(R.string.ai_correction),
+                        imageVector = Icons.Default.Edit,
+                        onClick = {
+                            onNavigate(
+                                PrefClickEvent.StartActivity(AICorrectionActivity::class.java)
                             )
                         }
                     )
