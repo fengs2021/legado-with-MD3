@@ -150,7 +150,7 @@ fun MyScreen(
                     )
                     ClickableSettingItem(
                         title = stringResource(R.string.ai_correction),
-                        imageVector = Icons.Default.Edit,
+                        imageVector = Icons.Default.Refresh,
                         onClick = {
                             onNavigate(
                                 PrefClickEvent.StartActivity(AICorrectionActivity::class.java)
