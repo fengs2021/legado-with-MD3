@@ -1152,15 +1152,15 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 }
                 launch {
                     val originalContent = BookHelp.getContent(b, chapter) ?: return@launch
-                    kotlin.runCatching {
-                        withTimeoutOrNull(300_000L) {
-                            val result = AIContentCorrector.correct(originalContent, chapter.title, "preCorrect")
-                            // 校验通过且与原文不同才保存
-                            if (!result.isNullOrBlank() && result != originalContent) {
-                                BookHelp.saveCorrectedContent(b, chapter, result)
-                            }
+                    try {
+                        val result = withTimeoutOrNull(300_000L) {
+                            AIContentCorrector.correct(originalContent, chapter.title, "preCorrect")
                         }
-                    }.onSuccess { }.onFinally {
+                        // 校验通过且与原文不同才保存
+                        if (!result.isNullOrBlank() && result != originalContent) {
+                            BookHelp.saveCorrectedContent(b, chapter, result)
+                        }
+                    } finally {
                         correctingChapters.remove(cacheKey)
                     }
                 }
