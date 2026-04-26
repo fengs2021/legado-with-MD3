@@ -92,6 +92,8 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
     internal val correctedChapterCache = hashMapOf<String, Long>()  // bookUrl#chapterIndex -> timestamp
     /** 记录AI修正失败的章节，app回前台时重试 */
     private val failedCorrectionChapters = ConcurrentHashMap<String, Int>()  // "bookUrl#chapterIndex" -> failCount
+    /** 记录正在修正中的章节，防止重复修正 */
+    private val correctingChapters = ConcurrentHashMap<String, Boolean>()  // "bookUrl#chapterIndex" -> true
     /** 清除AI修正缓存，下一次读时会重新修正 */
     fun clearCorrectionCache() {
         correctedChapterCache.clear()
@@ -1139,11 +1141,15 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
             val maxChapterIndex = min(durChapterIndex + AppConfig.preDownloadNum, chapterSize)
             for (i in durChapterIndex.plus(1)..maxChapterIndex) {
                 val chapter = appDb.bookChapterDao.getChapter(b.bookUrl, i) ?: continue
-                // 已有缓存则跳过
+                val cacheKey = "${b.bookUrl}#${i}"
+                // 已有缓存则跳过（putIfAbsent是原子操作，防止竞态）
                 if (BookHelp.getCorrectedContent(b, chapter) != null) continue
+                if (correctingChapters.putIfAbsent(cacheKey, true) != null) continue
                 // 没有原始内容则跳过
-                if (!BookHelp.hasContent(b, chapter)) continue
-                // 触发修正（fire-and-forget，不等待结果）
+                if (!BookHelp.hasContent(b, chapter)) {
+                    correctingChapters.remove(cacheKey)
+                    continue
+                }
                 launch {
                     val originalContent = BookHelp.getContent(b, chapter) ?: return@launch
                     kotlin.runCatching {
@@ -1154,6 +1160,8 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                                 BookHelp.saveCorrectedContent(b, chapter, result)
                             }
                         }
+                    }.onSuccess { }.onFinally {
+                        correctingChapters.remove(cacheKey)
                     }
                 }
             }
