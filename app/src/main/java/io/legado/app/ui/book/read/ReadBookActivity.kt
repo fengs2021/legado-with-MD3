@@ -40,7 +40,6 @@ import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.BookProgress
 import io.legado.app.data.entities.BookSource
 import io.legado.app.exception.NoStackTraceException
-import io.legado.app.help.AppWebDav
 import io.legado.app.help.IntentData
 import io.legado.app.help.TTS
 import io.legado.app.help.book.BookHelp
@@ -51,7 +50,6 @@ import io.legado.app.help.book.isLocal
 import io.legado.app.help.book.isLocalTxt
 import io.legado.app.help.book.isMobi
 import io.legado.app.help.book.removeType
-import io.legado.app.help.book.update
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.help.config.ReadTipConfig
@@ -529,10 +527,10 @@ class ReadBookActivity : BaseReadBookActivity(),
         }
         lifecycleScope.launch {
             menu.findItem(R.id.menu_get_progress)?.isVisible = withContext(IO) {
-                AppWebDav.isOk
+                viewModel.isReadingProgressSyncConfigured()
             }
             menu.findItem(R.id.menu_cover_progress)?.isVisible = withContext(IO) {
-                AppWebDav.isOk
+                viewModel.isReadingProgressSyncConfigured()
             }
         }
     }
@@ -1873,9 +1871,8 @@ class ReadBookActivity : BaseReadBookActivity(),
         backupJob = lifecycleScope.launch(IO) {
             delay(300000)
             ReadBook.book?.let {
-                AppWebDav.uploadBookProgress(it)
+                viewModel.uploadBookProgress(it)
                 ensureActive()
-                it.update()
                 Backup.autoBack(this@ReadBookActivity)
             }
         }

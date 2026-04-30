@@ -12,8 +12,10 @@ import io.legado.app.data.appDb
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.BookProgress
+import io.legado.app.domain.model.ReadingProgress
+import io.legado.app.domain.usecase.GetReadingProgressUseCase
+import io.legado.app.domain.usecase.UploadReadingProgressUseCase
 import io.legado.app.exception.NoStackTraceException
-import io.legado.app.help.AppWebDav
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.book.AIContentCorrector
 import io.legado.app.ui.main.my.aiCorrection.AICorrectionConfig
@@ -33,6 +35,7 @@ import io.legado.app.model.webBook.WebBook
 import io.legado.app.service.BaseReadAloudService
 import io.legado.app.ui.book.read.page.entities.TextChapter
 import io.legado.app.ui.book.searchContent.SearchResult
+import io.legado.app.ui.config.otherConfig.OtherConfig
 import io.legado.app.utils.ImageSaveUtils
 import io.legado.app.utils.mapParallelSafe
 import io.legado.app.utils.postEvent
@@ -56,7 +59,11 @@ import kotlin.coroutines.coroutineContext
 /**
  * 阅读界面数据处理
  */
-class ReadBookViewModel(application: Application) : BaseViewModel(application) {
+class ReadBookViewModel(
+    application: Application,
+    private val getReadingProgressUseCase: GetReadingProgressUseCase,
+    private val uploadReadingProgressUseCase: UploadReadingProgressUseCase
+) : BaseViewModel(application) {
     private val ioScope = CoroutineScope(Dispatchers.IO)
     val permissionDenialLiveData = MutableLiveData<Int>()
     var isInitFinish = false
@@ -258,7 +265,7 @@ class ReadBookViewModel(application: Application) : BaseViewModel(application) {
     ) {
         if (!AppConfig.syncBookProgress) return
         execute {
-            AppWebDav.getBookProgress(book)
+            getReadingProgressUseCase.execute(book.name, book.author)?.toBookProgress()
         }.onError {
             AppLog.put("拉取阅读进度失败《${book.name}》\n${it.localizedMessage}", it)
         }.onSuccess { progress ->
@@ -274,6 +281,35 @@ class ReadBookViewModel(application: Application) : BaseViewModel(application) {
             }
         }
     }
+
+    fun isReadingProgressSyncConfigured(): Boolean {
+        return getReadingProgressUseCase.isConfigured
+    }
+
+    suspend fun uploadBookProgress(book: Book) {
+        uploadReadingProgressUseCase.execute(book.toReadingProgress())?.let { uploadTime ->
+            book.syncTime = uploadTime
+            appDb.bookDao.update(book)
+        }
+    }
+
+    private fun Book.toReadingProgress() = ReadingProgress(
+        name = name,
+        author = author,
+        durChapterIndex = durChapterIndex,
+        durChapterPos = durChapterPos,
+        durChapterTime = durChapterTime,
+        durChapterTitle = durChapterTitle
+    )
+
+    private fun ReadingProgress.toBookProgress() = BookProgress(
+        name = name,
+        author = author,
+        durChapterIndex = durChapterIndex,
+        durChapterPos = durChapterPos,
+        durChapterTime = durChapterTime,
+        durChapterTitle = durChapterTitle
+    )
 
     /**
      * 换源
@@ -313,7 +349,7 @@ class ReadBookViewModel(application: Application) : BaseViewModel(application) {
                 }
             }.onStart {
                 ReadBook.upMsg(context.getString(R.string.source_auto_changing))
-            }.mapParallelSafe(AppConfig.threadCount) { source ->
+        }.mapParallelSafe(OtherConfig.threadCount) { source ->
                 val book = WebBook.preciseSearchAwait(source, name, author).getOrThrow()
                 if (book.tocUrl.isEmpty()) {
                     WebBook.getBookInfoAwait(source, book)

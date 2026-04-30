@@ -22,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.legado.app.R
 import io.legado.app.help.config.AppConfig
+import io.legado.app.model.CacheBook
 import io.legado.app.service.WebService
 import io.legado.app.ui.theme.LegadoTheme
 import io.legado.app.ui.theme.adaptiveContentPadding
@@ -29,7 +30,7 @@ import io.legado.app.ui.widget.components.AppScaffold
 import io.legado.app.ui.widget.components.AppTextField
 import io.legado.app.ui.widget.components.SplicedColumnGroup
 import io.legado.app.ui.widget.components.alert.AppAlertDialog
-import io.legado.app.ui.widget.components.button.TopBarNavigationButton
+import io.legado.app.ui.widget.components.topbar.TopBarNavigationButton
 import io.legado.app.ui.widget.components.filePicker.FilePickerSheet
 import io.legado.app.ui.widget.components.settingItem.ClickableSettingItem
 import io.legado.app.ui.widget.components.settingItem.DropdownListSettingItem
@@ -367,10 +368,25 @@ fun OtherConfigScreen(
 
                 SliderSettingItem(
                     title = stringResource(R.string.threads_num_title),
+                    description = stringResource(R.string.threads_num_summary),
                     value = OtherConfig.threadCount.toFloat(),
                     defaultValue = 8f,
                     valueRange = 1f..256f,
                     onValueChange = { OtherConfig.threadCount = it.toInt() }
+                )
+
+                SliderSettingItem(
+                    title = stringResource(R.string.cache_book_threads_num_title),
+                    description = stringResource(R.string.cache_book_threads_num_summary),
+                    value = OtherConfig.cacheBookThreadCount
+                        .coerceIn(1, CacheBook.maxDownloadConcurrency)
+                        .toFloat(),
+                    defaultValue = CacheBook.maxDownloadConcurrency.toFloat(),
+                    valueRange = 1f..CacheBook.maxDownloadConcurrency.toFloat(),
+                    onValueChange = {
+                        OtherConfig.cacheBookThreadCount =
+                            it.toInt().coerceIn(1, CacheBook.maxDownloadConcurrency)
+                    }
                 )
 
                 SwitchSettingItem(

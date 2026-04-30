@@ -51,8 +51,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.legado.app.R
 import io.legado.app.data.entities.BookSourcePart
-import io.legado.app.domain.usecase.ExploreKindUiUseCase
-import io.legado.app.ui.book.explore.ExploreShowActivity
+import io.legado.app.ui.widget.components.explore.ExploreKindUiUseCase
 import io.legado.app.ui.book.search.SearchActivity
 import io.legado.app.ui.book.search.SearchScope
 import io.legado.app.ui.book.source.edit.BookSourceEditActivity
@@ -84,7 +83,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ExploreScreen(
-    viewModel: ExploreViewModel = koinViewModel()
+    viewModel: ExploreViewModel = koinViewModel(),
+    onOpenExploreShow: (title: String?, sourceUrl: String, exploreUrl: String?) -> Unit
 ) {
     val context = LocalContext.current
     val activity = context as? AppCompatActivity
@@ -238,11 +238,7 @@ fun ExploreScreen(
                                         sourceUrl = item.bookSourceUrl,
                                         activity = activity,
                                         onOpenUrl = { url ->
-                                            context.startActivity<ExploreShowActivity> {
-                                                putExtra("exploreName", kind.title)
-                                                putExtra("sourceUrl", item.bookSourceUrl)
-                                                putExtra("exploreUrl", url)
-                                            }
+                                            onOpenExploreShow(kind.title, item.bookSourceUrl, url)
                                         },
                                         onRefreshKinds = { viewModel.refreshExploreKinds(item) },
                                         modifier = Modifier.weight(span.toFloat()),
@@ -272,8 +268,6 @@ fun ExploreScreen(
                 TextCard(
                     text = item.bookSourceName,
                     textStyle = LegadoTheme.typography.labelMediumEmphasized,
-                    backgroundColor = LegadoTheme.colorScheme.cardContainer,
-                    contentColor = LegadoTheme.colorScheme.onCardContainer,
                     cornerRadius = 12.dp,
                     horizontalPadding = 12.dp,
                     verticalPadding = 8.dp,

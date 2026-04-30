@@ -83,8 +83,8 @@ import io.legado.app.ui.theme.responsiveHazeEffectFixedStyle
 import io.legado.app.ui.widget.components.AppScaffold
 import io.legado.app.ui.widget.components.AppTextField
 import io.legado.app.ui.widget.components.alert.AppAlertDialog
-import io.legado.app.ui.widget.components.button.TopBarActionButton
-import io.legado.app.ui.widget.components.button.TopBarNavigationButton
+import io.legado.app.ui.widget.components.topbar.TopBarActionButton
+import io.legado.app.ui.widget.components.topbar.TopBarNavigationButton
 import io.legado.app.ui.widget.components.card.GlassCard
 import io.legado.app.ui.widget.components.card.TextCard
 import io.legado.app.ui.widget.components.cover.CoilBookCover
@@ -163,6 +163,7 @@ private fun BookInfoScreenContent(
                 text = { Text(stringResource(R.string.reading)) },
             )
         },
+        alwaysDrawBehindBars = true,
     ) { paddingValues ->
         val book = state.book
         if (book == null) {
@@ -274,8 +275,8 @@ private fun BookInfoScreenContent(
                 show = currentSheet == BookInfoSheet.SourcePicker,
                 oldBook = book,
                 onDismissRequest = { onIntent(BookInfoIntent.DismissSheet) },
-                onReplace = { source, newBook, toc ->
-                    onIntent(BookInfoIntent.ReplaceWithSource(source, newBook, toc))
+                onReplace = { source, newBook, toc, options ->
+                    onIntent(BookInfoIntent.ReplaceWithSource(source, newBook, toc, options))
                 },
                 onAddAsNew = { newBook, toc ->
                     onIntent(BookInfoIntent.AddSourceAsNewBook(newBook, toc))
@@ -417,15 +418,18 @@ private fun BookInfoTopBarActions(
         TopBarActionButton(
             onClick = { onMenuAction(BookInfoMenuAction.Edit) },
             imageVector = Icons.Default.Edit,
+            contentDescription = "编辑"
         )
     }
     TopBarActionButton(
         onClick = { onMenuAction(BookInfoMenuAction.Share) },
         imageVector = Icons.Default.Share,
+        contentDescription = "分享"
     )
     TopBarActionButton(
         onClick = { onShowMenuChange(true) },
         imageVector = Icons.Default.MoreVert,
+        contentDescription = "更多"
     )
     BookInfoOverflowMenu(
         expanded = showMenu,
@@ -573,7 +577,7 @@ private fun BookInfoOverflowMenu(
         RoundDropdownMenuItem(
             text = stringResource(R.string.delete_alert),
             onClick = { onMenuAction(BookInfoMenuAction.ToggleDeleteAlert) },
-            isSelected = io.legado.app.help.config.LocalConfig.bookInfoDeleteAlert
+            isSelected = state.deleteAlertEnabled
         )
         RoundDropdownMenuItem(
             text = stringResource(R.string.clear_cache),
@@ -823,7 +827,7 @@ private fun BookInfoSummary(
         modifier = Modifier
             .fillMaxWidth()
             .background(LegadoTheme.colorScheme.surface)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 120.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         AppText(
@@ -894,7 +898,7 @@ private fun BookInfoDialogs(
     onBack: () -> Unit,
 ) {
     val dialog = state.dialog
-    var deleteOriginal by remember(dialog) { mutableStateOf(io.legado.app.help.config.LocalConfig.deleteBookOriginal) }
+    var deleteOriginal by remember(dialog, state.deleteOriginal) { mutableStateOf(state.deleteOriginal) }
     var remarkText by remember(dialog) { mutableStateOf((dialog as? BookInfoDialog.EditRemark)?.remark.orEmpty()) }
 
     if (dialog is BookInfoDialog.AddToShelfOnBack) {
@@ -918,7 +922,6 @@ private fun BookInfoDialogs(
             text = stringResource(R.string.sure_del),
             confirmText = stringResource(android.R.string.ok),
             onConfirm = {
-                io.legado.app.help.config.LocalConfig.deleteBookOriginal = deleteOriginal
                 onIntent(BookInfoIntent.ConfirmDelete(deleteOriginal))
             },
             dismissText = stringResource(android.R.string.cancel),
