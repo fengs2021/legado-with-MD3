@@ -136,10 +136,6 @@ class MoreConfigDialog : BaseBottomSheetDialogFragment(R.layout.dialog_more_conf
                 PreferKey.paddingDisplayCutouts -> {
                     postEvent(EventBus.UP_CONFIG, arrayListOf(2))
                 }
-
-                PreferKey.aiCorrectionInReader -> {
-                    ReadBookConfig.aiCorrectionInReader = getPrefBoolean(key)
-                }
             }
         }
 

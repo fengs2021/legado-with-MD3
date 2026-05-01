@@ -239,13 +239,6 @@
             android:title="@string/expand_text_menu"
             app:isBottomBackground="true" />
 
-        <io.legado.app.lib.prefs.SwitchPreference
-            android:defaultValue="true"
-            android:key="aiCorrectionInReader"
-            android:title="@string/ai_correction_in_reader"
-            android:summary="@string/ai_correction_in_reader_desc"
-            app:isBottomBackground="true" />
-
     </io.legado.app.lib.prefs.PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>

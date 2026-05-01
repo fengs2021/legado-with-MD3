@@ -143,13 +143,6 @@
     </group>
 
     <item
-        android:id="@+id/menu_ai_correction"
-        android:checkable="true"
-        android:checked="false"
-        android:title="@string/ai_correction_in_reader"
-        app:showAsAction="never" />
-
-    <item
         android:id="@+id/menu_image_style"
         android:title="@string/image_style"
         app:showAsAction="never" />
