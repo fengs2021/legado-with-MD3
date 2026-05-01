@@ -230,9 +230,6 @@ class AICorrectionActivity : BaseComposeActivity() {
                                         .fillMaxWidth()
                                         .clickable {
                                             AICorrectionConfig.provider = id
-                                            if (id != "custom") {
-                                                AICorrectionConfig.model = ""
-                                            }
                                             showProviderDialog = false
                                         }
                                         .padding(vertical = 8.dp),
@@ -242,9 +239,6 @@ class AICorrectionActivity : BaseComposeActivity() {
                                         selected = AICorrectionConfig.provider == id,
                                         onClick = {
                                             AICorrectionConfig.provider = id
-                                            if (id != "custom") {
-                                                AICorrectionConfig.model = ""
-                                            }
                                             showProviderDialog = false
                                         }
                                     )

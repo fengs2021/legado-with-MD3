@@ -2,7 +2,8 @@ package io.legado.app.ui.main.my.aiCorrection
 
 import io.legado.app.constant.PreferKey
 import io.legado.app.help.config.ReadBookConfig
-import io.legado.app.ui.config.prefDelegate
+import io.legado.app.utils.getPrefString
+import io.legado.app.utils.putPrefString
 import splitties.init.appCtx
 
 /**
@@ -20,10 +21,15 @@ object AICorrectionConfig {
         "minimax"
     )
 
-    var model: String by prefDelegate(
-        PreferKey.aiCorrectionModel,
-        ""
-    )
+    var model: String
+        get() {
+            val key = PreferKey.aiCorrectionModelPrefix + provider
+            return appCtx.getPrefString(key, "") ?: ""
+        }
+        set(value) {
+            val key = PreferKey.aiCorrectionModelPrefix + provider
+            appCtx.putPrefString(key, value)
+        }
 
     var apiKey: String by prefDelegate(
         PreferKey.aiCorrectionApiKey,
