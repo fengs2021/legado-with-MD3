@@ -2,6 +2,7 @@ package io.legado.app.ui.main.my.aiCorrection
 
 import io.legado.app.constant.PreferKey
 import io.legado.app.help.config.ReadBookConfig
+import io.legado.app.ui.config.prefDelegate
 import io.legado.app.utils.getPrefString
 import io.legado.app.utils.putPrefString
 import splitties.init.appCtx
