@@ -1,6 +1,7 @@
 package io.legado.app.domain.usecase
 
 import io.legado.app.constant.AppLog
+import io.legado.app.data.entities.BookSource
 import io.legado.app.data.entities.BookSourcePart
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.domain.gateway.BookSearchGateway
@@ -10,6 +11,9 @@ import io.legado.app.model.webBook.WebBook
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
@@ -80,18 +84,35 @@ class SearchBooksUseCase(
             throw NoStackTraceException("启用书源为空")
         }
 
+        val searchableSources = coroutineScope {
+            sourceParts.map { part ->
+                async(Dispatchers.IO) {
+                    val source = gateway.getBookSource(part.bookSourceUrl) ?: return@async null
+                    if (source.bookSourceType != 0 || source.searchUrl.isNullOrBlank()) {
+                        return@async null
+                    }
+                    SearchableSource(part, source)
+                }
+            }.awaitAll().filterNotNull()
+        }
+        if (searchableSources.isEmpty()) {
+            throw NoStackTraceException("可搜索书源为空")
+        }
+
         val merger = SearchResultMerger(keyword, request.precision)
         val concurrency = request.concurrency.coerceAtLeast(1)
         var hasMore = false
         var processedSources = 0
+        var failedSources = 0
+        var firstFailureMessage: String? = null
 
         emit(SearchRunEvent.Started)
 
-        sourceParts.asFlow()
-            .flatMapMerge(concurrency) { sourcePart ->
+        searchableSources.asFlow()
+            .flatMapMerge(concurrency) { searchableSource ->
                 flow {
                     control.awaitResumed()
-                    emit(searchSource(sourcePart, keyword, request.page, request.precision))
+                    emit(searchSource(searchableSource, keyword, request.page, request.precision))
                 }.flowOn(Dispatchers.IO)
             }
             .collect { result ->
@@ -100,7 +121,7 @@ class SearchBooksUseCase(
                 when (result) {
                     is SourceSearchResult.Found -> {
                         result.books.forEach { it.releaseHtmlData() }
-                        hasMore = hasMore || result.books.isNotEmpty()
+                        hasMore = hasMore || (result.supportsNextPage && result.books.isNotEmpty())
                         if (result.books.isNotEmpty()) {
                             gateway.saveSearchBooks(result.books)
                         }
@@ -111,12 +132,16 @@ class SearchBooksUseCase(
                                 removedBookUrls = change.removedBookUrls,
                                 resultCount = merger.count,
                                 processedSources = processedSources,
-                                totalSources = sourceParts.size,
+                                totalSources = searchableSources.size,
                             )
                         )
                     }
 
                     is SourceSearchResult.Failed -> {
+                        failedSources++
+                        if (firstFailureMessage.isNullOrBlank()) {
+                            firstFailureMessage = result.throwable.localizedMessage
+                        }
                         AppLog.put("书源搜索出错\n${result.throwable.localizedMessage}", result.throwable)
                         emit(
                             SearchRunEvent.Progress(
@@ -124,12 +149,17 @@ class SearchBooksUseCase(
                                 removedBookUrls = emptyList(),
                                 resultCount = merger.count,
                                 processedSources = processedSources,
-                                totalSources = sourceParts.size,
+                                totalSources = searchableSources.size,
                             )
                         )
                     }
                 }
             }
+
+        if (merger.count == 0 && failedSources == searchableSources.size) {
+            val error = firstFailureMessage?.takeIf { it.isNotBlank() } ?: "全部书源搜索失败"
+            throw NoStackTraceException(error)
+        }
 
         emit(
             SearchRunEvent.Finished(
@@ -140,25 +170,30 @@ class SearchBooksUseCase(
     }.flowOn(Dispatchers.IO)
 
     private suspend fun searchSource(
-        sourcePart: BookSourcePart,
+        searchableSource: SearchableSource,
         keyword: String,
         page: Int,
         precision: Boolean,
     ): SourceSearchResult {
         return try {
-            val source = gateway.getBookSource(sourcePart.bookSourceUrl)
-                ?: return SourceSearchResult.Found(emptyList())
+            val source = searchableSource.source
+            val supportsSearchPage = source.supportsSearchPage()
+            if (page > 1 && !supportsSearchPage) {
+                return SourceSearchResult.Found(emptyList())
+            }
             val books = withTimeout(30000L) {
                 WebBook.searchBookAwait(
                     source,
                     keyword,
                     page,
                     filter = { name, author ->
-                        !precision || name.contains(keyword) || author.contains(keyword)
+                        !precision ||
+                            name.contains(keyword, ignoreCase = true) ||
+                            author.contains(keyword, ignoreCase = true)
                     }
                 )
             }
-            SourceSearchResult.Found(books)
+            SourceSearchResult.Found(books, supportsSearchPage)
         } catch (exception: Throwable) {
             coroutineContext.ensureActive()
             if (exception is CancellationException) throw exception
@@ -166,8 +201,18 @@ class SearchBooksUseCase(
         }
     }
 
+
+
+    private data class SearchableSource(
+        val part: BookSourcePart,
+        val source: BookSource,
+    )
     private sealed interface SourceSearchResult {
-        data class Found(val books: List<SearchBook>) : SourceSearchResult
+        data class Found(
+            val books: List<SearchBook>,
+            val supportsNextPage: Boolean = false,
+        ) : SourceSearchResult
+
         data class Failed(val throwable: Throwable) : SourceSearchResult
     }
 
@@ -215,8 +260,10 @@ class SearchBooksUseCase(
 
         private fun classifyBucket(book: SearchBook): LinkedHashMap<SearchBookKey, SearchBook>? {
             return when {
-                book.name == keyword || book.author == keyword -> equalBooks
-                book.name.contains(keyword) || book.author.contains(keyword) -> containsBooks
+                book.name.equals(keyword, ignoreCase = true) ||
+                    book.author.equals(keyword, ignoreCase = true) -> equalBooks
+                book.name.contains(keyword, ignoreCase = true) ||
+                    book.author.contains(keyword, ignoreCase = true) -> containsBooks
                 !precision -> otherBooks
                 else -> null
             }
@@ -251,3 +298,22 @@ class SearchBooksUseCase(
         val removedBookUrls: List<String> = emptyList(),
     )
 }
+
+internal fun BookSource.supportsSearchPage(): Boolean {
+    val url = searchUrl.orEmpty()
+    if (url.isBlank()) return false
+
+    if (searchPageScriptPattern.findAll(url).any { searchPageTokenPattern.containsMatchIn(it.value) }) {
+        return true
+    }
+
+    val staticUrl = searchPageScriptPattern.replace(url, "")
+    return searchPageGroupPattern.containsMatchIn(staticUrl)
+}
+
+private val searchPageScriptPattern = Regex(
+    pattern = """\{\{[\s\S]*?\}\}|<js>[\s\S]*?</js>|@js:[\s\S]*""",
+    option = RegexOption.IGNORE_CASE,
+)
+private val searchPageTokenPattern = Regex("""(?<![A-Za-z0-9_])page(?![A-Za-z0-9_])""")
+private val searchPageGroupPattern = Regex("""<[^<>]+>""")

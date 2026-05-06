@@ -1484,4 +1484,9 @@
     <string name="ai_correction_test_success">测试成功！</string>
     <string name="ai_correction_test_failed">测试失败，请检查 API Key</string>
     <string name="ai_correction_api_key_empty">API Key 不能为空</string>
+    <string name="bookshelf_total_count">共%1$d本</string>
+    <string name="bookshelf_selected_count">已选%1$d本</string>
+    <string name="bookshelf_empty_global_search">没有书籍，尝试全局搜索</string>
+    <string name="global_search">全局搜索</string>
+    <string name="cache_management">缓存管理</string>
 </resources>

@@ -1466,17 +1466,16 @@
     <string name="enable_select_vibrator">Vibrate While Selecting Text</string>
     <string name="re_sync_webdav">Resync from WebDAV</string>
     <string name="underline_padding">Underline Padding</string>
-	<string name="layout_setting">Layout Settings</string>
-	<string name="cover_info_orientation">Cover Info Orientation</string>
-	<string name="rule_segment">Rules</string>
-	<string name="tool_bar_style">Tool Bar Style</string>
-	<string name="split_title">Split Title</string>
-	<string name="split_title_mode">Split Mode</string>
-	<string name="subtitle_scale">Subtitle Scale</string>
-	<string name="subtitle_margin">Subtitle Margin</string>
-	<string name="heading_spacing">Heading Spacing</string>
-	<string name="follow_read_background">Follow Background</string>
-
+    <string name="layout_setting">Layout Settings</string>
+    <string name="cover_info_orientation">Cover Info Orientation</string>
+    <string name="rule_segment">Rules</string>
+    <string name="tool_bar_style">Tool Bar Style</string>
+    <string name="split_title">Split Title</string>
+    <string name="split_title_mode">Split Mode</string>
+    <string name="subtitle_scale">Subtitle Scale</string>
+    <string name="subtitle_margin">Subtitle Margin</string>
+    <string name="heading_spacing">Heading Spacing</string>
+    <string name="follow_read_background">Follow Background</string>
     <string name="ai_correction">AI Correction</string>
     <string name="ai_correction_enable">Enable AI Correction</string>
     <string name="ai_correction_enable_desc">Use AI to correct novel content</string>
@@ -1491,9 +1490,14 @@
     <string name="ai_correction_test_success">Test successful!</string>
     <string name="ai_correction_test_failed">Test failed, check API key</string>
     <string name="ai_correction_api_key_empty">API key cannot be empty</string>
-    <string name="ai_correction_in_reader">阅读时启用AI修正</string>
-    <string name="ai_correction_in_reader_desc">开启后阅读时自动对正文进行AI修正</string>
+    <string name="ai_correction_in_reader">Enable AI Correction in Reader</string>
+    <string name="ai_correction_in_reader_desc">Auto-correct content with AI when reading</string>
     <string name="ai_correction_clear_cache">Clear Correction Cache</string>
     <string name="ai_correction_clear_cache_desc">Clear cached AI-corrected chapters</string>
     <string name="ai_correction_cleared">Correction history cleared</string>
+    <string name="bookshelf_total_count">%1$d books</string>
+    <string name="bookshelf_selected_count">%1$d selected</string>
+    <string name="bookshelf_empty_global_search">No books here. Try global search.</string>
+    <string name="global_search">Global search</string>
+    <string name="cache_management">Cache management</string>
 </resources>

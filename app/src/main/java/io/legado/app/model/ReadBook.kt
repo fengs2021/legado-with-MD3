@@ -29,8 +29,6 @@ import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.help.globalExecutor
 import io.legado.app.model.localBook.TextFile
-import io.legado.app.model.cache.ReadingCacheEvent
-import io.legado.app.model.cache.ReadingCacheEvents
 import io.legado.app.model.webBook.WebBook
 import io.legado.app.service.BaseReadAloudService
 import io.legado.app.service.CacheBookService
@@ -100,26 +98,6 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
         correctedChapterCache.clear()
     }
     var readStartTime: Long = System.currentTimeMillis()
-
-    init {
-        launch {
-            ReadingCacheEvents.events.collect { event ->
-                when (event) {
-                    is ReadingCacheEvent.ContentReady -> {
-                        if (book?.bookUrl == event.book.bookUrl) {
-                            contentLoadFinish(
-                                book = event.book,
-                                chapter = event.chapter,
-                                content = event.content,
-                                resetPageOffset = event.resetPageOffset,
-                                canceled = event.canceled,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     /* 跳转进度前进度记录 */
     var lastBookProgress: BookProgress? = null
@@ -699,7 +677,12 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
     ) {
         Coroutine.async {
             val book = book!!
-            val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, index) ?: return@async
+            val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, index) ?: run {
+                if (index == durChapterIndex) {
+                    upMsg("章节不存在")
+                }
+                return@async
+            }
             if (addLoading(index)) {
                 BookHelp.getContent(book, chapter)?.let {
                     contentLoadFinish(
@@ -717,7 +700,11 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 )
             }
         }.onError {
-            AppLog.put("加载正文出错\n${it.localizedMessage}")
+            removeLoading(index)
+            if (index == durChapterIndex) {
+                upMsg("加载正文出错\n${it.localizedMessage}")
+            }
+            AppLog.put("加载正文出错\n${it.localizedMessage}", it)
         }
     }
 
@@ -854,6 +841,11 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
             val contents = contentProcessor
                 .getContent(book, chapter, content, includeTitle = false)
             val cacheKey = "${book.bookUrl}#${chapter.index}"
+            // 检查磁盘上是否已有修正文件（跨会话持久化），有则标记缓存
+            if (correctedChapterCache[cacheKey] == null && BookHelp.getCorrectedContent(book, chapter) != null) {
+                AppLog.put("AI修正跳过(磁盘已有修正文件): ${chapter.title}")
+                correctedChapterCache[cacheKey] = System.currentTimeMillis()
+            }
             // AI 修正（互斥锁，已修正过则跳过）
             val finalContents = if (AICorrectionConfig.isEffectiveEnabled && correctedChapterCache[cacheKey] == null) {
                 AppLog.put("AI修正开始: ${chapter.title}")
@@ -983,6 +975,11 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
             val bookContent = contentProcessor
                 .getContent(book, chapter, content, includeTitle = false)
             val cacheKey = "${book.bookUrl}#${chapter.index}"
+            // 检查磁盘修正文件，有则标记缓存跳过
+            if (correctedChapterCache[cacheKey] == null && BookHelp.getCorrectedContent(book, chapter) != null) {
+                AppLog.put("contentLoadFinish AI修正跳过(磁盘已有修正文件): ${chapter.title}")
+                correctedChapterCache[cacheKey] = System.currentTimeMillis()
+            }
             val cacheVal = correctedChapterCache[cacheKey]
             // AI 修正（互斥锁，已修正过则跳过）
             val finalTextList = if (AICorrectionConfig.isEffectiveEnabled && cacheVal == null) {
