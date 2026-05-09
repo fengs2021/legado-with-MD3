@@ -151,8 +151,6 @@ jobs:
           echo "清空18PlusList.txt"
           echo "">$GITHUB_WORKSPACE/app/src/main/assets/18PlusList.txt
       - name: Release Apk Sign
-        # 仅在所有者的 PR 或 push 时进行签名
-        if: ${{ github.actor == 'HapeLee' }}
         run: |
           echo "${{ secrets.SIGNING_KEY }}" | base64 -d > $GITHUB_WORKSPACE/app/my-release-key.jks
           echo "RELEASE_STORE_FILE=my-release-key.jks" >> $GITHUB_WORKSPACE/gradle.properties
