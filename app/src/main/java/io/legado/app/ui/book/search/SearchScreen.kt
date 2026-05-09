@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -43,6 +44,7 @@ import io.legado.app.ui.widget.components.topbar.M3GlassScrollBehavior
 import io.legado.app.ui.widget.components.topbar.GlassTopAppBarDefaults
 import io.legado.app.ui.widget.components.topbar.GlassTopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -80,9 +82,9 @@ import io.legado.app.ui.widget.components.button.SmallTextButton
 import io.legado.app.ui.widget.components.card.NormalCard
 import io.legado.app.ui.widget.components.card.SelectionItemCard
 import io.legado.app.ui.widget.components.button.ToggleChip
-import io.legado.app.ui.widget.components.button.TopBarActionButton
-import io.legado.app.ui.widget.components.button.TopBarAnimatedActionButton
-import io.legado.app.ui.widget.components.button.TopBarNavigationButton
+import io.legado.app.ui.widget.components.topbar.TopBarActionButton
+import io.legado.app.ui.widget.components.topbar.TopBarAnimatedActionButton
+import io.legado.app.ui.widget.components.topbar.TopBarNavigationButton
 import io.legado.app.ui.widget.components.card.GlassCard
 import io.legado.app.ui.widget.components.icon.AppIcon
 import io.legado.app.ui.widget.components.icon.AppIcons
@@ -93,7 +95,6 @@ import io.legado.app.utils.toastOnUi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
 
 @OptIn(FlowPreview::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -108,6 +109,7 @@ fun SearchScreen(
     val listState = rememberLazyListState()
     var queryInput by rememberSaveable { mutableStateOf(state.query) }
     var scopeSheetTab by rememberSaveable { mutableStateOf(0) }
+    var ignoreNextDebouncedQuery by rememberSaveable { mutableStateOf<String?>(null) }
     val showSuggestionPanel = state.showSuggestions
     val latestQuery by rememberUpdatedState(state.query)
     val scrollBehavior = if (ThemeResolver.isMiuixEngine(LegadoTheme.composeEngine)) {
@@ -140,9 +142,14 @@ fun SearchScreen(
         snapshotFlow { queryInput }
             .distinctUntilChanged()
             .debounce(200)
-            .filter { it != latestQuery }
             .collect { newQuery ->
-                viewModel.onIntent(SearchIntent.UpdateQuery(newQuery))
+                if (ignoreNextDebouncedQuery == newQuery) {
+                    ignoreNextDebouncedQuery = null
+                    return@collect
+                }
+                if (newQuery != latestQuery) {
+                    viewModel.onIntent(SearchIntent.UpdateQuery(newQuery))
+                }
             }
     }
 
@@ -177,9 +184,16 @@ fun SearchScreen(
         }
     }
 
+    DisposableEffect(viewModel) {
+        onDispose {
+            viewModel.onIntent(SearchIntent.StopSearch)
+        }
+    }
+
     val submitSearch: (String) -> Unit = { rawQuery ->
         val normalized = rawQuery.trim()
         if (normalized.isNotBlank()) {
+            ignoreNextDebouncedQuery = normalized
             queryInput = normalized
             if (normalized != state.query) {
                 viewModel.onIntent(SearchIntent.UpdateQuery(normalized))
@@ -214,17 +228,22 @@ fun SearchScreen(
                             activeText = stringResource(R.string.precision_search),
                             inactiveText = stringResource(R.string.search),
                         )
-                        TopBarActionButton(
-                            onClick = {
+                        TopBarAnimatedActionButton(
+                            checked = !state.isAllScope,
+                            onCheckedChange = {
                                 viewModel.onIntent(SearchIntent.SetScopeSheetVisible(true))
                             },
-                            imageVector = AppIcons.Filter
+                            iconChecked = AppIcons.Filter,
+                            iconUnchecked = AppIcons.Filter,
+                            activeText = stringResource(R.string.screen),
+                            inactiveText = stringResource(R.string.screen),
                         )
                         TopBarActionButton(
                             onClick = {
                                 viewModel.onIntent(SearchIntent.OpenSourceManage)
                             },
                             imageVector = AppIcons.Settings,
+                            contentDescription = "书源管理"
                         )
                     },
                     scrollBehavior = scrollBehavior
@@ -334,15 +353,15 @@ fun SearchScreen(
                                 ),
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                items(items = state.results, key = { it.bookUrl }) { book ->
-                                    val shelfStateFlow = remember(book.bookUrl) {
-                                        viewModel.getBookShelfStateFlow(book)
-                                    }
+                                itemsIndexed(
+                                    items = state.results,
+                                    key = { index, item -> "${item.book.origin}:${item.book.bookUrl}:$index" }
+                                ) { _, item ->
                                     SearchBookListItem(
-                                        book = book,
-                                        shelfState = shelfStateFlow,
+                                        book = item.book,
+                                        shelfState = item.shelfState,
                                         onClick = {
-                                            viewModel.onIntent(SearchIntent.OpenSearchBook(book))
+                                            viewModel.onIntent(SearchIntent.OpenSearchBook(item.book))
                                         }
                                     )
                                 }

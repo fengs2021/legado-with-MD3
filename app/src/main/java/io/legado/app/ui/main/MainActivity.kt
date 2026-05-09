@@ -6,6 +6,8 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.text.format.DateUtils
 import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -24,13 +26,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
 import io.legado.app.BuildConfig
 import io.legado.app.R
 import io.legado.app.base.BaseComposeActivity
 import io.legado.app.constant.AppConst.appInfo
 import io.legado.app.constant.PreferKey
-import io.legado.app.help.AppWebDav
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.LocalConfig
@@ -41,14 +43,17 @@ import io.legado.app.lib.dialogs.alert
 import io.legado.app.service.WebService
 import io.legado.app.ui.about.CrashLogsDialog
 import io.legado.app.ui.about.UpdateDialog
-import io.legado.app.ui.book.info.BookInfoActivity
+import io.legado.app.ui.book.cache.manage.BookCacheManageRouteScreen
+import io.legado.app.ui.book.explore.ExploreShowScreen
+import io.legado.app.ui.book.info.BookInfoRouteScreen
+import io.legado.app.ui.book.info.BookInfoViewModel
 import io.legado.app.ui.book.import.local.ImportBookScreen
 import io.legado.app.ui.book.import.remote.RemoteBookScreen
 import io.legado.app.ui.book.search.SearchIntent
 import io.legado.app.ui.book.search.SearchScreen
 import io.legado.app.ui.book.search.SearchViewModel
 import io.legado.app.ui.book.source.manage.BookSourceActivity
-import io.legado.app.ui.book.cache.CacheRouteScreen
+import io.legado.app.ui.book.manage.BookshelfManageRouteScreen
 import io.legado.app.ui.book.read.ReadBookActivity
 import io.legado.app.ui.config.ConfigNavScreen
 import io.legado.app.ui.config.ConfigTag
@@ -65,6 +70,7 @@ import io.legado.app.ui.rss.read.MainRouteRssRead
 import io.legado.app.ui.rss.read.RssReadRouteScreen
 import io.legado.app.ui.welcome.WelcomeActivity
 import io.legado.app.ui.widget.dialog.TextDialog
+import io.legado.app.ui.widget.dialog.VariableDialog
 import io.legado.app.utils.getPrefBoolean
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.startActivity
@@ -81,7 +87,7 @@ import kotlin.coroutines.suspendCoroutine
 /**
  * 主界面
  */
-open class MainActivity : BaseComposeActivity() {
+open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
 
     companion object {
         const val EXTRA_START_ROUTE = "startRoute"
@@ -95,12 +101,21 @@ open class MainActivity : BaseComposeActivity() {
         private const val ROUTE_IMPORT_LOCAL = "import/local"
         private const val ROUTE_IMPORT_REMOTE = "import/remote"
         private const val ROUTE_CACHE = "cache"
+        private const val ROUTE_BOOK_CACHE_MANAGE = "book/cache/manage"
         private const val ROUTE_SEARCH = "search"
+        private const val ROUTE_BOOK_INFO = "book/info"
+        private const val ROUTE_EXPLORE_SHOW = "explore/show"
         private const val ROUTE_RSS_SORT = "rss/sort"
         private const val ROUTE_RSS_READ = "rss/read"
         private const val EXTRA_CACHE_GROUP_ID = "extra_cache_group_id"
         private const val EXTRA_SEARCH_KEY = "extra_search_key"
         private const val EXTRA_SEARCH_SCOPE = "extra_search_scope"
+        private const val EXTRA_BOOK_NAME = "name"
+        private const val EXTRA_BOOK_AUTHOR = "author"
+        private const val EXTRA_BOOK_URL = "bookUrl"
+        private const val EXTRA_EXPLORE_NAME = "exploreName"
+        private const val EXTRA_SOURCE_URL = "sourceUrl"
+        private const val EXTRA_EXPLORE_URL = "exploreUrl"
 
         private const val EXTRA_RSS_SOURCE_URL = "extra_rss_source_url"
         private const val EXTRA_RSS_SORT_URL = "extra_rss_sort_url"
@@ -163,13 +178,24 @@ open class MainActivity : BaseComposeActivity() {
             }
         }
 
-        fun createCacheIntent(
+        fun createBookshelfManageScreenIntent(
             context: Context,
             groupId: Long = -1L
         ): Intent {
             return createLauncherIntent(context).apply {
                 putExtra(EXTRA_START_ROUTE, ROUTE_CACHE)
                 putExtra(EXTRA_CACHE_GROUP_ID, groupId)
+            }
+        }
+
+        fun createCacheIntent(
+            context: Context,
+            groupId: Long = -1L
+        ): Intent = createBookshelfManageScreenIntent(context, groupId)
+
+        fun createBookCacheManageIntent(context: Context): Intent {
+            return createLauncherIntent(context).apply {
+                putExtra(EXTRA_START_ROUTE, ROUTE_BOOK_CACHE_MANAGE)
             }
         }
 
@@ -182,6 +208,34 @@ open class MainActivity : BaseComposeActivity() {
                 putExtra(EXTRA_START_ROUTE, ROUTE_SEARCH)
                 putExtra(EXTRA_SEARCH_KEY, key)
                 putExtra(EXTRA_SEARCH_SCOPE, scopeRaw)
+            }
+        }
+
+        fun createBookInfoIntent(
+            context: Context,
+            name: String? = null,
+            author: String? = null,
+            bookUrl: String
+        ): Intent {
+            return createLauncherIntent(context).apply {
+                putExtra(EXTRA_START_ROUTE, ROUTE_BOOK_INFO)
+                putExtra(EXTRA_BOOK_NAME, name)
+                putExtra(EXTRA_BOOK_AUTHOR, author)
+                putExtra(EXTRA_BOOK_URL, bookUrl)
+            }
+        }
+
+        fun createExploreShowIntent(
+            context: Context,
+            exploreName: String? = null,
+            sourceUrl: String,
+            exploreUrl: String? = null
+        ): Intent {
+            return createLauncherIntent(context).apply {
+                putExtra(EXTRA_START_ROUTE, ROUTE_EXPLORE_SHOW)
+                putExtra(EXTRA_EXPLORE_NAME, exploreName)
+                putExtra(EXTRA_SOURCE_URL, sourceUrl)
+                putExtra(EXTRA_EXPLORE_URL, exploreUrl)
             }
         }
 
@@ -199,6 +253,7 @@ open class MainActivity : BaseComposeActivity() {
 
     private val viewModel by viewModel<MainViewModel>()
     private val routeEvents = MutableSharedFlow<NavKey>(extraBufferCapacity = 1)
+    private var bookInfoVariableSetter: ((String, String?) -> Unit)? = null
 
     @Serializable
     private sealed interface MainRoute : NavKey
@@ -236,9 +291,26 @@ open class MainActivity : BaseComposeActivity() {
     private data class MainRouteCache(val groupId: Long) : MainRoute
 
     @Serializable
+    private data object MainRouteBookCacheManage : MainRoute
+
+    @Serializable
     private data class MainRouteSearch(
         val key: String?,
         val scopeRaw: String? = null
+    ) : MainRoute
+
+    @Serializable
+    private data class MainRouteBookInfo(
+        val name: String?,
+        val author: String?,
+        val bookUrl: String,
+    ) : MainRoute
+
+    @Serializable
+    private data class MainRouteExploreShow(
+        val title: String?,
+        val sourceUrl: String,
+        val exploreUrl: String?,
     ) : MainRoute
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -274,6 +346,7 @@ open class MainActivity : BaseComposeActivity() {
         routeEvents.tryEmit(resolveStartRoute(intent))
     }
 
+    @OptIn(ExperimentalSharedTransitionApi::class)
     @Composable
     override fun Content() {
         val orientation = resources.configuration.orientation
@@ -296,9 +369,10 @@ open class MainActivity : BaseComposeActivity() {
             }
         }
 
-        NavDisplay(
-            backStack = backStack,
-            transitionSpec = {
+        SharedTransitionLayout {
+            NavDisplay(
+                backStack = backStack,
+                transitionSpec = {
                 (slideIntoContainer(
                     towards = AnimatedContentTransitionScope.SlideDirection.Start,
                     animationSpec = tween(
@@ -375,7 +449,7 @@ open class MainActivity : BaseComposeActivity() {
                     finish()
                 }
             },
-            entryProvider = entryProvider {
+                entryProvider = entryProvider {
                 entry<MainRouteHome> {
                     MainScreen(
                         useRail = useRail,
@@ -399,6 +473,29 @@ open class MainActivity : BaseComposeActivity() {
                         onNavigateToCache = { groupId ->
                             navigateToRoute(backStack, MainRouteCache(groupId))
                         },
+                        onNavigateToBookCacheManage = {
+                            navigateToRoute(backStack, MainRouteBookCacheManage)
+                        },
+                        onNavigateToBookInfo = { name, author, bookUrl ->
+                            navigateToRoute(
+                                backStack,
+                                MainRouteBookInfo(
+                                    name = name,
+                                    author = author,
+                                    bookUrl = bookUrl
+                                )
+                            )
+                        },
+                        onNavigateToExploreShow = { title, sourceUrl, exploreUrl ->
+                            navigateToRoute(
+                                backStack,
+                                MainRouteExploreShow(
+                                    title = title,
+                                    sourceUrl = sourceUrl,
+                                    exploreUrl = exploreUrl
+                                )
+                            )
+                        },
                         onNavigateToRssSort = { sourceUrl, sortUrl, key ->
                             navigateToRoute(
                                 backStack,
@@ -419,7 +516,9 @@ open class MainActivity : BaseComposeActivity() {
                                     openUrl = openUrl
                                 )
                             )
-                        }
+                        },
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                     )
                 }
 
@@ -468,8 +567,24 @@ open class MainActivity : BaseComposeActivity() {
                 }
 
                 entry<MainRouteCache> { route ->
-                    CacheRouteScreen(
+                    BookshelfManageRouteScreen(
                         groupId = route.groupId,
+                        onBackClick = { navigateBack(backStack) },
+                        onOpenBookInfo = { name, author, bookUrl ->
+                            navigateToRoute(
+                                backStack,
+                                MainRouteBookInfo(
+                                    name = name,
+                                    author = author,
+                                    bookUrl = bookUrl
+                                )
+                            )
+                        }
+                    )
+                }
+
+                entry<MainRouteBookCacheManage> {
+                    BookCacheManageRouteScreen(
                         onBackClick = { navigateBack(backStack) }
                     )
                 }
@@ -513,11 +628,14 @@ open class MainActivity : BaseComposeActivity() {
                         viewModel = searchViewModel,
                         onBack = { navigateBack(backStack) },
                         onOpenBookInfo = { name, author, bookUrl ->
-                            this@MainActivity.startActivity<BookInfoActivity> {
-                                putExtra("name", name)
-                                putExtra("author", author)
-                                putExtra("bookUrl", bookUrl)
-                            }
+                            navigateToRoute(
+                                backStack,
+                                MainRouteBookInfo(
+                                    name = name,
+                                    author = author,
+                                    bookUrl = bookUrl
+                                )
+                            )
                         },
                         onOpenSourceManage = {
                             this@MainActivity.startActivity<BookSourceActivity>()
@@ -553,8 +671,47 @@ open class MainActivity : BaseComposeActivity() {
                         onBackClick = { navigateBack(backStack) }
                     )
                 }
-            }
-        )
+
+                entry<MainRouteBookInfo> { route ->
+                    val bookInfoViewModel = koinViewModel<BookInfoViewModel>()
+                    BookInfoRouteScreen(
+                        bookUrl = route.bookUrl,
+                        viewModel = bookInfoViewModel,
+                        onBack = { navigateBack(backStack) },
+                        onFinish = { _, _ -> navigateBack(backStack) },
+                        onOpenSearch = { keyword ->
+                            navigateToRoute(backStack, MainRouteSearch(key = keyword))
+                        },
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                        sharedCoverKey = bookCoverSharedElementKey(route.bookUrl),
+                        onRegisterVariableSetter = { setter ->
+                            bookInfoVariableSetter = setter
+                        }
+                    )
+                }
+
+                entry<MainRouteExploreShow> { route ->
+                    ExploreShowScreen(
+                        title = route.title ?: "探索",
+                        sourceUrl = route.sourceUrl,
+                        exploreUrl = route.exploreUrl,
+                        onBack = { navigateBack(backStack) },
+                        onBookClick = { book ->
+                            navigateToRoute(
+                                backStack,
+                                MainRouteBookInfo(
+                                    name = book.name,
+                                    author = book.author,
+                                    bookUrl = book.bookUrl
+                                )
+                            )
+                        }
+                    )
+                }
+                }
+            )
+        }
     }
 
     private fun navigateToRoute(backStack: MutableList<NavKey>, route: NavKey) {
@@ -590,7 +747,8 @@ open class MainActivity : BaseComposeActivity() {
 
             MainRouteImportLocal,
             MainRouteImportRemote,
-            is MainRouteCache -> {
+            is MainRouteCache,
+            MainRouteBookCacheManage -> {
                 if (currentRoute == MainRouteHome) {
                     backStack.add(route)
                 } else {
@@ -601,6 +759,30 @@ open class MainActivity : BaseComposeActivity() {
             }
 
             is MainRouteSearch -> {
+                if (currentRoute == MainRouteHome) {
+                    backStack.add(route)
+                } else {
+                    backStack.clear()
+                    backStack.add(MainRouteHome)
+                    backStack.add(route)
+                }
+            }
+
+            is MainRouteBookInfo -> {
+                if (
+                    currentRoute == MainRouteHome ||
+                    currentRoute is MainRouteSearch ||
+                    currentRoute is MainRouteExploreShow
+                ) {
+                    backStack.add(route)
+                } else {
+                    backStack.clear()
+                    backStack.add(MainRouteHome)
+                    backStack.add(route)
+                }
+            }
+
+            is MainRouteExploreShow -> {
                 if (currentRoute == MainRouteHome) {
                     backStack.add(route)
                 } else {
@@ -720,13 +902,13 @@ open class MainActivity : BaseComposeActivity() {
         }
         lifecycleScope.launch {
             val lastBackupFile =
-                withContext(IO) { AppWebDav.lastBackUp().getOrNull() } ?: return@launch
+                withContext(IO) { viewModel.getLatestWebDavBackup() } ?: return@launch
             if (lastBackupFile.lastModify - LocalConfig.lastBackup > DateUtils.MINUTE_IN_MILLIS) {
                 LocalConfig.lastBackup = lastBackupFile.lastModify
                 alert(R.string.restore, R.string.webdav_after_local_restore_confirm) {
                     cancelButton()
                     okButton {
-                        viewModel.restoreWebDav(lastBackupFile.displayName)
+                        viewModel.restoreWebDav(lastBackupFile.name)
                     }
                 }
             }
@@ -801,12 +983,35 @@ open class MainActivity : BaseComposeActivity() {
             ROUTE_IMPORT_LOCAL -> MainRouteImportLocal
             ROUTE_IMPORT_REMOTE -> MainRouteImportRemote
             ROUTE_CACHE -> MainRouteCache(intent?.getLongExtra(EXTRA_CACHE_GROUP_ID, -1L) ?: -1L)
+            ROUTE_BOOK_CACHE_MANAGE -> MainRouteBookCacheManage
             ROUTE_SEARCH -> MainRouteSearch(
                 key = intent?.getStringExtra(EXTRA_SEARCH_KEY),
                 scopeRaw = intent?.getStringExtra(EXTRA_SEARCH_SCOPE)
             )
+            ROUTE_BOOK_INFO -> intent?.getStringExtra(EXTRA_BOOK_URL)
+                ?.takeIf { it.isNotBlank() }
+                ?.let { bookUrl ->
+                    MainRouteBookInfo(
+                        name = intent.getStringExtra(EXTRA_BOOK_NAME),
+                        author = intent.getStringExtra(EXTRA_BOOK_AUTHOR),
+                        bookUrl = bookUrl
+                    )
+                } ?: MainRouteHome
+            ROUTE_EXPLORE_SHOW -> intent?.getStringExtra(EXTRA_SOURCE_URL)
+                ?.takeIf { it.isNotBlank() }
+                ?.let { sourceUrl ->
+                    MainRouteExploreShow(
+                        title = intent.getStringExtra(EXTRA_EXPLORE_NAME),
+                        sourceUrl = sourceUrl,
+                        exploreUrl = intent.getStringExtra(EXTRA_EXPLORE_URL)
+                    )
+                } ?: MainRouteHome
             else -> MainRouteHome
         }
+    }
+
+    override fun setVariable(key: String, variable: String?) {
+        bookInfoVariableSetter?.invoke(key, variable)
     }
 
 }

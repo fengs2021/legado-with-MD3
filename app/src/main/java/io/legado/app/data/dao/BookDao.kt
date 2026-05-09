@@ -11,6 +11,7 @@ import io.legado.app.constant.BookType
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookGroup
 import io.legado.app.data.entities.BookSource
+import io.legado.app.domain.model.CacheableBook
 import io.legado.app.help.book.isNotShelf
 import io.legado.app.ui.main.bookshelf.BookShelfItem
 import kotlinx.coroutines.flow.Flow
@@ -75,6 +76,7 @@ interface BookDao {
             bookUrl,
             name,
             author,
+            origin,
             originName,
             coverUrl,
             customCoverUrl,
@@ -108,6 +110,7 @@ interface BookDao {
         bookUrl,
         name,
         author,
+        origin,
         originName,
         coverUrl,
         customCoverUrl,
@@ -138,6 +141,7 @@ interface BookDao {
             bookUrl,
             name,
             author,
+            origin,
             originName,
             coverUrl,
             customCoverUrl,
@@ -168,6 +172,7 @@ interface BookDao {
             bookUrl,
             name,
             author,
+            origin,
             originName,
             coverUrl,
             customCoverUrl,
@@ -203,6 +208,7 @@ interface BookDao {
             bookUrl,
             name,
             author,
+            origin,
             originName,
             coverUrl,
             customCoverUrl,
@@ -239,6 +245,7 @@ interface BookDao {
             bookUrl,
             name,
             author,
+            origin,
             originName,
             coverUrl,
             customCoverUrl,
@@ -270,6 +277,7 @@ interface BookDao {
             bookUrl,
             name,
             author,
+            origin,
             originName,
             coverUrl,
             customCoverUrl,
@@ -302,6 +310,7 @@ interface BookDao {
             bookUrl,
             name,
             author,
+            origin,
             originName,
             coverUrl,
             customCoverUrl,
@@ -332,6 +341,7 @@ interface BookDao {
             bookUrl,
             name,
             author,
+            origin,
             originName,
             coverUrl,
             customCoverUrl,
@@ -363,6 +373,7 @@ interface BookDao {
             bookUrl,
             name,
             author,
+            origin,
             originName,
             coverUrl,
             customCoverUrl,
@@ -393,6 +404,7 @@ interface BookDao {
             bookUrl,
             name,
             author,
+            origin,
             originName,
             coverUrl,
             customCoverUrl,
@@ -423,6 +435,7 @@ interface BookDao {
             bookUrl,
             name,
             author,
+            origin,
             originName,
             coverUrl,
             customCoverUrl,
@@ -453,6 +466,7 @@ interface BookDao {
             bookUrl,
             name,
             author,
+            origin,
             originName,
             coverUrl,
             customCoverUrl,
@@ -483,6 +497,7 @@ interface BookDao {
             bookUrl,
             name,
             author,
+            origin,
             originName,
             coverUrl,
             customCoverUrl,
@@ -515,6 +530,20 @@ interface BookDao {
 
     @Query("SELECT * FROM books WHERE bookUrl = :bookUrl")
     fun getBook(bookUrl: String): Book?
+
+    @Query(
+        """
+        SELECT
+            bookUrl,
+            type & ${BookType.local} > 0 AS isLocal,
+            type & ${BookType.audio} > 0 AS isAudio,
+            durChapterIndex,
+            totalChapterNum - 1 AS lastChapterIndex
+        FROM books
+        WHERE bookUrl IN (:bookUrls)
+        """
+    )
+    fun getCacheableBooks(bookUrls: Set<String>): List<CacheableBook>
 
     @Query("SELECT * FROM books WHERE bookUrl = :bookUrl")
     fun flowGetBook(bookUrl: String): Flow<Book?>
