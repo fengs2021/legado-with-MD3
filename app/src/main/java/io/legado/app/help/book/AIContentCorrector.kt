@@ -100,8 +100,18 @@ object AIContentCorrector {
                 throw CorrectionException(errMsg)
             }
             val json = JSONObject(body)
+            // 检查是否有 API 错误
+            val errorObj = json.optJSONObject("error")
+            if (errorObj != null) {
+                val errorMsg = errorObj.optString("message", "")
+                    .ifEmpty { errorObj.optString("type", "未知错误") }
+                AppLog.put("[${chapterTitle}] AI修正失败: API错误 - $errorMsg")
+                AppLog.put("[${chapterTitle}] AI修正完整响应: $body")
+                throw CorrectionException("API错误: $errorMsg")
+            }
             val choices = json.optJSONArray("choices") ?: run {
                 AppLog.put("[${chapterTitle}] AI修正失败: 无choices")
+                AppLog.put("[${chapterTitle}] AI修正完整响应: $body")
                 throw CorrectionException("无choices")
             }
             if (choices.length() == 0) {
