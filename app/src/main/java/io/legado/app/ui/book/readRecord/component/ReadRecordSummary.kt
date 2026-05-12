@@ -12,7 +12,7 @@ import io.legado.app.ui.book.readRecord.ReadRecordViewModel
 import io.legado.app.ui.theme.LegadoTheme
 import io.legado.app.ui.theme.adaptiveHorizontalPadding
 import io.legado.app.ui.widget.components.card.GlassCard
-import io.legado.app.ui.widget.components.cover.Cover
+import io.legado.app.ui.widget.components.cover.CoilBookCover
 import io.legado.app.ui.widget.components.text.AppText
 import java.time.format.DateTimeFormatter
 
@@ -107,11 +107,13 @@ fun BookStackView(
                 coverPath = viewModel.getBookCover(name, author)
             }
             
-            Cover(
+            CoilBookCover(
+                name = name,
+                author = author,
                 path = coverPath,
                 modifier = Modifier
                     .padding(end = (index * 12).dp)
-                    .size(32.dp, 44.dp)
+                    .width(32.dp)
             )
         }
     }

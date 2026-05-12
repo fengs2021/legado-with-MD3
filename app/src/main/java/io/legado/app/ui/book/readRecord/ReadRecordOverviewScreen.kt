@@ -29,7 +29,7 @@ import io.legado.app.ui.theme.adaptiveHorizontalPadding
 import io.legado.app.ui.widget.components.AppScaffold
 import io.legado.app.ui.widget.components.button.MediumIconButton
 import io.legado.app.ui.widget.components.card.GlassCard
-import io.legado.app.ui.widget.components.cover.Cover
+import io.legado.app.ui.widget.components.cover.CoilBookCover
 import io.legado.app.ui.widget.components.heatmap.HeatmapMode
 import io.legado.app.ui.widget.components.text.AppText
 import io.legado.app.ui.widget.components.topbar.GlassMediumFlexibleTopAppBar
@@ -223,8 +223,12 @@ fun TopReadingListCard(
             .fillMaxWidth()
             .adaptiveHorizontalPadding(vertical = 8.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            AppText("阅读时长榜", style = LegadoTheme.typography.titleMedium)
+        Column(modifier = Modifier.padding(vertical = 16.dp)) {
+            AppText(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                text = "阅读时长榜",
+                style = LegadoTheme.typography.titleMedium
+            )
             Spacer(modifier = Modifier.height(8.dp))
             
             topBooks.forEachIndexed { index, book ->
@@ -237,7 +241,7 @@ fun TopReadingListCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onBookClick(book.bookName, book.bookAuthor) }
-                        .padding(vertical = 8.dp),
+                        .padding(vertical = 8.dp, horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     AppText(
@@ -247,7 +251,12 @@ fun TopReadingListCard(
                         textAlign = TextAlign.Center,
                         color = if (index < 3) LegadoTheme.colorScheme.primary else LegadoTheme.colorScheme.onSurfaceVariant
                     )
-                    Cover(path = coverPath, modifier = Modifier.size(40.dp, 56.dp))
+                    CoilBookCover(
+                        name = book.bookName,
+                        author = book.bookAuthor,
+                        path = coverPath,
+                        modifier = Modifier.width(40.dp)
+                    )
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         AppText(
@@ -264,6 +273,7 @@ fun TopReadingListCard(
                         )
                     }
                     AppText(
+                        modifier = Modifier.padding(end = 8.dp),
                         text = ReadRecordFormatter.formatDuration(book.readTime),
                         style = LegadoTheme.typography.bodySmall,
                         color = LegadoTheme.colorScheme.primary
@@ -355,10 +365,14 @@ fun CalendarDayCell(
             .background(LegadoTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center
     ) {
-        if (coverPath != null) {
-            Cover(
+        if (topBook != null) {
+            CoilBookCover(
+                name = topBook.first,
+                author = topBook.second,
                 path = coverPath,
-                modifier = Modifier.fillMaxSize().alpha(0.4f)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(0.4f)
             )
         }
         

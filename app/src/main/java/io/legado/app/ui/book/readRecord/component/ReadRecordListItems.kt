@@ -16,7 +16,7 @@ import io.legado.app.ui.book.readRecord.ReadRecordFormatter
 import io.legado.app.ui.book.readRecord.ReadRecordViewModel
 import io.legado.app.ui.book.readRecord.TimelineItem
 import io.legado.app.ui.theme.LegadoTheme
-import io.legado.app.ui.widget.components.cover.Cover
+import io.legado.app.ui.widget.components.cover.CoilBookCover
 import io.legado.app.ui.widget.components.text.AppText
 import io.legado.app.utils.StringUtils.formatFriendlyDate
 
@@ -39,7 +39,12 @@ fun LatestReadItem(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Cover(path = coverPath, modifier = Modifier.size(48.dp, 64.dp))
+        CoilBookCover(
+            name = record.bookName,
+            author = record.bookAuthor,
+            path = coverPath,
+            modifier = Modifier.size(48.dp, 64.dp)
+        )
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             AppText(
@@ -89,7 +94,12 @@ fun TimelineSessionItem(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Cover(path = coverPath, modifier = Modifier.size(40.dp, 56.dp))
+        CoilBookCover(
+            name = session.bookName,
+            author = session.bookAuthor,
+            path = coverPath,
+            modifier = Modifier.size(40.dp, 56.dp)
+        )
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             AppText(
@@ -131,7 +141,12 @@ fun ReadRecordItem(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Cover(path = coverPath, modifier = Modifier.size(40.dp, 56.dp))
+        CoilBookCover(
+            name = detail.bookName,
+            author = detail.bookAuthor,
+            path = coverPath,
+            modifier = Modifier.size(40.dp, 56.dp)
+        )
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             AppText(

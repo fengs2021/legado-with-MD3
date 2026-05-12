@@ -13,6 +13,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -78,6 +79,7 @@ fun CoilBookCover(
 
     Box(
         modifier = modifier
+            .aspectRatio(5f / 7f)
             .then(
                 if (CoverConfig.coverShowShadow) {
                     Modifier.shadow(4.dp, RoundedCornerShape(4.dp))

@@ -83,7 +83,7 @@ import io.legado.app.ui.widget.components.topbar.TopBarNavigationButton
 import io.legado.app.ui.widget.components.card.GlassCard
 import io.legado.app.ui.widget.components.card.TextCard
 import io.legado.app.ui.widget.components.checkBox.CheckboxItem
-import io.legado.app.ui.widget.components.cover.Cover
+import io.legado.app.ui.widget.components.cover.CoilBookCover
 import io.legado.app.ui.widget.components.heatmap.HEATMAP_CALENDAR_TITLE
 import io.legado.app.ui.widget.components.heatmap.HeatmapCalendarEndAction
 import io.legado.app.ui.widget.components.heatmap.HeatmapCalendarStartAction
@@ -728,7 +728,12 @@ fun LatestReadItem(
             .adaptiveHorizontalPadding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Cover(coverPath)
+        CoilBookCover(
+            name = record.bookName,
+            author = record.bookAuthor,
+            path = coverPath,
+            modifier = Modifier.width(44.dp)
+        )
 
         Spacer(modifier = Modifier.width(16.dp))
 
@@ -839,7 +844,12 @@ fun TimelineSessionItem(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Cover(coverPath)
+                CoilBookCover(
+                    name = session.bookName,
+                    author = session.bookAuthor,
+                    path = coverPath,
+                    modifier = Modifier.width(44.dp)
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 Column {
                     AppText(
@@ -889,7 +899,12 @@ fun ReadRecordItem(
             .adaptiveHorizontalPadding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Cover(coverPath)
+        CoilBookCover(
+            name = detail.bookName,
+            author = detail.bookAuthor,
+            path = coverPath,
+            modifier = Modifier.width(44.dp)
+        )
 
         Spacer(modifier = Modifier.width(16.dp))
 
@@ -1017,24 +1032,25 @@ fun ReadingSummaryCard(
             }
 
             if (bookNamesForCover.isNotEmpty()) {
-                BookStackView(coverPaths = coverPaths)
+                val combined = bookNamesForCover.zip(coverPaths)
+                BookStackView(books = combined)
             }
         }
     }
 }
 
 @Composable
-fun BookStackView(coverPaths: List<String?>) {
+fun BookStackView(books: List<Pair<Pair<String, String>, String?>>) {
     val xOffsetStep = 12.dp
-    val stackWidth = 48.dp + (xOffsetStep * (coverPaths.size - 1).coerceAtLeast(0))
+    val stackWidth = 44.dp + (xOffsetStep * (books.size - 1).coerceAtLeast(0))
 
     Box(
         modifier = Modifier
             .width(stackWidth)
-            .height(72.dp),
+            .height(64.dp),
         contentAlignment = Alignment.CenterStart
     ) {
-        coverPaths.forEachIndexed { index, path ->
+        books.forEachIndexed { index, (info, path) ->
             Box(
                 modifier = Modifier
                     .padding(start = xOffsetStep * index)
@@ -1046,7 +1062,12 @@ fun BookStackView(coverPaths: List<String?>) {
                     shape = RoundedCornerShape(4.dp),
                     color = Color.Transparent
                 ) {
-                    Cover(path = path)
+                    CoilBookCover(
+                        name = info.first,
+                        author = info.second,
+                        path = path,
+                        modifier = Modifier.width(44.dp)
+                    )
                 }
             }
         }

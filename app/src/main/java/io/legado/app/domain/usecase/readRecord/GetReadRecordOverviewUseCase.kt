@@ -69,6 +69,18 @@ class GetReadRecordOverviewUseCase {
 
         val dailyTimeData = if (period == ReadPeriod.ALL) {
             emptyList()
+        } else if (period == ReadPeriod.YEAR) {
+            val dateToTime = filteredDetails.groupBy { 
+                LocalDate.parse(it.date, DateTimeFormatter.ISO_LOCAL_DATE).with(TemporalAdjusters.firstDayOfMonth())
+            }.mapValues { it.value.sumOf { d -> d.readTime } }
+            
+            val monthList = mutableListOf<Pair<LocalDate, Long>>()
+            var curr = startDate.with(TemporalAdjusters.firstDayOfMonth())
+            while (!curr.isAfter(endDate)) {
+                monthList.add(curr to (dateToTime[curr] ?: 0L))
+                curr = curr.plusMonths(1)
+            }
+            monthList
         } else {
             val dateToTime = filteredDetails.groupBy { it.date }
                 .mapValues { it.value.sumOf { d -> d.readTime } }
