@@ -1,0 +1,136 @@
+package io.legado.app.ui.widget.components
+
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
+import io.legado.app.ui.theme.LegadoTheme
+import io.legado.app.ui.theme.ThemeResolver
+import io.legado.app.ui.widget.components.icon.AppIcon
+import io.legado.app.ui.widget.components.icon.AppIcons
+import io.legado.app.ui.widget.components.text.AppText
+import kotlinx.coroutines.CoroutineScope
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SearchBar(
+    modifier: Modifier = Modifier,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onSearch: (String) -> Unit = {},
+    placeholder: String = "搜索...",
+    leadingIcon: @Composable (() -> Unit)? = {
+        AppIcon(
+            modifier = Modifier.padding(horizontal = 12.dp),
+            imageVector = AppIcons.Search,
+            contentDescription = null
+        )
+    },
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
+    scrollState: LazyListState? = null,
+    scope: CoroutineScope = rememberCoroutineScope(),
+    trailingIcon: @Composable (() -> Unit)? = null,
+    autoFocus: Boolean = true,
+    dropdownMenu: (@Composable (onDismiss: () -> Unit) -> Unit)? = null
+) {
+    val textFieldState = rememberTextFieldState(initialText = query)
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(autoFocus) {
+        if (autoFocus) {
+            focusRequester.requestFocus()
+            // 某些情况下需要手动调用 show() 确保键盘弹出
+            keyboardController?.show()
+        }
+    }
+
+    LaunchedEffect(query) {
+        if (query != textFieldState.text.toString()) {
+            textFieldState.edit {
+                replace(0, length, query)
+            }
+        }
+    }
+
+    LaunchedEffect(textFieldState.text) {
+        snapshotFlow { textFieldState.text.toString() }
+            .collect { newText ->
+                if (newText != query) {
+                    onQueryChange(newText)
+                }
+            }
+    }
+
+    val isMiuix = ThemeResolver.isMiuixEngine(LegadoTheme.composeEngine)
+    val resolvedBackgroundColor = if (backgroundColor != Color.Unspecified) {
+        backgroundColor
+    } else {
+        if (isMiuix) MiuixTheme.colorScheme.surfaceContainer else MaterialTheme.colorScheme.surfaceContainerLow
+    }
+
+    if (isMiuix) {
+        AppDenseTextField(
+            state = textFieldState,
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .focusRequester(focusRequester),
+            placeholder = { AppText(placeholder) },
+            leadingIcon = leadingIcon,
+            trailingIcon = trailingIcon,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            onKeyboardAction = {
+                onSearch(textFieldState.text.toString())
+            },
+            lineLimits = TextFieldLineLimits.SingleLine,
+            backgroundColor = resolvedBackgroundColor,
+            miuixUseSearchBarInputField = true,
+            miuixSearchBarLabel = placeholder,
+            miuixOnSearch = onSearch,
+        )
+    } else {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp),
+            shape = RoundedCornerShape(32.dp),
+            color = resolvedBackgroundColor
+        ) {
+            AppDenseTextField(
+                state = textFieldState,
+                modifier = modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester),
+                placeholder = { AppText(placeholder) },
+                leadingIcon = leadingIcon,
+                trailingIcon = trailingIcon,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                onKeyboardAction = {
+                    onSearch(textFieldState.text.toString())
+                },
+                lineLimits = TextFieldLineLimits.SingleLine,
+                backgroundColor = Color.Transparent
+            )
+        }
+    }
+}
