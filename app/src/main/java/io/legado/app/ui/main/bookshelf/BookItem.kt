@@ -5,6 +5,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -421,7 +422,8 @@ fun BookGroupItemList(
     titleCenter: Boolean = true,
     titleMaxLines: Int = 2,
     coverShadow: Boolean = false,
-    onLongClick: (() -> Unit)? = null
+    onLongClick: (() -> Unit)? = null,
+    onBookClick: ((BookShelfItem) -> Unit)? = null
 ) {
     if (BookshelfConfig.bookshelfGroupListStyle == 2) {
         BookGroupItemHorizontalCovers(
@@ -430,7 +432,8 @@ fun BookGroupItemList(
             onClick = onClick,
             modifier = modifier,
             countText = countText,
-            onLongClick = onLongClick
+            onLongClick = onLongClick,
+            onBookClick = onBookClick
         )
         return
     }
@@ -472,7 +475,8 @@ fun BookGroupItemHorizontalCovers(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     countText: String? = null,
-    onLongClick: (() -> Unit)? = null
+    onLongClick: (() -> Unit)? = null,
+    onBookClick: ((BookShelfItem) -> Unit)? = null
 ) {
     Column {
         NormalCard(
@@ -534,6 +538,7 @@ fun BookGroupItemHorizontalCovers(
                                 .weight(1f)
                                 .aspectRatio(5f / 7f)
                                 .clip(RoundedCornerShape(4.dp))
+                                .clickable { onBookClick?.invoke(book) }
                         ) {
                             CoilBookCover(
                                 name = book.name,

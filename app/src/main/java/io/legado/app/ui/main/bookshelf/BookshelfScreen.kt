@@ -91,6 +91,7 @@ import io.legado.app.R
 import io.legado.app.base.BaseRuleEvent
 import io.legado.app.ui.about.AppLogSheet
 import io.legado.app.data.entities.BookGroup
+import io.legado.app.ui.book.group.GroupEditSheet
 import io.legado.app.ui.book.info.GroupSelectSheet
 import io.legado.app.ui.config.bookshelfConfig.BookshelfConfig
 import io.legado.app.ui.main.bookCoverSharedElementKey
@@ -743,8 +744,9 @@ fun BookshelfScreen(
                                         viewModel.setInFolderRoot(false)
                                     },
                                     onLongClick = {
-                                        viewModel.showOverlay(BookshelfOverlay.GroupManageSheet)
-                                    }
+                                        viewModel.showOverlay(BookshelfOverlay.GroupEditSheet(group.groupId))
+                                    },
+                                    onBookClick = onBookClick
                                 )
                             } else {
                                 BookGroupItemGrid(
@@ -762,7 +764,7 @@ fun BookshelfScreen(
                                         viewModel.setInFolderRoot(false)
                                     },
                                     onLongClick = {
-                                        viewModel.showOverlay(BookshelfOverlay.GroupManageSheet)
+                                        viewModel.showOverlay(BookshelfOverlay.GroupEditSheet(group.groupId))
                                     }
                                 )
                             }
@@ -1038,6 +1040,17 @@ private fun BookshelfOverlays(
     )
 
     val groups by viewModel.allGroupsFlow.collectAsStateWithLifecycle()
+
+    if (activeOverlay is BookshelfOverlay.GroupEditSheet) {
+        val editGroup = groups.firstOrNull { it.groupId == activeOverlay.groupId }
+        if (editGroup != null) {
+            GroupEditSheet(
+                show = true,
+                group = editGroup,
+                onDismissRequest = { viewModel.dismissOverlay() }
+            )
+        }
+    }
 
     GroupSelectSheet(
         show = activeOverlay == BookshelfOverlay.GroupSelectSheet,
