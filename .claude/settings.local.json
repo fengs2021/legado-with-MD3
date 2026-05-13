@@ -68,7 +68,8 @@
       "Bash(git stash *)",
       "Bash(Select-String -Pattern \"FAILED|error:\")",
       "Bash(Select-Object -First 5)",
-      "Bash(Select-String -NotMatch \"^\\\\s*$\")"
+      "Bash(Select-String -NotMatch \"^\\\\s*$\")",
+      "Bash(Select-Object -Last 20)"
     ]
   }
 }

@@ -78,7 +78,6 @@ import io.legado.app.ui.widget.components.AppLinearProgressIndicator
 import io.legado.app.ui.widget.components.AppTextField
 import io.legado.app.ui.widget.components.EmptyMessage
 import io.legado.app.ui.widget.components.alert.AppAlertDialog
-import io.legado.app.ui.widget.components.button.ConfirmDismissButtonsRow
 import io.legado.app.ui.widget.components.button.MediumIconButton
 import io.legado.app.ui.widget.components.button.SmallIconButton
 import io.legado.app.ui.widget.components.card.GlassCard
@@ -143,7 +142,18 @@ fun GroupSelectSheet(
         show = show,
         onDismissRequest = onDismissRequest,
         title = stringResource(R.string.group_select),
-        endAction = { IconButton(onClick = { editingGroup = BookGroup() }) { Icon(Icons.Default.Add, null) } }
+        startAction = {
+            MediumIconButton(
+                onClick = { editingGroup = BookGroup() },
+                imageVector = Icons.Default.Add
+            )
+        },
+        endAction = {
+            MediumIconButton(
+                onClick = { onConfirm(selectedGroupId) },
+                imageVector = Icons.Default.Check
+            )
+        }
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             LazyColumn(
@@ -184,13 +194,6 @@ fun GroupSelectSheet(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
-            ConfirmDismissButtonsRow(
-                onDismiss = onDismissRequest,
-                onConfirm = { onConfirm(selectedGroupId) },
-                dismissText = stringResource(R.string.cancel),
-                confirmText = stringResource(R.string.ok),
-            )
             Spacer(modifier = Modifier.height(12.dp))
         }
     }
