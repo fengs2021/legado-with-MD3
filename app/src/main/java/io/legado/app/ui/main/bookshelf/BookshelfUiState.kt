@@ -26,6 +26,7 @@ sealed interface BookshelfOverlay {
     data object LogSheet : BookshelfOverlay
     data object GroupMenu : BookshelfOverlay
     data object GroupSelectSheet : BookshelfOverlay
+    data class GroupEditSheet(val groupId: Long) : BookshelfOverlay
     data object BatchDownloadConfirmDialog : BookshelfOverlay
 }
 

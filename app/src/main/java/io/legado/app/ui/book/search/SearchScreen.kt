@@ -39,7 +39,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -80,6 +79,7 @@ import io.legado.app.ui.widget.components.topbar.TopBarAnimatedActionButton
 import io.legado.app.ui.widget.components.topbar.TopBarNavigationButton
 import io.legado.app.ui.widget.components.icon.AppIcon
 import io.legado.app.ui.widget.components.icon.AppIcons
+import io.legado.app.ui.book.search.ScopeSelectSheet
 import io.legado.app.ui.widget.components.list.TopFloatingStickyItem
 import io.legado.app.ui.widget.components.tabRow.AppTabRow
 import io.legado.app.ui.widget.components.text.AppText
@@ -104,7 +104,6 @@ fun SearchScreen(
     val listState = rememberLazyListState()
     val lifecycleOwner = LocalLifecycleOwner.current
     var queryInput by rememberSaveable { mutableStateOf(state.query) }
-    var scopeSheetTab by rememberSaveable { mutableIntStateOf(0) }
     var ignoreNextDebouncedQuery by rememberSaveable { mutableStateOf<String?>(null) }
     val showSuggestionPanel = state.showSuggestions
     val latestQuery by rememberUpdatedState(state.query)
@@ -125,12 +124,6 @@ fun SearchScreen(
     LaunchedEffect(state.query) {
         if (state.query != queryInput) {
             queryInput = state.query
-        }
-    }
-
-    LaunchedEffect(state.showScopeSheet, state.isSourceScope) {
-        if (state.showScopeSheet) {
-            scopeSheetTab = if (state.isSourceScope) 1 else 0
         }
     }
 
@@ -505,85 +498,19 @@ fun SearchScreen(
         }
     )
 
-    AppModalBottomSheet(
+    ScopeSelectSheet(
         show = state.showScopeSheet,
         onDismissRequest = { viewModel.onIntent(SearchIntent.SetScopeSheetVisible(false)) },
-        title = stringResource(R.string.search_select_group),
-    ) {
-        Column {
-            SelectionItemCard(
-                title = stringResource(R.string.all_source),
-                isSelected = state.isAllScope,
-                containerColor = LegadoTheme.colorScheme.surface.copy(alpha = 0.6f),
-                inSelectionMode = true,
-                onToggleSelection = {
-                    viewModel.onIntent(SearchIntent.SelectAllScope)
-                }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-            AppTabRow(
-                tabTitles = listOf(
-                    stringResource(R.string.group),
-                    stringResource(R.string.book_source),
-                ),
-                selectedTabIndex = scopeSheetTab,
-                onTabSelected = { scopeSheetTab = it },
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-
-            if (scopeSheetTab == 0) {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    items(state.enabledGroups, key = { it }) {
-                        val selected = !state.isSourceScope && state.scopeDisplayNames.contains(it)
-                        SelectionItemCard(
-                            title = it,
-                            isSelected = selected,
-                            containerColor = LegadoTheme.colorScheme.surface.copy(alpha = 0.6f),
-                            inSelectionMode = true,
-                            onToggleSelection = {
-                                viewModel.onIntent(SearchIntent.ToggleScopeGroup(it))
-                            }
-                        )
-                    }
-                }
-            } else {
-                if (state.enabledSources.isEmpty()) {
-                    Text(
-                        text = stringResource(R.string.search_empty),
-                        style = LegadoTheme.typography.bodyMedium,
-                        color = LegadoTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp),
-                    )
-                } else {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        items(state.enabledSources, key = { it.bookSourceUrl }) {
-                            val selected = state.selectedScopeSourceUrls.contains(it.bookSourceUrl)
-                            SelectionItemCard(
-                                title = it.bookSourceName,
-                                subtitle = it.bookSourceGroup?.takeIf { group -> group.isNotBlank() },
-                                containerColor = LegadoTheme.colorScheme.surface.copy(alpha = 0.6f),
-                                isSelected = selected,
-                                inSelectionMode = true,
-                                onToggleSelection = {
-                                    viewModel.onIntent(SearchIntent.ToggleScopeSource(it))
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-        }
-    }
+        isAll = state.isAllScope,
+        onSelectAll = { viewModel.onIntent(SearchIntent.SelectAllScope) },
+        groups = state.enabledGroups,
+        selectedGroups = state.scopeDisplayNames,
+        onToggleGroup = { viewModel.onIntent(SearchIntent.ToggleScopeGroup(it)) },
+        sources = state.enabledSources,
+        selectedSources = state.selectedScopeSourceUrls,
+        onToggleSource = { viewModel.onIntent(SearchIntent.ToggleScopeSource(it)) },
+        isSourceScope = state.isSourceScope
+    )
 
     AppModalBottomSheet(
         show = state.showTypeSheet,
