@@ -52,6 +52,7 @@ class CacheBookService : BaseService() {
         private const val DIAGNOSTICS_LOG_INTERVAL_MILLIS = 5_000L
         private const val MAX_IDLE_SPIN_MS = 60_000L
 
+        @Volatile
         var isRun = false
             private set
     }
@@ -183,9 +184,9 @@ class CacheBookService : BaseService() {
             admissionIdleWaiters.values.flatten().forEach { it.complete(Unit) }
             admissionIdleWaiters.clear()
         }
-        CacheBook.close(clearFailureState = false)
-        serviceCommandScope.cancel()
+        CacheBook.shutdownPreservingPaused()
         super.onDestroy()
+        serviceCommandScope.cancel()
     }
 
     private fun reconstructRequestFromIntent(intent: Intent): CacheDownloadRequest? {

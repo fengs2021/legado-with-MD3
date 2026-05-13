@@ -474,6 +474,26 @@ object CacheBook {
         updateSummary()
     }
 
+    fun shutdownPreservingPaused() {
+        isPaused = false
+        val toRemove = ArrayList<String>()
+        cacheBookMap.forEach { (bookUrl, model) ->
+            val keep = synchronized(model) {
+                model.isPaused() || model.pausedIndices().isNotEmpty()
+            }
+            if (keep) return@forEach
+            toRemove.add(bookUrl)
+            model.stop()
+        }
+        toRemove.forEach { cacheBookMap.remove(it) }
+        successDownloadCount.set(0)
+        pendingRemoveRequests.values.forEach { it.complete(false) }
+        pendingRemoveRequests.clear()
+        clearPendingAdmissions()
+        stateStore.clearRuntimeState()
+        updateSummary()
+    }
+
     fun setWorkingState(value: Boolean) {
         coordinator.setWorkingState(value)
     }
