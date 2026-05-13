@@ -4,10 +4,14 @@ import androidx.benchmark.macro.BaselineProfileMode
 import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.StartupMode
 import androidx.benchmark.macro.StartupTimingMetric
+import androidx.benchmark.macro.FrameTimingMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Direction
+import androidx.test.uiautomator.Until
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,27 +53,32 @@ class StartupBenchmarks {
 
     private fun benchmark(compilationMode: CompilationMode) {
         // The application id for the running build variant is read from the instrumentation arguments.
+        val packageName = InstrumentationRegistry.getArguments().getString("targetAppId")
+            ?: "io.legado.app"
+
         rule.measureRepeated(
-            packageName = InstrumentationRegistry.getArguments().getString("targetAppId")
-                ?: throw Exception("targetAppId not passed as instrumentation runner arg"),
-            metrics = listOf(StartupTimingMetric()),
+            packageName = packageName,
+            metrics = listOf(StartupTimingMetric(), FrameTimingMetric()),
             compilationMode = compilationMode,
             startupMode = StartupMode.COLD,
-            iterations = 10,
+            iterations = 3,
             setupBlock = {
                 pressHome()
             },
             measureBlock = {
                 startActivityAndWait()
 
-                // TODO Add interactions to wait for when your app is fully drawn.
-                // The app is fully drawn when Activity.reportFullyDrawn is called.
-                // For Jetpack Compose, you can use ReportDrawn, ReportDrawnWhen and ReportDrawnAfter
-                // from the AndroidX Activity library.
+                // 等待书架列表加载完成
+                // 我们在 BookshelfScreen 中添加了 testTag("bookshelf_list")
+                device.wait(Until.hasObject(By.res(packageName, "bookshelf_list")), 10000)
 
-                // Check the UiAutomator documentation for more information on how to
-                // interact with the app.
-                // https://d.android.com/training/testing/other-components/ui-automator
+                // 模拟交互：在书架上进行滑动，以确保 Profile 捕获到列表渲染和图片加载的路径
+                val bookshelfList = device.findObject(By.res(packageName, "bookshelf_list"))
+                bookshelfList?.apply {
+                    setGestureMargin(device.displayWidth / 10)
+                    fling(Direction.DOWN)
+                    device.waitForIdle()
+                }
             }
         )
     }

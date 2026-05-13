@@ -5,18 +5,21 @@ import android.os.Looper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -119,14 +122,17 @@ fun ThemeManageScreen(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
             modifier = Modifier.fillMaxSize(),
             contentPadding = adaptiveContentPadding(
                 top = paddingValues.calculateTopPadding(),
                 bottom = 120.dp
-            )
+            ),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item {
+            item(span = { GridItemSpan(maxLineSpan) }) {
                 SplicedColumnGroup {
                     ClickableSettingItem(
                         title = "保存当前设置",
@@ -155,12 +161,12 @@ fun ThemeManageScreen(
             }
 
             if (savedThemes.isNotEmpty()) {
-                item {
+                item(span = { GridItemSpan(maxLineSpan) }) {
                     AppText(
                         text = "已保存的主题",
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                     )
                 }
 
@@ -288,79 +294,112 @@ private fun SavedThemeItem(
 ) {
     GlassCard(
         onClick = onApply,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        cornerRadius = 20.dp
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            val previewColor = if (theme.data.themeColor != 0) {
-                Color(theme.data.themeColor)
-            } else if (theme.data.cPrimary != 0) {
-                Color(theme.data.cPrimary)
-            } else {
-                MaterialTheme.colorScheme.primary
+            val lightPrimary = if (theme.data.themeColor != 0) Color(theme.data.themeColor)
+            else if (theme.data.cPrimary != 0) Color(theme.data.cPrimary)
+            else MaterialTheme.colorScheme.primary
+
+            val darkPrimary = if (theme.data.cNPrimary != 0) Color(theme.data.cNPrimary)
+            else lightPrimary
+
+            val lightBg = if (theme.data.themeBackgroundColor != 0) Color(theme.data.themeBackgroundColor)
+            else Color(0xFFF7F2FA)
+
+            val darkBg = if (theme.data.isPureBlack) Color.Black else Color(0xFF1C1B1F)
+
+            // 预览区域
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1.2f)
+            ) {
+                // 日间行
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .background(
+                            Brush.horizontalGradient(
+                                0.5f to lightBg,
+                                0.8f to lightPrimary
+                            )
+                        )
+                ) {
+                    AppText(
+                        text = "日间",
+                        style = MaterialTheme.typography.labelMediumEmphasized,
+                        color = if (theme.data.primaryTextColor != 0) Color(theme.data.primaryTextColor).copy(alpha = 0.6f)
+                        else Color.Black.copy(alpha = 0.5f),
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(12.dp)
+                    )
+                }
+
+                // 夜间行
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .background(
+                            Brush.horizontalGradient(
+                                0.5f to darkBg,
+                                0.8f to darkPrimary
+                            )
+                        )
+                ) {
+                    AppText(
+                        text = "夜间",
+                        style = MaterialTheme.typography.labelMediumEmphasized,
+                        color = Color.White.copy(alpha = 0.5f),
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(12.dp)
+                    )
+                }
             }
 
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(previewColor)
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 AppText(
                     text = theme.name,
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1
                 )
-                val features = mutableListOf<String>()
-                features.add(
-                    when (theme.data.appTheme) {
-                        "0" -> "动态取色"
-                        "12" -> "自定义颜色"
-                        else -> "预设主题"
-                    }
-                )
-                if (theme.data.enableBlur) features.add("模糊效果")
-                if (theme.data.useFloatingBottomBar) features.add("浮动底栏")
-                AppText(
-                    text = features.joinToString(" · "),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
 
-            IconButton(onClick = onEdit) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "编辑",
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            IconButton(onClick = onExport) {
-                Icon(
-                    imageVector = Icons.Default.Share,
-                    contentDescription = "导出",
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "删除",
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.error
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "编辑",
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    IconButton(onClick = onExport, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "导出",
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "删除",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             }
         }
     }

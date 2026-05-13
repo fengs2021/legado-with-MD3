@@ -55,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -240,6 +241,7 @@ fun MainScreen(
                     val haptic = LocalHapticFeedback.current
 
                     WideNavigationRailItem(
+                        modifier = Modifier.testTag("nav_${destination.route}"),
                         railExpanded = navState.targetValue == WideNavigationRailValue.Expanded,
                         selected = selected,
                         onClick = {
@@ -308,6 +310,7 @@ fun MainScreen(
                                 MainDestination.My -> ThemeConfig.navIconMy
                             }
                             AppNavigationBarItem(
+                                modifier = Modifier.testTag("nav_${destination.route}"),
                                 selected = selected,
                                 onClick = {
                                     coroutineScope.launch { pagerState.animateScrollToPage(index) }

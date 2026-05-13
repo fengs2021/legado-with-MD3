@@ -1,4 +1,4 @@
-name: Test Build
+name: Auto Release
 
 on:
   push:
@@ -118,7 +118,7 @@ jobs:
           echo "build_number=$NEW_BUILD_NUM" >> $GITHUB_OUTPUT
           echo "commit_number=$COMMIT_COUNT" >> $GITHUB_OUTPUT
           echo "last_tag=$LAST_TAG_FOR_LOG" >> $GITHUB_OUTPUT
-          echo "is_release=$IS_RELEASE" >> $GITHUB_OUTPUT # 新的输出标志
+          echo "is_release=$IS_RELEASE" >> $GITHUB_OUTPUT # 新s的输出标志
 
   build:
     needs: prepare

@@ -2,6 +2,7 @@ package io.legado.app.ui.config.themeManage
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import io.legado.app.R
 import io.legado.app.help.config.ThemeExportData
 import io.legado.app.ui.widget.components.AppTextField
+import io.legado.app.ui.widget.components.SearchBar
 import io.legado.app.ui.widget.components.button.MediumIconButton
 import io.legado.app.ui.widget.components.dialog.ColorPickerSheet
 import io.legado.app.ui.widget.components.modalBottomSheet.AppModalBottomSheet
@@ -74,7 +76,8 @@ fun EditThemeSheet(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .navigationBarsPadding()
-                .padding(bottom = 32.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Name
             AppTextField(
@@ -84,7 +87,6 @@ fun EditThemeSheet(
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
