@@ -75,7 +75,9 @@ fun CoilBookCover(
     }
 
     val hasCustomDefault = !randomPath.isNullOrBlank()
-    var isOnlineCoverLoaded by remember(path) { mutableStateOf(false) }
+    var isOnlineCoverLoaded by remember(path) {
+        mutableStateOf(sharedCoverKey != null && finalPath != null)
+    }
 
     Box(
         modifier = modifier

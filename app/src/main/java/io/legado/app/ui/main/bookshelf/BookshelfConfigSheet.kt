@@ -180,7 +180,23 @@ fun BookshelfConfigSheet(
             AnimatedVisibility(
                 visible = layoutMode != 1
             ) {
-                val isHorizontalCovers = BookshelfConfig.bookGroupStyle == 2 && BookshelfConfig.bookshelfGroupListStyle == 2
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    CompactSwitchSettingItem(
+                        title = stringResource(R.string.show_divider_line),
+                        checked = BookshelfConfig.bookshelfShowDivider,
+                        color = LegadoTheme.colorScheme.surface,
+                        onCheckedChange = { BookshelfConfig.bookshelfShowDivider = it }
+                    )
+
+                    CompactClickableSettingItem(
+                        title = "卡片背景颜色",
+                        color = LegadoTheme.colorScheme.surface,
+                        onClick = { showColorPicker = true }
+                    )
+
+                    val isHorizontalCovers = BookshelfConfig.bookGroupStyle == 2 && BookshelfConfig.bookshelfGroupListStyle == 2
 
                     AnimatedVisibility(visible = !isHorizontalCovers) {
                         Column(
@@ -195,13 +211,6 @@ fun BookshelfConfigSheet(
                                 )
                             }
 
-                            CompactSwitchSettingItem(
-                                title = stringResource(R.string.show_divider_line),
-                                checked = BookshelfConfig.bookshelfShowDivider,
-                                color = LegadoTheme.colorScheme.surface,
-                                onCheckedChange = { BookshelfConfig.bookshelfShowDivider = it }
-                            )
-
                             val listColCount =
                                 if (isLandscape) BookshelfConfig.bookshelfLayoutListLandscape else BookshelfConfig.bookshelfLayoutListPortrait
                             CompactSliderSettingItem(
@@ -214,12 +223,6 @@ fun BookshelfConfigSheet(
                                         it.toInt()
                                     else BookshelfConfig.bookshelfLayoutListPortrait = it.toInt()
                                 }
-                            )
-
-                            CompactClickableSettingItem(
-                                title = "卡片背景颜色",
-                                color = LegadoTheme.colorScheme.surface,
-                                onClick = { showColorPicker = true }
                             )
 
                             CompactSwitchSettingItem(
@@ -282,7 +285,7 @@ fun BookshelfConfigSheet(
                             }
                         }
                     }
-
+                }
             }
 
             CompactSliderSettingItem(

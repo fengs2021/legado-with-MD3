@@ -166,7 +166,7 @@ object BookshelfConfig {
     }
 
     /**
-     * 文件夹在列表模式下的样式: 0: 默认, 1: 横排封面
+     * 文件夹在列表模式下的样式: 0: 默认, 2: 横排封面
      */
     var bookshelfGroupListStyle by prefDelegate(PreferKey.bookshelfGroupListStyle, 0)
 
