@@ -49,6 +49,7 @@ class CacheBookService : BaseService() {
     companion object {
         private const val MB = 1024L * 1024L
         private const val DIAGNOSTICS_LOG_INTERVAL_MILLIS = 5_000L
+        private const val MAX_IDLE_SPIN_MS = 60_000L
 
         var isRun = false
             private set
@@ -181,15 +182,8 @@ class CacheBookService : BaseService() {
             admissionIdleWaiters.values.flatten().forEach { it.complete(Unit) }
             admissionIdleWaiters.clear()
         }
-        serviceCommandScope.launch {
-            try {
-                serviceCommandMutex.withLock {
-                    CacheBook.close(clearFailureState = false)
-                }
-            } finally {
-                serviceCommandScope.cancel()
-            }
-        }
+        CacheBook.close(clearFailureState = false)
+        serviceCommandScope.cancel()
         super.onDestroy()
     }
 
@@ -486,14 +480,22 @@ class CacheBookService : BaseService() {
 
     private suspend fun runDownloadLoop() {
         try {
+            var lastActiveTime = System.currentTimeMillis()
             while (currentCoroutineContext().isActive) {
                 drainPendingDownloadRequests()
                 if (CacheBook.isGloballyPaused) {
-                    delay(200)
-                    continue
+                    break
+                }
+                val isActiveNow = CacheBook.isRun
+                        || hasPendingDownloadRequests()
+                        || hasAdmittingRequests()
+                if (isActiveNow) {
+                    lastActiveTime = System.currentTimeMillis()
+                } else {
+                    break
                 }
                 if (!CacheBook.isRun) {
-                    if (!hasPendingDownloadRequests() && !hasAdmittingRequests()) break
+                    if (System.currentTimeMillis() - lastActiveTime > MAX_IDLE_SPIN_MS) break
                     delay(200)
                     continue
                 }
