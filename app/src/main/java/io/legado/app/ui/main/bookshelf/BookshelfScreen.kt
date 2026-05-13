@@ -333,6 +333,21 @@ fun BookshelfScreen(
             if (isLandscape) BookshelfConfig.bookshelfLayoutListLandscape else BookshelfConfig.bookshelfLayoutListPortrait
         }
     }
+    val bookshelfFolderLayoutMode by remember {
+        derivedStateOf {
+            if (isLandscape) BookshelfConfig.bookshelfFolderLayoutModeLandscape else BookshelfConfig.bookshelfFolderLayoutModePortrait
+        }
+    }
+    val bookshelfFolderLayoutGrid by remember {
+        derivedStateOf {
+            if (isLandscape) BookshelfConfig.bookshelfFolderLayoutGridLandscape else BookshelfConfig.bookshelfFolderLayoutGridPortrait
+        }
+    }
+    val bookshelfFolderLayoutList by remember {
+        derivedStateOf {
+            if (isLandscape) BookshelfConfig.bookshelfFolderLayoutListLandscape else BookshelfConfig.bookshelfFolderLayoutListPortrait
+        }
+    }
     val currentMenuGroupId by remember {
         derivedStateOf { if (uiState.isSearch) uiState.selectedGroupId else currentTabGroupId }
     }
@@ -682,8 +697,8 @@ fun BookshelfScreen(
             ) { isRoot ->
                 if (bookGroupStyle == 2 && isRoot && !isUsingStandaloneSearchGroup) {
                     val folderColumns =
-                        if (bookshelfLayoutMode == 0) bookshelfLayoutList else bookshelfLayoutGrid
-                    val isGridMode = bookshelfLayoutMode != 0
+                        if (bookshelfFolderLayoutMode == 0) bookshelfFolderLayoutList else bookshelfFolderLayoutGrid
+                    val isGridMode = bookshelfFolderLayoutMode != 0
                     FastScrollLazyVerticalGrid(
                         columns = GridCells.Fixed(folderColumns.coerceAtLeast(1)),
                         modifier = Modifier
@@ -712,7 +727,7 @@ fun BookshelfScreen(
                             } else {
                                 null
                             }
-                            if (bookshelfLayoutMode == 0) {
+                            if (bookshelfFolderLayoutMode == 0) {
                                 BookGroupItemList(
                                     group = group,
                                     previewBooks = uiState.groupPreviews[group.groupId]

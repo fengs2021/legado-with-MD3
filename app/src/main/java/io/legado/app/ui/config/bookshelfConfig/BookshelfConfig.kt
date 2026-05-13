@@ -124,6 +124,36 @@ object BookshelfConfig {
     var bookshelfLayoutListLandscape by prefDelegate(PreferKey.bookshelfLayoutListLandscape, 1)
 
     /**
+     * 文件夹竖屏布局模式: 0:列表, 1:网格
+     */
+    var bookshelfFolderLayoutModePortrait by prefDelegate(PreferKey.bookshelfFolderLayoutModePortrait, 1)
+
+    /**
+     * 文件夹竖屏网格列数
+     */
+    var bookshelfFolderLayoutGridPortrait by prefDelegate(PreferKey.bookshelfFolderLayoutGridPortrait, 3)
+
+    /**
+     * 文件夹横屏布局模式: 0:列表, 1:网格
+     */
+    var bookshelfFolderLayoutModeLandscape by prefDelegate(PreferKey.bookshelfFolderLayoutModeLandscape, 1)
+
+    /**
+     * 文件夹横屏网格列数
+     */
+    var bookshelfFolderLayoutGridLandscape by prefDelegate(PreferKey.bookshelfFolderLayoutGridLandscape, 7)
+
+    /**
+     * 文件夹竖屏列表列数
+     */
+    var bookshelfFolderLayoutListPortrait by prefDelegate(PreferKey.bookshelfFolderLayoutListPortrait, 1)
+
+    /**
+     * 文件夹横屏列表列数
+     */
+    var bookshelfFolderLayoutListLandscape by prefDelegate(PreferKey.bookshelfFolderLayoutListLandscape, 1)
+
+    /**
      * 网格模式布局样式: 0:标准, 1:紧凑, 2:仅封面
      */
     var bookshelfGridLayout by prefDelegate(PreferKey.bookshelfGridLayout, 0)
