@@ -89,18 +89,22 @@ fun AppScaffold(
                         containerColor = miuixContainerColor,
                         contentWindowInsets = contentWindowInsets
                     ) { paddingValues ->
-                        val topPadding = PaddingValues(top = paddingValues.calculateTopPadding())
+                        val scaffoldPadding = if (ThemeConfig.useFloatingBottomBar) {
+                            PaddingValues(top = paddingValues.calculateTopPadding())
+                        } else {
+                            paddingValues
+                        }
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .responsiveHazeSource(hazeState)
                                 .then(
                                     if (contentDrawsBehindBars) Modifier
-                                    else Modifier.padding(topPadding)
+                                    else Modifier.padding(scaffoldPadding)
                                 )
                         ) {
                             content(
-                                if (contentDrawsBehindBars) topPadding
+                                if (contentDrawsBehindBars) scaffoldPadding
                                 else PaddingValues(0.dp)
                             )
                         }
@@ -124,18 +128,22 @@ fun AppScaffold(
                         contentColor = contentColor,
                         contentWindowInsets = contentWindowInsets
                     ) { paddingValues ->
-                        val topPadding = PaddingValues(top = paddingValues.calculateTopPadding())
+                        val scaffoldPadding = if (ThemeConfig.useFloatingBottomBar) {
+                            PaddingValues(top = paddingValues.calculateTopPadding())
+                        } else {
+                            paddingValues
+                        }
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .responsiveHazeSource(hazeState)
                                 .then(
                                     if (contentDrawsBehindBars) Modifier
-                                    else Modifier.padding(topPadding)
+                                    else Modifier.padding(scaffoldPadding)
                                 )
                         ) {
                             content(
-                                if (contentDrawsBehindBars) topPadding
+                                if (contentDrawsBehindBars) scaffoldPadding
                                 else PaddingValues(0.dp)
                             )
                         }
