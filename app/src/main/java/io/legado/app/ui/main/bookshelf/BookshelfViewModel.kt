@@ -710,7 +710,9 @@ class BookshelfViewModel(
     fun refreshBooks(books: List<BookShelfItem>) {
         if (isRefreshingFlow.value) return
         isRefreshingFlow.value = true
-        enqueueTocUpdate(books, resetRefreshWhenIdle = true)
+        val limit = BookshelfConfig.bookshelfRefreshingLimit
+        val list = if (limit > 0) books.take(limit) else books
+        enqueueTocUpdate(list, resetRefreshWhenIdle = true)
     }
 
     fun startDraggingBooks(books: List<BookShelfItem>) {
@@ -761,7 +763,9 @@ class BookshelfViewModel(
     }
 
     fun upToc(books: List<BookShelfItem>) {
-        enqueueTocUpdate(books, resetRefreshWhenIdle = false)
+        val limit = BookshelfConfig.bookshelfRefreshingLimit
+        val list = if (limit > 0) books.take(limit) else books
+        enqueueTocUpdate(list, resetRefreshWhenIdle = false)
     }
 
     private fun enqueueTocUpdate(

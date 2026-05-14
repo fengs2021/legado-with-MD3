@@ -289,6 +289,13 @@ fun BookshelfConfigSheet(
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     CompactSwitchSettingItem(
+                                        title = "显示最新章节",
+                                        checked = BookshelfConfig.bookshelfShowLatestChapter,
+                                        color = LegadoTheme.colorScheme.surface,
+                                        onCheckedChange = { BookshelfConfig.bookshelfShowLatestChapter = it }
+                                    )
+
+                                    CompactSwitchSettingItem(
                                         title = "显示简介",
                                         checked = BookshelfConfig.bookshelfShowIntro,
                                         color = LegadoTheme.colorScheme.surface,

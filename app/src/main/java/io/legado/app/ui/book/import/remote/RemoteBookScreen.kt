@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -44,8 +45,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import io.legado.app.ui.widget.components.AppPullToRefresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -84,6 +84,7 @@ import io.legado.app.ui.widget.components.topbar.TopBarActionButton
 import io.legado.app.ui.widget.components.card.GlassCard
 import io.legado.app.ui.widget.components.card.SelectionItemCard
 import io.legado.app.ui.widget.components.card.TextCard
+import io.legado.app.ui.widget.components.icon.AppIcon
 import io.legado.app.ui.widget.components.list.ListScaffold
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenuItem
 import io.legado.app.ui.widget.components.modalBottomSheet.AppModalBottomSheet
@@ -303,7 +304,7 @@ fun RemoteBookScreen(
             onSelectInvert = { viewModel.dispatch(RemoteBookIntent.SelectInvert) },
             primaryAction = ActionItem(
                 text = "添加至书架",
-                icon = { Icon(Icons.Default.CloudDownload, null) },
+                icon = Icons.Default.CloudDownload,
                 onClick = {
                     val selectedBooks = uiState.items
                         .filter { it.id in uiState.selectedIds }
@@ -316,18 +317,16 @@ fun RemoteBookScreen(
         ),
         onAddClick = null,
     ) { paddingValues ->
-        val pullToRefreshState = rememberPullToRefreshState()
-        PullToRefreshBox(
+        AppPullToRefresh(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
             isRefreshing = uiState.isLoading,
-            state = pullToRefreshState,
-            onRefresh = { viewModel.dispatch(RemoteBookIntent.Refresh) }
+            onRefresh = { viewModel.dispatch(RemoteBookIntent.Refresh) },
         ) {
             if (uiState.items.isEmpty()) {
                 if (uiState.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    CircularProgressIndicator(modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center))
                 } else {
                     EmptyMessage(
                         modifier = Modifier

@@ -307,6 +307,7 @@ object PreferKey {
     const val showBookIntro = "showBookIntro"
     const val bookshelfShowIntro = "bookshelfShowIntro"
     const val bookshelfShowTag = "bookshelfShowTag"
+    const val bookshelfShowLatestChapter = "bookshelfShowLatestChapter"
     const val bookshelfIntroMaxLines = "bookshelfIntroMaxLines"
     const val sliderVibrator = "sliderVibrator"
     const val selectVibrator = "selectVibrator"

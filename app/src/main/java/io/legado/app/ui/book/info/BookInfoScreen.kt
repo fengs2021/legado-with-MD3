@@ -45,9 +45,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import io.legado.app.ui.widget.components.AppPullToRefresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -155,7 +153,6 @@ private fun BookInfoScreenContent(
         M3GlassScrollBehavior(TopAppBarDefaults.exitUntilCollapsedScrollBehavior())
     }
     val listState = rememberLazyListState()
-    val pullState = rememberPullToRefreshState()
     var showMenu by rememberSaveable { mutableStateOf(false) }
 
     AppScaffold(
@@ -194,22 +191,10 @@ private fun BookInfoScreenContent(
         } else {
             Box(modifier = Modifier.fillMaxSize()) {
                 BookInfoBackdrop(book)
-                PullToRefreshBox(
+                AppPullToRefresh(
                     modifier = Modifier.fillMaxSize(),
-                    state = pullState,
                     isRefreshing = state.isTocLoading,
                     onRefresh = { onIntent(BookInfoIntent.MenuAction(BookInfoMenuAction.Refresh)) },
-                    indicator = {
-                        PullToRefreshDefaults.LoadingIndicator(
-                            state = pullState,
-                            isRefreshing = state.isTocLoading,
-                            containerColor = LegadoTheme.colorScheme.surfaceContainerHigh,
-                            color = LegadoTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .padding(top = paddingValues.calculateTopPadding())
-                        )
-                    }
                 ) {
                     LazyColumn(
                         state = listState,

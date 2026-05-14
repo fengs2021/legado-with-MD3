@@ -42,9 +42,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import io.legado.app.ui.widget.components.AppPullToRefresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -136,7 +134,6 @@ fun ExploreShowScreen(
     }
 
     val isRefreshing by viewModel.isRefreshing.collectAsState()
-    val pullToRefreshState = rememberPullToRefreshState()
 
     val hazeState = remember { HazeState() }
     val shouldLoadMoreList = remember {
@@ -409,20 +406,10 @@ fun ExploreShowScreen(
             )
         }
     ) { paddingValues ->
-        PullToRefreshBox(
+        AppPullToRefresh(
             modifier = Modifier.fillMaxSize(),
             isRefreshing = isRefreshing,
-            state = pullToRefreshState,
             onRefresh = { viewModel.loadMore(isRefresh = true) },
-            indicator = {
-                PullToRefreshDefaults.LoadingIndicator(
-                    state = pullToRefreshState,
-                    isRefreshing = isRefreshing,
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = paddingValues.calculateTopPadding())
-                )
-            }
         ) {
             Crossfade(
                 targetState = isGridMode,

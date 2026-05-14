@@ -118,37 +118,12 @@ fun ExploreScreen(
         }
     }
 
-    val expandedHeader = remember(uiState.expandedId, uiState.listItems) {
-        val expandedId = uiState.expandedId ?: return@remember null
-        val headerIndex = uiState.listItems.indexOfFirst {
-            it is ExploreListItem.Header && it.source.bookSourceUrl == expandedId
-        }
-        val headerItem = uiState.listItems.getOrNull(headerIndex) as? ExploreListItem.Header
-        if (headerItem != null) {
-            ExpandedExploreHeader(
-                source = headerItem.source,
-                headerIndex = headerIndex,
-                contentRowCount = uiState.listItems.count {
-                    it is ExploreListItem.KindRow && it.sourceUrl == expandedId
-                }
-            )
-        } else {
-            null
-        }
-    }
-
-    LaunchedEffect(expandedHeader?.headerIndex) {
-        expandedHeader?.let { listState.animateScrollToItem(it.headerIndex) }
-    }
-
-    val stickyHeaderSource by remember(expandedHeader) {
+    val stickyHeaderSource by remember(uiState.listItems, uiState.items) {
         derivedStateOf {
-            val header = expandedHeader ?: return@derivedStateOf null
-            val lastContentIndex = header.headerIndex + header.contentRowCount
-            val firstVisible = listState.firstVisibleItemIndex
-
-            if (firstVisible in (header.headerIndex + 1)..lastContentIndex) {
-                header.source
+            val firstIndex = listState.firstVisibleItemIndex
+            val item = uiState.listItems.getOrNull(firstIndex)
+            if (item is ExploreListItem.KindRow) {
+                uiState.items.find { it.bookSourceUrl == item.sourceUrl }
             } else {
                 null
             }
@@ -292,8 +267,9 @@ fun ExploreScreen(
                     verticalPadding = 8.dp,
                     onClick = {
                         scope.launch {
-                            val index =
-                                uiState.items.indexOfFirst { it.bookSourceUrl == item.bookSourceUrl }
+                            val index = uiState.listItems.indexOfFirst {
+                                it is ExploreListItem.Header && it.source.bookSourceUrl == item.bookSourceUrl
+                            }
                             if (index >= 0) listState.animateScrollToItem(index)
                         }
                     }
@@ -317,11 +293,6 @@ fun ExploreScreen(
     )
 }
 
-private data class ExpandedExploreHeader(
-    val source: BookSourcePart,
-    val headerIndex: Int,
-    val contentRowCount: Int
-)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

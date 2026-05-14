@@ -33,8 +33,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import io.legado.app.ui.widget.components.AppPullToRefresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -132,17 +131,15 @@ fun RssArticlesPage(
         loadState.errorMessage?.takeIf { it.isNotBlank() }?.let(context::toastOnUi)
     }
 
-    val refreshState = rememberPullToRefreshState()
     val contentPadding = adaptiveContentPadding(
         top = paddingValues.calculateTopPadding(),
         bottom = 120.dp
     )
 
-    PullToRefreshBox(
+    AppPullToRefresh(
         isRefreshing = loadState.isRefreshing,
         onRefresh = { rssSource?.let(viewModel::loadArticles) },
-        state = refreshState,
-        modifier = modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize(),
     ) {
         when (layout) {
             RssArticleLayout.List, RssArticleLayout.LargeCard -> {

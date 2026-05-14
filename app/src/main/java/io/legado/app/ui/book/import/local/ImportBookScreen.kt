@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -35,8 +36,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import io.legado.app.ui.widget.components.AppPullToRefresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -178,31 +178,29 @@ private fun ImportBookContent(
             onSelectInvert = onSelectInvert,
             primaryAction = ActionItem(
                 text = stringResource(R.string.add_to_bookshelf),
-                icon = { Icon(Icons.Default.CloudDownload, null) },
+                icon = Icons.Default.CloudDownload,
                 onClick = onAddToBookshelf
             ),
             secondaryActions = listOf(
                 ActionItem(
                     text = stringResource(R.string.delete),
-                    icon = { Icon(Icons.Default.Delete, null) },
+                    icon = Icons.Default.Delete,
                     onClick = onDeleteSelection
                 )
             )
         ),
         onAddClick = null
     ) { paddingValues ->
-        val refreshState = rememberPullToRefreshState()
-        PullToRefreshBox(
+        AppPullToRefresh(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
             isRefreshing = state.isLoading,
-            state = refreshState,
-            onRefresh = onScanFolder
+            onRefresh = onScanFolder,
         ) {
             when {
                 state.items.isEmpty() && state.isLoading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    CircularProgressIndicator(modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center))
                 }
 
                 state.items.isEmpty() -> {

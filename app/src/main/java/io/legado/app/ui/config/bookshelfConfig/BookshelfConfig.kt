@@ -92,6 +92,13 @@ object BookshelfConfig {
     val bookshelfShowTagState: State<Boolean> get() = _bookshelfShowTag.state
 
     /**
+     * 是否显示最新章节
+     */
+    private val _bookshelfShowLatestChapter = prefStateDelegate(PreferKey.bookshelfShowLatestChapter, true)
+    var bookshelfShowLatestChapter by _bookshelfShowLatestChapter
+    val bookshelfShowLatestChapterState: State<Boolean> get() = _bookshelfShowLatestChapter.state
+
+    /**
      * 列表模式下简介显示行数 (0为显示全部)
      */
     private val _bookshelfIntroMaxLines = prefStateDelegate(PreferKey.bookshelfIntroMaxLines, 0)

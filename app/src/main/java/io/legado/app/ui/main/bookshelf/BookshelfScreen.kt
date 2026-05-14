@@ -132,6 +132,7 @@ import io.legado.app.ui.widget.components.card.NormalCard
 import io.legado.app.ui.widget.components.card.TextCard
 import io.legado.app.ui.widget.components.divider.PillHeaderDivider
 import io.legado.app.ui.widget.components.filePicker.FilePickerSheet
+import io.legado.app.ui.widget.components.icon.AppIcon
 import io.legado.app.ui.widget.components.icon.AppIcons
 import io.legado.app.ui.widget.components.importComponents.SourceInputDialog
 import io.legado.app.ui.widget.components.lazylist.FastScrollLazyVerticalGrid
@@ -1061,7 +1062,7 @@ fun BookshelfScreen(
                     onSelectInvert = { viewModel.invertVisibleSelection() },
                     primaryAction = ActionItem(
                         text = stringResource(R.string.action_download),
-                        icon = { Icon(Icons.Default.Download, contentDescription = null) },
+                        icon = Icons.Default.Download,
                         onClick = {
                             if (selectedBookUrls.isNotEmpty()) {
                                 viewModel.showOverlay(BookshelfOverlay.BatchDownloadConfirmDialog)
@@ -1071,7 +1072,7 @@ fun BookshelfScreen(
                     secondaryActions = listOf(
                         ActionItem(
                             text = stringResource(R.string.move_to_group),
-                            icon = { Icon(Icons.Default.Bookmarks, contentDescription = null) },
+                            icon = Icons.Default.Bookmarks,
                             onClick = {
                                 if (selectedBookUrls.isNotEmpty()) {
                                     viewModel.showOverlay(BookshelfOverlay.GroupSelectSheet)

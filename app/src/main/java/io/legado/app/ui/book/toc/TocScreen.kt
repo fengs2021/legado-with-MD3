@@ -108,6 +108,7 @@ import io.legado.app.ui.widget.components.card.NormalCard
 import io.legado.app.ui.widget.components.card.TextCard
 import io.legado.app.ui.widget.components.divider.PillDivider
 import io.legado.app.ui.widget.components.divider.PillHeaderDivider
+import io.legado.app.ui.widget.components.icon.AppIcon
 import io.legado.app.ui.widget.components.lazylist.FastScrollLazyColumn
 import io.legado.app.ui.widget.components.list.TopFloatingStickyItem
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenu
@@ -244,17 +245,17 @@ fun TocScreen(
         listOf(
             ActionItem(
                 text = "反选",
-                icon = { Icon(Icons.Default.Refresh, contentDescription = null) },
+                icon = Icons.Default.Refresh,
                 onClick = { viewModel.invertSelection() }
             ),
             ActionItem(
                 text = "选择后续",
-                icon = { Icon(Icons.Default.ExpandMore, contentDescription = null) },
+                icon = Icons.Default.ExpandMore,
                 onClick = { viewModel.selectFromLast() }
             ),
             ActionItem(
                 text = "添加书签",
-                icon = { Icon(Icons.Default.BookmarkAdd, contentDescription = null) },
+                icon = Icons.Default.BookmarkAdd,
                 onClick = { viewModel.addBookmarksForSelected() }
             )
         )
@@ -577,7 +578,7 @@ fun TocScreen(
                     onSelectInvert = { viewModel.invertSelection() },
                     primaryAction = ActionItem(
                         text = "下载已选 (${state.selectedIds.size})",
-                        icon = { Icon(Icons.Default.Download, null) },
+                        icon = Icons.Default.Download,
                         onClick = { viewModel.downloadSelected() }
                     ),
                     secondaryActions = selectionSecondaryActions

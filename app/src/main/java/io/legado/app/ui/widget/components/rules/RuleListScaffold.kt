@@ -106,7 +106,7 @@ fun <T> RuleListScaffold(
             onSelectInvert = onSelectInvert,
             primaryAction = ActionItem(
                 text = stringResource(R.string.delete),
-                icon = { Icon(Icons.Default.Delete, null) },
+                icon = Icons.Default.Delete,
                 onClick = { showDeleteConfirmDialog = true }
             ),
             secondaryActions = selectionSecondaryActions
