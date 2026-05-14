@@ -17,6 +17,7 @@ import io.legado.app.ui.config.otherConfig.OtherConfig
 import io.legado.app.utils.LogUtils
 import io.legado.app.utils.onEachParallel
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
@@ -34,6 +35,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
@@ -180,16 +182,14 @@ object CacheBook {
         _downloadSummaryFlow.value = buildSummary(stats)
     }
 
-    @Synchronized
-    fun getOrCreate(bookUrl: String): CacheBookModel? {
-        val book = appDb.bookDao.getBook(bookUrl) ?: return null
-        val source = appDb.bookSourceDao.getBookSource(book.origin) ?: return null
-        return getOrCreate(source, book)
+    suspend fun getOrCreate(bookUrl: String): CacheBookModel? = withContext(Dispatchers.IO) {
+        val book = appDb.bookDao.getBook(bookUrl) ?: return@withContext null
+        val source = appDb.bookSourceDao.getBookSource(book.origin) ?: return@withContext null
+        getOrCreate(source, book)
     }
 
     @Synchronized
     fun getOrCreate(bookSource: BookSource, book: Book): CacheBookModel {
-        updateBookSource(bookSource)
         cacheBookMap[book.bookUrl]?.let { model ->
             model.bookSource = bookSource
             model.book = book
@@ -202,14 +202,16 @@ object CacheBook {
     }
 
     private fun updateBookSource(newBookSource: BookSource) {
-        cacheBookMap.forEach { (_, model) ->
-            if (model.bookSource.bookSourceUrl == newBookSource.bookSourceUrl) {
+        // 只有在必要时才更新，且避免在 getOrCreate 中高频调用
+        val sourceUrl = newBookSource.bookSourceUrl
+        cacheBookMap.values.forEach { model ->
+            if (model.bookSource.bookSourceUrl == sourceUrl && model.bookSource != newBookSource) {
                 model.bookSource = newBookSource
             }
         }
     }
 
-    fun start(context: Context, book: Book, selectedIndices: List<Int>) {
+    suspend fun start(context: Context, book: Book, selectedIndices: List<Int>) {
         start(
             context = context,
             request = CacheDownloadRequest(
@@ -220,7 +222,7 @@ object CacheBook {
         )
     }
 
-    fun start(context: Context, book: Book, startIndex: Int, endIndex: Int) {
+    suspend fun start(context: Context, book: Book, startIndex: Int, endIndex: Int) {
         start(
             context = context,
             request = CacheDownloadRequest(
@@ -241,19 +243,28 @@ object CacheBook {
         }
     }
 
-    fun start(context: Context, requests: List<CacheDownloadRequest>) {
-        requests.asSequence()
-            .filter { it.hasValidSelection() }
-            .filter { request ->
-                appDb.bookDao.getBook(request.bookUrl)?.isLocal != true
+    suspend fun start(context: Context, requests: List<CacheDownloadRequest>) = withContext(Dispatchers.IO) {
+        val validRequests = requests.filter { it.hasValidSelection() }
+        if (validRequests.isEmpty()) return@withContext
+        
+        val urls = validRequests.map { it.bookUrl }.toSet()
+        val localBookUrls = appDb.bookDao.getCacheableBooks(urls)
+            .filter { it.isLocal }
+            .map { it.bookUrl }
+            .toSet()
+
+        val finalRequests = validRequests.filterNot { it.bookUrl in localBookUrls }
+        if (finalRequests.isEmpty()) return@withContext
+
+        isPaused = false
+        // 如果请求较多，可以通过 Intent 传递一个特殊的标志让 Service 自己去检查队列，
+        // 或者分批发送。这里我们先简单处理，但确保不在主线程做数据库查询。
+        finalRequests.forEach { request ->
+            startCacheBookService(context) {
+                action = IntentAction.start
+                putRequestExtras(request)
             }
-            .forEach { request ->
-                isPaused = false
-                startCacheBookService(context) {
-                    action = IntentAction.start
-                    putRequestExtras(request)
-                }
-            }
+        }
     }
 
     private fun android.content.Intent.putRequestExtras(request: CacheDownloadRequest) {

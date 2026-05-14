@@ -150,7 +150,7 @@ class CacheBookService : BaseService() {
                         serviceCommandMutex.withLock {
                             CacheBook.pauseAllFromService()
                             notificationContent = CacheBook.downloadSummary
-                            upCacheBookNotification()
+                            upCacheBookNotification(force = true)
                         }
                     }
                 }
@@ -160,7 +160,7 @@ class CacheBookService : BaseService() {
                             CacheBook.resumeFromService()
                             ensureDownloadJob()
                             notificationContent = CacheBook.downloadSummary
-                            upCacheBookNotification()
+                            upCacheBookNotification(force = true)
                         }
                     }
                 }
@@ -364,7 +364,8 @@ class CacheBookService : BaseService() {
         }
 
         notificationContent = CacheBook.downloadSummary
-        upCacheBookNotification()
+        // 移除这里的直接调用，依靠 onCreate 的循环更新
+        // upCacheBookNotification()
     }
 
     private fun AdmissionRequest.isCurrent(): Boolean {
@@ -521,7 +522,13 @@ class CacheBookService : BaseService() {
         }
     }
 
-    private fun upCacheBookNotification() {
+    private var lastNotificationTime = 0L
+
+    private fun upCacheBookNotification(force: Boolean = false) {
+        val now = System.currentTimeMillis()
+        if (!force && now - lastNotificationTime < 500L) return
+        lastNotificationTime = now
+
         val total = CacheBook.totalCount
         val progress = CacheBook.completedCount
         val pendingBookCount = synchronized(admissionQueue) { admissionQueue.size }
