@@ -12,6 +12,7 @@ import kotlinx.collections.immutable.persistentSetOf
 
 @Stable
 data class BookshelfGroupSelectorState(
+    val isInitialLoading: Boolean = true,
     val groups: ImmutableList<BookGroupUi> = persistentListOf(),
     val selectedGroupIndex: Int = 0,
     val selectedGroupId: Long = BookGroup.IdAll
@@ -37,6 +38,7 @@ data class BookshelfUiState(
     override val searchKey: String = "",
     override val isSearch: Boolean = false,
     override val isLoading: Boolean = false,
+    val isInitialLoading: Boolean = true,
     val groups: ImmutableList<BookGroupUi> = persistentListOf(),
     val allGroups: ImmutableList<BookGroupUi> = persistentListOf(),
     val groupPreviews: ImmutableMap<Long, ImmutableList<BookShelfItem>> = persistentMapOf(),

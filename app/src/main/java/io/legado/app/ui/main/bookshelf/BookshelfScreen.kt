@@ -262,15 +262,17 @@ fun BookshelfScreen(
                 )
             }
         ) { paddingValues ->
-            EmptyMessage(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(
-                        top = paddingValues.calculateTopPadding(),
-                        bottom = 120.dp
-                    ),
-                messageResId = R.string.bookshelf_empty
-            )
+            if (!uiState.isInitialLoading) {
+                EmptyMessage(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(
+                            top = paddingValues.calculateTopPadding(),
+                            bottom = 120.dp
+                        ),
+                    messageResId = R.string.bookshelf_empty
+                )
+            }
         }
         return
     }
@@ -1250,7 +1252,7 @@ fun BookshelfPage(
                 buttonText = stringResource(R.string.global_search),
                 onButtonClick = onGlobalSearch
             )
-        } else {
+        } else if (!uiState.isInitialLoading) {
             EmptyMessage(
                 modifier = Modifier
                     .fillMaxSize()

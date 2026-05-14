@@ -77,10 +77,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
@@ -117,6 +120,7 @@ class BookshelfViewModel(
     private val bookGroupStyleFlow = MutableStateFlow(BookshelfConfig.bookGroupStyle)
     private val draggingBooksFlow = MutableStateFlow<List<BookShelfItem>?>(null)
     private val pendingSavedBooksFlow = MutableStateFlow<List<BookShelfItem>?>(null)
+    private val isInitialLoadingFlow = MutableStateFlow(true)
 
     private data class BookshelfSortConfig(
         val sort: Int,
@@ -156,6 +160,7 @@ class BookshelfViewModel(
     val events = _eventChannel.receiveAsFlow()
 
     val groupsFlow: StateFlow<List<BookGroup>> = bookGroupRepository.flowShow()
+        .onEach { isInitialLoadingFlow.value = false }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val allGroupsFlow: StateFlow<List<BookGroup>> = bookGroupRepository.flowAll()
@@ -363,18 +368,23 @@ class BookshelfViewModel(
         )
     }
 
+    private val groupPreviewsStateFlow = MutableStateFlow(
+        GroupPreviewState(persistentMapOf(), persistentMapOf(), 0)
+    )
+
+    private val allGroupBooksStateFlow = MutableStateFlow<ImmutableMap<Long, ImmutableList<BookShelfItem>>>(
+        persistentMapOf()
+    )
+
     private val dataStateFlow = combine(
-        combine(
-            booksFlow,
-            groupsFlow,
-            allGroupsFlow,
-            groupPreviewsFlow,
-            internalStateFlow
-        ) { books, groups, allGroups, previews, internal ->
-            BookshelfDataCore(books, groups, allGroups, previews, internal)
-        },
-        allGroupBooksImmutableFlow
-    ) { core, allGroupBooks ->
+        booksFlow,
+        groupsFlow,
+        allGroupsFlow,
+        groupPreviewsStateFlow,
+        internalStateFlow
+    ) { books, groups, allGroups, previews, internal ->
+        BookshelfDataCore(books, groups, allGroups, previews, internal)
+    }.combine(allGroupBooksStateFlow) { core, allGroupBooks ->
         BookshelfDataState(
             books = core.books,
             groups = core.groups.map { it.toBookGroupUi() },
@@ -405,8 +415,9 @@ class BookshelfViewModel(
     val uiState: StateFlow<BookshelfUiState> = combine(
         dataStateFlow,
         interactionStateFlow,
-        visibleBooksFlow
-    ) { data, interaction, filteredBooks ->
+        visibleBooksFlow,
+        isInitialLoadingFlow
+    ) { data, interaction, filteredBooks, isInitialLoading ->
         val books = data.books
         val groups = data.groups
         val allGroups = data.allGroups
@@ -429,6 +440,7 @@ class BookshelfViewModel(
         BookshelfUiState(
             items = filteredBooks.toImmutableList(),
             selectedIds = selectedIds.toImmutableSet(),
+            isInitialLoading = isInitialLoading,
             groups = groups.toImmutableList(),
             allGroups = allGroups.toImmutableList(),
             groupPreviews = previews.previews,
@@ -485,8 +497,19 @@ class BookshelfViewModel(
                 }
         }
 
-        if (BookshelfConfig.autoRefreshBook) {
-            upAllBookToc()
+        viewModelScope.launch {
+            groupPreviewsFlow.collect { groupPreviewsStateFlow.value = it }
+        }
+        viewModelScope.launch {
+            allGroupBooksImmutableFlow.collect { allGroupBooksStateFlow.value = it }
+        }
+
+        viewModelScope.launch {
+            isInitialLoadingFlow.filter { !it }.collect {
+                if (BookshelfConfig.autoRefreshBook) {
+                    upAllBookToc()
+                }
+            }
         }
     }
 
