@@ -56,6 +56,9 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -241,7 +244,9 @@ fun MainScreen(
                     val haptic = LocalHapticFeedback.current
 
                     WideNavigationRailItem(
-                        modifier = Modifier.testTag("nav_${destination.route}"),
+                        modifier = Modifier.semantics(mergeDescendants = true) {
+                            contentDescription = "nav_${destination.route}"
+                        },
                         railExpanded = navState.targetValue == WideNavigationRailValue.Expanded,
                         selected = selected,
                         onClick = {
@@ -310,7 +315,9 @@ fun MainScreen(
                                 MainDestination.My -> ThemeConfig.navIconMy
                             }
                             AppNavigationBarItem(
-                                modifier = Modifier.testTag("nav_${destination.route}"),
+                                modifier = Modifier.semantics(mergeDescendants = true) {
+                                    contentDescription = "nav_${destination.route}"
+                                },
                                 selected = selected,
                                 onClick = {
                                     coroutineScope.launch { pagerState.animateScrollToPage(index) }
@@ -457,7 +464,11 @@ fun MainScreen(
                                             pagerState.animateScrollToPage(index)
                                         }
                                     },
-                                    modifier = Modifier.defaultMinSize(minWidth = 76.dp)
+                                    modifier = Modifier
+                                        .defaultMinSize(minWidth = 76.dp)
+                                        .semantics(mergeDescendants = true) {
+                                            contentDescription = "nav_${destination.route}"
+                                        }
                                 ) {
                                     NavigationIcon(
                                         destination = destination,

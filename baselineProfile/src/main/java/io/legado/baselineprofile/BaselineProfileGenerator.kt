@@ -30,36 +30,41 @@ class BaselineProfileGenerator {
             packageName = packageName,
             includeInStartupProfile = true
         ) {
-            // 1. 启动应用
             pressHome()
             startActivityAndWait()
 
-            // 2. 等待书架加载 (我们在 BookshelfScreen 中添加了 ReportDrawnWhen)
-            // 等待书架列表 testTag 出现
-            device.wait(Until.hasObject(By.res(packageName, "bookshelf_list")), 10000)
+            val bookshelfSelector = By.desc("bookshelf_list")
+            device.wait(Until.hasObject(bookshelfSelector), 10000)
 
-            // 3. 模拟滑动书架 (优化列表渲染性能)
-            val bookshelf = device.findObject(By.res(packageName, "bookshelf_list"))
-            bookshelf?.apply {
-                setGestureMargin(device.displayWidth / 10)
-                fling(Direction.DOWN)
-                device.waitForIdle()
-                fling(Direction.UP)
-                device.waitForIdle()
+            device.waitForIdle()
+            Thread.sleep(2000)
+
+            val screenWidth = device.displayWidth
+            val screenHeight = device.displayHeight
+            val startX = screenWidth / 2
+            val startY = (screenHeight * 0.75).toInt()
+            val endY = (screenHeight * 0.25).toInt()
+
+            repeat(3) {
+                device.swipe(startX, startY, startX, endY, 25)
+                Thread.sleep(1000)
             }
 
-            // 4. 遍历主要 Tab (优化 Compose 导航和各页面初始化)
-            val tabs = listOf("nav_explore", "nav_rss", "nav_my", "nav_bookshelf")
-            for (tabTag in tabs) {
-                val tab = device.findObject(By.res(packageName, tabTag))
+            repeat(2) {
+                device.swipe(startX, endY, startX, startY, 10)
+                Thread.sleep(1000)
+            }
+
+            // "nav_my"
+            /* val tabs = listOf("nav_explore", "nav_rss", "nav_bookshelf")
+            for (tabDesc in tabs) {
+                val tab = device.wait(Until.findObject(By.desc(tabDesc)), 5000)
                 if (tab != null) {
-                    tab.click()
-                    device.waitForIdle()
-                    // 稍微等待页面加载
-                    Thread.sleep(500) 
+                    val bounds = tab.visibleBounds
+                    device.click(bounds.centerX(), bounds.centerY())
+                    Thread.sleep(3000)
                 }
-            }
-
+            }*/
         }
     }
 }

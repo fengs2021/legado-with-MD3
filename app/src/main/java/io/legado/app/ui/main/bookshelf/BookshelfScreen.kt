@@ -83,7 +83,11 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -123,6 +127,9 @@ import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenu
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenuItem
 import io.legado.app.ui.widget.components.tabRow.AppTabRow
 import io.legado.app.ui.widget.components.text.AppText
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableSet
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -321,32 +328,38 @@ fun BookshelfScreen(
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val bookshelfLayoutMode by remember {
         derivedStateOf {
-            if (isLandscape) BookshelfConfig.bookshelfLayoutModeLandscape else BookshelfConfig.bookshelfLayoutModePortrait
+            if (isLandscape) BookshelfConfig.bookshelfLayoutModeLandscapeState.value
+            else BookshelfConfig.bookshelfLayoutModePortraitState.value
         }
     }
     val bookshelfLayoutGrid by remember {
         derivedStateOf {
-            if (isLandscape) BookshelfConfig.bookshelfLayoutGridLandscape else BookshelfConfig.bookshelfLayoutGridPortrait
+            if (isLandscape) BookshelfConfig.bookshelfLayoutGridLandscapeState.value
+            else BookshelfConfig.bookshelfLayoutGridPortraitState.value
         }
     }
     val bookshelfLayoutList by remember {
         derivedStateOf {
-            if (isLandscape) BookshelfConfig.bookshelfLayoutListLandscape else BookshelfConfig.bookshelfLayoutListPortrait
+            if (isLandscape) BookshelfConfig.bookshelfLayoutListLandscapeState.value
+            else BookshelfConfig.bookshelfLayoutListPortraitState.value
         }
     }
     val bookshelfFolderLayoutMode by remember {
         derivedStateOf {
-            if (isLandscape) BookshelfConfig.bookshelfFolderLayoutModeLandscape else BookshelfConfig.bookshelfFolderLayoutModePortrait
+            if (isLandscape) BookshelfConfig.bookshelfFolderLayoutModeLandscapeState.value
+            else BookshelfConfig.bookshelfFolderLayoutModePortraitState.value
         }
     }
     val bookshelfFolderLayoutGrid by remember {
         derivedStateOf {
-            if (isLandscape) BookshelfConfig.bookshelfFolderLayoutGridLandscape else BookshelfConfig.bookshelfFolderLayoutGridPortrait
+            if (isLandscape) BookshelfConfig.bookshelfFolderLayoutGridLandscapeState.value
+            else BookshelfConfig.bookshelfFolderLayoutGridPortraitState.value
         }
     }
     val bookshelfFolderLayoutList by remember {
         derivedStateOf {
-            if (isLandscape) BookshelfConfig.bookshelfFolderLayoutListLandscape else BookshelfConfig.bookshelfFolderLayoutListPortrait
+            if (isLandscape) BookshelfConfig.bookshelfFolderLayoutListLandscapeState.value
+            else BookshelfConfig.bookshelfFolderLayoutListPortraitState.value
         }
     }
     val currentMenuGroupId by remember {
@@ -388,7 +401,7 @@ fun BookshelfScreen(
                 backNavigationIcon = AppIcons.Close,
                 showSearchAction = true,
                 onSearchToggle = { active ->
-                    if (BookshelfConfig.bookshelfSearchActionDirectToSearch) {
+                    if (BookshelfConfig.bookshelfSearchActionDirectToSearchState.value) {
                         onNavigateToSearch(uiState.searchKey.trim())
                     } else {
                         viewModel.setSearchMode(active)
@@ -561,7 +574,8 @@ fun BookshelfScreen(
                                     modifier = Modifier.weight(1f)
                                 )
 
-                                if (BookshelfConfig.shouldShowExpandButton) {
+                                val showExpandButton by BookshelfConfig.shouldShowExpandButtonState
+                                if (showExpandButton) {
                                     Box(modifier = Modifier) {
                                         SmallOutlinedIconToggleButton(
                                             checked = showGroupMenu,
@@ -716,12 +730,12 @@ fun BookshelfScreen(
                         ),
                         verticalArrangement = Arrangement.spacedBy(if (isGridMode) 8.dp else 0.dp),
                         horizontalArrangement = Arrangement.spacedBy(if (isGridMode) 8.dp else 0.dp),
-                        showFastScroll = BookshelfConfig.showBookshelfFastScroller
+                        showFastScroll = BookshelfConfig.showBookshelfFastScrollerState.value
                     ) {
                         itemsIndexed(
                             uiState.groups,
                             key = { _, it -> it.groupId }) { index, group ->
-                            val countText = if (BookshelfConfig.showBookCount) {
+                            val countText = if (BookshelfConfig.showBookCountState.value) {
                                 uiState.groupBookCounts[group.groupId]?.let {
                                     stringResource(R.string.book_count, it)
                                 }
@@ -734,11 +748,11 @@ fun BookshelfScreen(
                                     previewBooks = uiState.groupPreviews[group.groupId]
                                         ?: emptyList(),
                                     countText = countText,
-                                    isCompact = BookshelfConfig.bookshelfLayoutCompact,
-                                    titleSmallFont = BookshelfConfig.bookshelfTitleSmallFont,
-                                    titleCenter = BookshelfConfig.bookshelfTitleCenter,
-                                    titleMaxLines = BookshelfConfig.bookshelfTitleMaxLines,
-                                    coverShadow = BookshelfConfig.bookshelfCoverShadow,
+                                    isCompact = BookshelfConfig.bookshelfLayoutCompactState.value,
+                                    titleSmallFont = BookshelfConfig.bookshelfTitleSmallFontState.value,
+                                    titleCenter = BookshelfConfig.bookshelfTitleCenterState.value,
+                                    titleMaxLines = BookshelfConfig.bookshelfTitleMaxLinesState.value,
+                                    coverShadow = BookshelfConfig.bookshelfCoverShadowState.value,
                                     onClick = {
                                         scope.launch { pagerState.scrollToPage(index) }
                                         viewModel.setInFolderRoot(false)
@@ -754,11 +768,11 @@ fun BookshelfScreen(
                                     previewBooks = uiState.groupPreviews[group.groupId]
                                         ?: emptyList(),
                                     countText = countText,
-                                    gridStyle = BookshelfConfig.bookshelfGridLayout,
-                                    titleSmallFont = BookshelfConfig.bookshelfTitleSmallFont,
-                                    titleCenter = BookshelfConfig.bookshelfTitleCenter,
-                                    titleMaxLines = BookshelfConfig.bookshelfTitleMaxLines,
-                                    coverShadow = BookshelfConfig.bookshelfCoverShadow,
+                                    gridStyle = BookshelfConfig.bookshelfGridLayoutState.value,
+                                    titleSmallFont = BookshelfConfig.bookshelfTitleSmallFontState.value,
+                                    titleCenter = BookshelfConfig.bookshelfTitleCenterState.value,
+                                    titleMaxLines = BookshelfConfig.bookshelfTitleMaxLinesState.value,
+                                    coverShadow = BookshelfConfig.bookshelfCoverShadowState.value,
                                     onClick = {
                                         scope.launch { pagerState.scrollToPage(index) }
                                         viewModel.setInFolderRoot(false)
@@ -810,7 +824,7 @@ fun BookshelfScreen(
                                 val isSelectedGroup = group.groupId == uiState.selectedGroupId
                                 val books = uiState.allGroupBooks[group.groupId]
                                     ?: if (isSelectedGroup) uiState.items
-                                    else emptyList()
+                                    else persistentListOf()
                                 val canReorderBooks = isEditMode &&
                                         !uiState.isSearch &&
                                         (group.bookSort.takeIf { it >= 0 }
@@ -1155,17 +1169,17 @@ private data class BookshelfEditStickySummary(
 @Composable
 fun BookshelfPage(
     paddingValues: PaddingValues,
-    books: List<BookShelfItem>,
+    books: ImmutableList<BookShelfItem>,
     uiState: BookshelfUiState,
-    selectedBookUrls: Set<String>,
+    selectedBookUrls: ImmutableSet<String>,
     canReorderBooks: Boolean,
     onToggleBookSelection: (BookShelfItem) -> Unit,
-    draggingBooks: List<BookShelfItem>?,
-    pendingSavedBooks: List<BookShelfItem>?,
-    onDragStarted: (List<BookShelfItem>) -> Unit,
-    onMoveBook: (fromIndex: Int, toIndex: Int, currentBooks: List<BookShelfItem>) -> Unit,
+    draggingBooks: ImmutableList<BookShelfItem>?,
+    pendingSavedBooks: ImmutableList<BookShelfItem>?,
+    onDragStarted: (ImmutableList<BookShelfItem>) -> Unit,
+    onMoveBook: (fromIndex: Int, toIndex: Int, currentBooks: ImmutableList<BookShelfItem>) -> Unit,
     onDragFinished: () -> Unit,
-    onSyncDragState: (books: List<BookShelfItem>, canReorderBooks: Boolean) -> Unit,
+    onSyncDragState: (books: ImmutableList<BookShelfItem>, canReorderBooks: Boolean) -> Unit,
     onGlobalSearch: () -> Unit,
     onBookClick: (BookShelfItem) -> Unit,
     onBookLongClick: (BookShelfItem) -> Unit,
@@ -1203,14 +1217,37 @@ fun BookshelfPage(
 
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val bookshelfLayoutMode =
-        if (isLandscape) BookshelfConfig.bookshelfLayoutModeLandscape else BookshelfConfig.bookshelfLayoutModePortrait
-    val bookshelfLayoutGrid =
-        if (isLandscape) BookshelfConfig.bookshelfLayoutGridLandscape else BookshelfConfig.bookshelfLayoutGridPortrait
-    val bookshelfLayoutList =
-        if (isLandscape) BookshelfConfig.bookshelfLayoutListLandscape else BookshelfConfig.bookshelfLayoutListPortrait
-    val columns = if (bookshelfLayoutMode == 0) bookshelfLayoutList else bookshelfLayoutGrid
-    val isGridMode = bookshelfLayoutMode != 0
+    val bookshelfLayoutMode by remember {
+        derivedStateOf {
+            if (isLandscape) BookshelfConfig.bookshelfLayoutModeLandscapeState.value
+            else BookshelfConfig.bookshelfLayoutModePortraitState.value
+        }
+    }
+    val bookshelfLayoutGrid by remember {
+        derivedStateOf {
+            if (isLandscape) BookshelfConfig.bookshelfLayoutGridLandscapeState.value
+            else BookshelfConfig.bookshelfLayoutGridPortraitState.value
+        }
+    }
+    val bookshelfLayoutList by remember {
+        derivedStateOf {
+            if (isLandscape) BookshelfConfig.bookshelfLayoutListLandscapeState.value
+            else BookshelfConfig.bookshelfLayoutListPortraitState.value
+        }
+    }
+    val columns by remember {
+        derivedStateOf {
+            if (bookshelfLayoutMode == 0) bookshelfLayoutList else bookshelfLayoutGrid
+        }
+    }
+    val isGridMode by remember { derivedStateOf { bookshelfLayoutMode != 0 } }
+    val bookItemGridStyle by BookshelfConfig.bookshelfGridLayoutState
+    val bookItemIsCompact by BookshelfConfig.bookshelfLayoutCompactState
+    val bookItemTitleSmallFont by BookshelfConfig.bookshelfTitleSmallFontState
+    val bookItemTitleCenter by BookshelfConfig.bookshelfTitleCenterState
+    val bookItemTitleMaxLines by BookshelfConfig.bookshelfTitleMaxLinesState
+    val bookItemCoverShadow by BookshelfConfig.bookshelfCoverShadowState
+    val showFastScroll by BookshelfConfig.showBookshelfFastScrollerState
     val totalHorizontalPadding =
         if (ThemeResolver.isMiuixEngine(LegadoTheme.composeEngine)) 12.dp else 16.dp
     val gridContentHorizontalPadding = totalHorizontalPadding / 2
@@ -1247,7 +1284,7 @@ fun BookshelfPage(
             state = gridState,
             modifier = Modifier
                 .fillMaxSize()
-                .testTag("bookshelf_list")
+                .semantics(mergeDescendants = true) { contentDescription = "bookshelf_list" }
                 .then(
                     with(sharedTransitionScope) {
                         if (this != null) Modifier.skipToLookaheadSize() else Modifier
@@ -1260,7 +1297,7 @@ fun BookshelfPage(
             ),
             verticalArrangement = Arrangement.spacedBy(if (isGridMode) 8.dp else 0.dp),
             horizontalArrangement = Arrangement.spacedBy(if (isGridMode) 8.dp else 0.dp),
-            showFastScroll = BookshelfConfig.showBookshelfFastScroller
+            showFastScroll = showFastScroll
         ) {
             items(displayBooks, key = { it.bookUrl }) { book ->
                 val isSelected = selectedBookUrls.contains(book.bookUrl)
@@ -1292,13 +1329,13 @@ fun BookshelfPage(
                         ),
                         layoutMode = bookshelfLayoutMode,
                         isSelected = isSelected,
-                        gridStyle = BookshelfConfig.bookshelfGridLayout,
-                        isCompact = BookshelfConfig.bookshelfLayoutCompact,
+                        gridStyle = bookItemGridStyle,
+                        isCompact = bookItemIsCompact,
                         isUpdating = uiState.updatingBooks.contains(book.bookUrl),
-                        titleSmallFont = BookshelfConfig.bookshelfTitleSmallFont,
-                        titleCenter = BookshelfConfig.bookshelfTitleCenter,
-                        titleMaxLines = BookshelfConfig.bookshelfTitleMaxLines,
-                        coverShadow = BookshelfConfig.bookshelfCoverShadow,
+                        titleSmallFont = bookItemTitleSmallFont,
+                        titleCenter = bookItemTitleCenter,
+                        titleMaxLines = bookItemTitleMaxLines,
+                        coverShadow = bookItemCoverShadow,
                         isSearchMode = uiState.isSearch,
                         searchKey = uiState.searchKey,
                         sharedTransitionScope = sharedTransitionScope,
