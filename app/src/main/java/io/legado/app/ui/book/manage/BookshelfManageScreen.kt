@@ -41,10 +41,10 @@ import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
+import io.legado.app.ui.widget.components.progressIndicator.AppCircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -962,7 +962,7 @@ private fun BookshelfManageScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 if (state.isChangingSource) {
-                    CircularProgressIndicator()
+                    AppCircularProgressIndicator()
                 }
                 AppText(
                     text = state.changeSourceError ?: state.changeSourceProgress ?: "准备中",

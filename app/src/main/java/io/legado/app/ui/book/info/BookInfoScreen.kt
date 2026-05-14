@@ -36,8 +36,8 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
+import io.legado.app.ui.widget.components.progressIndicator.AppCircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -183,10 +183,7 @@ private fun BookInfoScreenContent(
         val book = state.book
         if (book == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    color = LegadoTheme.colorScheme.primary,
-                    trackColor = LegadoTheme.colorScheme.surfaceContainerHighest,
-                )
+                AppCircularProgressIndicator()
             }
         } else {
             Box(modifier = Modifier.fillMaxSize()) {
@@ -1053,10 +1050,7 @@ private fun BookInfoDialogs(
             onDismissRequest = {},
             content = {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(
-                        color = LegadoTheme.colorScheme.primary,
-                        trackColor = LegadoTheme.colorScheme.surfaceContainerHighest,
-                    )
+                    AppCircularProgressIndicator()
                 }
             }
         )

@@ -41,8 +41,8 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Icon
+import io.legado.app.ui.widget.components.progressIndicator.AppLinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -374,8 +374,8 @@ fun RssReadRouteScreen(
                     }
                 )
                 if (webProgress in 0..99) {
-                    LinearProgressIndicator(
-                        progress = { webProgress / 100f },
+                    AppLinearProgressIndicator(
+                        progress = webProgress / 100f,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
