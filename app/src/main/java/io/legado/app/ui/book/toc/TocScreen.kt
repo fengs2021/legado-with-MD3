@@ -113,6 +113,7 @@ import io.legado.app.ui.widget.components.lazylist.FastScrollLazyColumn
 import io.legado.app.ui.widget.components.list.TopFloatingStickyItem
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenu
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenuItem
+import io.legado.app.ui.widget.components.progressIndicator.AppContainedLoadingIndicator
 import io.legado.app.ui.widget.components.tabRow.AppTabRow
 import io.legado.app.ui.widget.components.text.AppText
 import io.legado.app.ui.widget.components.topbar.DynamicTopAppBar
@@ -944,8 +945,8 @@ private fun StatusIcon(
             }
 
             "LOADING" -> {
-                AppCircularProgressIndicator(
-                    modifier = Modifier.size(24.dp)
+                AppContainedLoadingIndicator(
+                    modifier = Modifier.size(20.dp)
                 )
             }
 
