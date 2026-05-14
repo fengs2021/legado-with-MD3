@@ -76,9 +76,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
-import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
-import androidx.compose.material3.pulltorefresh.pullToRefresh
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import io.legado.app.ui.widget.components.AppPullToRefresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -724,7 +722,6 @@ fun BookshelfScreen(
             )
         }
     ) { paddingValues ->
-        val pullToRefreshState = rememberPullToRefreshState()
         val currentGroup by remember {
             derivedStateOf {
                 if (uiState.isSearch) {
@@ -738,16 +735,12 @@ fun BookshelfScreen(
             derivedStateOf { (currentGroup?.enableRefresh ?: true) && !isEditMode }
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .pullToRefresh(
-                    state = pullToRefreshState,
-                    isRefreshing = uiState.isRefreshing,
-                    onRefresh = { viewModel.refreshBooks(uiState.items) },
-                    enabled = pullToRefreshEnabled
-                )
-        ) {
+        Box(Modifier.fillMaxSize()) {
+            AppPullToRefresh(
+                isRefreshing = uiState.isRefreshing,
+                onRefresh = { viewModel.refreshBooks(uiState.items) },
+                enabled = pullToRefreshEnabled,
+            ) {
             val transition = rememberTransition(
                 transitionState, 
                 label = "FolderTransition"
@@ -934,6 +927,7 @@ fun BookshelfScreen(
                     }
                 }
             }
+            }
 
             TopFloatingStickyItem(
                 item = editStickySummary,
@@ -1035,14 +1029,6 @@ fun BookshelfScreen(
                     }
                 }
             }
-
-            PullToRefreshDefaults.LoadingIndicator(
-                state = pullToRefreshState,
-                isRefreshing = uiState.isRefreshing,
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = paddingValues.calculateTopPadding())
-            )
 
             AnimatedVisibility(
                 visible = isEditMode && selectedBookUrls.isNotEmpty(),
