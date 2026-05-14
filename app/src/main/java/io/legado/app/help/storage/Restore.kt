@@ -28,6 +28,7 @@ import io.legado.app.data.entities.TxtTocRule
 import io.legado.app.data.entities.readRecord.ReadRecord
 import io.legado.app.data.entities.readRecord.ReadRecordDetail
 import io.legado.app.data.entities.readRecord.ReadRecordSession
+import io.legado.app.data.repository.SettingsRepository
 import io.legado.app.help.DirectLinkUpload
 import io.legado.app.help.LauncherIconHelp
 import io.legado.app.help.book.isLocal
@@ -57,6 +58,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import splitties.init.appCtx
 import java.io.File
 import java.io.FileInputStream
@@ -64,8 +67,9 @@ import java.io.FileInputStream
 /**
  * 恢复
  */
-object Restore {
+object Restore : KoinComponent {
 
+    private val settingsRepository: SettingsRepository by inject()
     private val mutex = Mutex()
 
     private const val TAG = "Restore"
@@ -306,36 +310,40 @@ object Restore {
         }
         //AppWebDav.downBgs()
         appCtx.getSharedPreferences(path, "config")?.all?.let { map ->
+            val finalMap = mutableMapOf<String, Any>()
             appCtx.defaultSharedPreferences.edit {
-
                 map.forEach { (key, value) ->
                     if (BackupConfig.keyIsNotIgnore(key)) {
                         when (key) {
                             PreferKey.webDavPassword -> {
-                                kotlin.runCatching {
+                                val password = kotlin.runCatching {
                                     aes.decryptStr(value.toString())
-                                }.getOrNull()?.let {
+                                }.getOrNull() ?: let {
+                                    if (appCtx.getPrefString(PreferKey.webDavPassword).isNullOrBlank()) {
+                                        value.toString()
+                                    } else null
+                                }
+                                password?.let {
                                     putString(key, it)
-                                } ?: let {
-                                    if (appCtx.getPrefString(PreferKey.webDavPassword)
-                                            .isNullOrBlank()
-                                    ) {
-                                        putString(key, value.toString())
-                                    }
+                                    finalMap[key] = it
                                 }
                             }
 
-                            else -> when (value) {
-                                is Int -> putInt(key, value)
-                                is Boolean -> putBoolean(key, value)
-                                is Long -> putLong(key, value)
-                                is Float -> putFloat(key, value)
-                                is String -> putString(key, value)
+                            else -> {
+                                when (value) {
+                                    is Int -> { putInt(key, value); finalMap[key] = value }
+                                    is Boolean -> { putBoolean(key, value); finalMap[key] = value }
+                                    is Long -> { putLong(key, value); finalMap[key] = value }
+                                    is Float -> { putFloat(key, value); finalMap[key] = value }
+                                    is String -> { putString(key, value); finalMap[key] = value }
+                                }
                             }
                         }
                     }
                 }
             }
+            // 同步恢复到 DataStore
+            settingsRepository.batchPutFromMap(finalMap)
         }
         ReadBookConfig.apply {
             comicStyleSelect = appCtx.getPrefInt(PreferKey.comicStyleSelect)

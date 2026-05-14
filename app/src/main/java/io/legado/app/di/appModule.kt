@@ -25,6 +25,7 @@ import io.legado.app.data.repository.RssRepository
 import io.legado.app.data.repository.SearchRepository
 import io.legado.app.data.repository.SearchRepositoryImpl
 import io.legado.app.data.repository.SearchContentRepository
+import io.legado.app.data.repository.SettingsRepository
 import io.legado.app.data.repository.UploadRepository
 import io.legado.app.data.repository.WebDavBackupRepository
 import io.legado.app.data.repository.WebDavReadingProgressRepository
@@ -119,6 +120,7 @@ val appModule = module {
     singleOf(::DictRuleRepository)
     singleOf(::SearchContentRepository)
     singleOf(::RemoteBookRepository)
+    singleOf(::SettingsRepository)
     singleOf(::ExploreKindUiUseCase)
     singleOf(::AppStartupMaintenanceUseCase)
     singleOf(::BatchCacheDownloadUseCase)
