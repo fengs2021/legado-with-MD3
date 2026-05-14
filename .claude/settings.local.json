@@ -72,7 +72,8 @@
       "Bash(Select-Object -Last 20)",
       "WebFetch(domain:compose-miuix-ui.github.io)",
       "Bash(Select-Object -Last 60)",
-      "PowerShell(.\\\\gradlew.bat :app:compileAppDebugKotlin 2>&1 | Select-Object -Last 60)"
+      "PowerShell(.\\\\gradlew.bat :app:compileAppDebugKotlin 2>&1 | Select-Object -Last 60)",
+      "Bash(New-Item *)"
     ]
   }
 }

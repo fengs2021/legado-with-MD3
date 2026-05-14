@@ -87,7 +87,7 @@ import io.legado.app.ui.book.info.ChangeSourceSheet
 import io.legado.app.ui.book.info.GroupSelectSheet
 import io.legado.app.ui.theme.LegadoTheme
 import io.legado.app.ui.theme.adaptiveContentPadding
-import io.legado.app.ui.widget.components.AppLinearProgressIndicator
+import io.legado.app.ui.widget.components.progressIndicator.AppLinearProgressIndicator
 import io.legado.app.ui.widget.components.AppTextField
 import io.legado.app.ui.widget.components.alert.AppAlertDialog
 import io.legado.app.ui.widget.components.button.SmallTonalIconButton

@@ -45,6 +45,7 @@ import io.legado.app.ui.association.ImportBookSourceDialog
 import io.legado.app.ui.association.ImportReplaceRuleDialog
 import io.legado.app.ui.association.ImportRssSourceDialog
 import io.legado.app.ui.theme.LegadoTheme
+import io.legado.app.ui.theme.adaptiveContentPadding
 import io.legado.app.ui.widget.components.AppTextField
 import io.legado.app.ui.widget.components.EmptyMessage
 import io.legado.app.ui.widget.components.alert.AppAlertDialog
@@ -107,10 +108,9 @@ fun RuleSubScreen(
                 onClick = {
                     showEditDialog = RuleSub(customOrder = state.items.size + 1)
                 },
-                tooltipText = "Localized description"
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Rule")
-            }
+                tooltipText = stringResource(R.string.add),
+                icon = Icons.Default.Add
+            )
         }
     ) { paddingValues ->
         if (state.items.isEmpty()) {
@@ -129,7 +129,10 @@ fun RuleSubScreen(
             val typeArray = stringArrayResource(R.array.rule_type)
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = paddingValues,
+                contentPadding = adaptiveContentPadding(
+                    top = paddingValues.calculateTopPadding(),
+                    bottom = paddingValues.calculateBottomPadding() + 120.dp
+                ),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(state.items, key = { it.id }) { ruleSub ->

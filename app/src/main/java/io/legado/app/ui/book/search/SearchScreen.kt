@@ -331,13 +331,10 @@ fun SearchScreen(
                         } else {
                             viewModel.onIntent(SearchIntent.LoadMore)
                         }
-                    }
-                ) {
-                    AppIcon(
-                        imageVector = if (state.isSearching) Icons.Default.Stop else Icons.Default.PlayArrow,
-                        contentDescription = if (state.isSearching) stringResource(R.string.stop) else stringResource(R.string.start),
-                    )
-                }
+                    },
+                    icon = if (state.isSearching) Icons.Default.Stop else Icons.Default.PlayArrow,
+                    tooltipText = if (state.isSearching) stringResource(R.string.stop) else stringResource(R.string.start)
+                )
             }
         }
     ) { paddingValues ->

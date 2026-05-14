@@ -46,7 +46,7 @@ import io.legado.app.R
 import io.legado.app.ui.theme.LegadoTheme
 import io.legado.app.ui.theme.adaptiveContentPadding
 import io.legado.app.ui.theme.adaptiveHorizontalPadding
-import io.legado.app.ui.widget.components.AppLinearProgressIndicator
+import io.legado.app.ui.widget.components.progressIndicator.AppLinearProgressIndicator
 import io.legado.app.ui.widget.components.AppScaffold
 import io.legado.app.ui.widget.components.alert.AppAlertDialog
 import io.legado.app.ui.widget.components.button.SmallTonalIconButton

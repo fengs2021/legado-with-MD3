@@ -38,7 +38,6 @@ import io.legado.app.ui.theme.LegadoTheme
 import io.legado.app.ui.widget.components.AppFloatingActionButton
 import io.legado.app.ui.widget.components.AppTextField
 import io.legado.app.ui.widget.components.button.MediumIconButton
-import io.legado.app.ui.widget.components.icon.AppIcon
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenu
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenuItem
 import io.legado.app.ui.widget.components.modalBottomSheet.AppModalBottomSheet
@@ -164,10 +163,9 @@ fun <T> RuleEditSheet(
                 onClick = { onSave(getCurrentEntity()) },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-            ) {
-                AppIcon(Icons.Default.Save, contentDescription = "Save")
-            }
+                    .padding(16.dp),
+                icon = Icons.Default.Save
+            )
         }
     }
 }

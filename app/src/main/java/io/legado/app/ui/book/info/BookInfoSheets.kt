@@ -74,7 +74,7 @@ import io.legado.app.ui.book.search.ScopeSelectSheet
 import io.legado.app.ui.book.source.edit.BookSourceEditActivity
 import io.legado.app.ui.book.source.manage.BookSourceActivity
 import io.legado.app.ui.theme.LegadoTheme
-import io.legado.app.ui.widget.components.AppLinearProgressIndicator
+import io.legado.app.ui.widget.components.progressIndicator.AppLinearProgressIndicator
 import io.legado.app.ui.widget.components.AppTextField
 import io.legado.app.ui.widget.components.EmptyMessage
 import io.legado.app.ui.widget.components.alert.AppAlertDialog
