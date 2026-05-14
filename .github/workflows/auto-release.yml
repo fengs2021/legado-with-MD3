@@ -151,14 +151,18 @@ jobs:
           echo "清空18PlusList.txt"
           echo "">$GITHUB_WORKSPACE/app/src/main/assets/18PlusList.txt
       - name: Release Apk Sign
-        # 仅在所有者的 PR 或 push 时进行签名
         if: ${{ github.actor == 'HapeLee' }}
+        shell: bash
         run: |
-          echo "${{ secrets.SIGNING_KEY }}" | base64 -d > $GITHUB_WORKSPACE/app/my-release-key.jks
-          echo "RELEASE_STORE_FILE=my-release-key.jks" >> $GITHUB_WORKSPACE/gradle.properties
-          echo "RELEASE_STORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> $GITHUB_WORKSPACE/gradle.properties
-          echo "RELEASE_KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_WORKSPACE/gradle.properties
-          echo "RELEASE_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_WORKSPACE/gradle.properties
+          echo "${{ secrets.SIGNING_KEY }}" | base64 -d >"$GITHUB_WORKSPACE/app/my-release-key.jks"
+
+          {
+            echo ""
+            echo "RELEASE_STORE_FILE=my-release-key.jks"
+            echo "RELEASE_STORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}"
+            echo "RELEASE_KEY_ALIAS=${{ secrets.KEY_ALIAS }}"
+            echo "RELEASE_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}"
+          } >> "$GITHUB_WORKSPACE/gradle.properties"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
