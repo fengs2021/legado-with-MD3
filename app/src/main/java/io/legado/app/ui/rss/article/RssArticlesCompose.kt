@@ -120,11 +120,7 @@ fun RssArticlesPage(
     val articles by articleFlow.collectAsStateWithLifecycle(initialValue = emptyList())
 
     LaunchedEffect(rssSource?.sourceUrl, sortName, sortUrl) {
-        rssSource?.let { source ->
-            if (isPreload) {
-                viewModel.loadArticles(source)
-            }
-        }
+        rssSource?.let(viewModel::loadArticles)
     }
 
     LaunchedEffect(loadState.errorMessage) {
@@ -308,7 +304,7 @@ private fun LoadMoreFooter(
     onRetry: () -> Unit
 ) {
     val text = when {
-        state.isLoadingMore -> "加载中..."
+        state.isRefreshing || state.isLoadingMore -> "加载中..."
         !state.hasMore -> "没有更多了"
         state.errorMessage != null -> "加载失败，点击重试"
         else -> "上拉加载更多"
@@ -326,7 +322,7 @@ private fun LoadMoreFooter(
     ) {
         EmptyMessage(
             message = text,
-            isLoading = state.isLoadingMore,
+            isLoading = state.isRefreshing || state.isLoadingMore,
             modifier = contentModifier
         )
     }
