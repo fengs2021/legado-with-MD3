@@ -5,18 +5,29 @@ import android.content.res.Configuration
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.activity.compose.ReportDrawnWhen
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.SeekableTransitionState
+import androidx.compose.animation.core.rememberTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
@@ -101,6 +112,7 @@ import io.legado.app.data.entities.BookGroup
 import io.legado.app.ui.book.group.GroupEditSheet
 import io.legado.app.ui.book.info.GroupSelectSheet
 import io.legado.app.ui.config.bookshelfConfig.BookshelfConfig
+import io.legado.app.ui.config.themeConfig.ThemeConfig
 import io.legado.app.ui.main.bookCoverSharedElementKey
 import io.legado.app.ui.theme.LegadoTheme
 import io.legado.app.ui.theme.ThemeResolver
@@ -133,6 +145,7 @@ import io.legado.app.ui.widget.components.text.AppText
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -141,7 +154,8 @@ import sh.calvin.reorderable.rememberReorderableLazyGridState
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
-    ExperimentalMaterial3ExpressiveApi::class, ExperimentalSharedTransitionApi::class
+    ExperimentalMaterial3ExpressiveApi::class, ExperimentalSharedTransitionApi::class,
+    ExperimentalAnimationApi::class
 )
 @Composable
 fun BookshelfScreen(
@@ -166,6 +180,13 @@ fun BookshelfScreen(
     val selectedBookUrls = uiState.selectedBookUrls
     val isInFolderRoot = uiState.isInFolderRoot
     val bookGroupStyle = uiState.bookGroupStyle
+
+    val transitionState = remember { SeekableTransitionState(isInFolderRoot) }
+    LaunchedEffect(isInFolderRoot) {
+        if (transitionState.targetState != isInFolderRoot) {
+            transitionState.animateTo(isInFolderRoot)
+        }
+    }
 
     val clipboardManager = LocalClipboard.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -327,9 +348,15 @@ fun BookshelfScreen(
 
     val currentGroupName by remember { derivedStateOf { uiState.currentGroupName } }
 
-    if (bookGroupStyle == 2 && !isInFolderRoot && !isEditMode) {
-        BackHandler {
+    PredictiveBackHandler(enabled = bookGroupStyle == 2 && !isInFolderRoot && !isEditMode) { progress ->
+        try {
+            progress.collect { backEvent ->
+                transitionState.seekTo(backEvent.progress, targetState = true)
+            }
             viewModel.setInFolderRoot(true)
+            transitionState.animateTo(true)
+        } catch (e: CancellationException) {
+            transitionState.animateTo(false)
         }
     }
 
@@ -720,9 +747,26 @@ fun BookshelfScreen(
                     enabled = pullToRefreshEnabled
                 )
         ) {
-            AnimatedContent(
-                targetState = isInFolderRoot,
+            val transition = rememberTransition(
+                transitionState, 
                 label = "FolderTransition"
+            )
+            transition.AnimatedContent(
+                transitionSpec = {
+                    val easing = FastOutSlowInEasing
+                    val duration = 480
+                    if (targetState) {
+                        (fadeIn(animationSpec = tween(duration, easing = easing)) + 
+                                scaleIn(initialScale = 1.05f, animationSpec = tween(duration, easing = easing)))
+                            .togetherWith(fadeOut(animationSpec = tween(duration, easing = easing)) + 
+                                    scaleOut(targetScale = 0.95f, animationSpec = tween(duration, easing = easing)))
+                    } else {
+                        (fadeIn(animationSpec = tween(duration, easing = easing)) + 
+                                scaleIn(initialScale = 0.95f, animationSpec = tween(duration, easing = easing)))
+                            .togetherWith(fadeOut(animationSpec = tween(duration, easing = easing)) + 
+                                    scaleOut(targetScale = 1.05f, animationSpec = tween(duration, easing = easing)))
+                    }
+                }
             ) { isRoot ->
                 if (bookGroupStyle == 2 && isRoot && !isUsingStandaloneSearchGroup) {
                     val folderColumns =
@@ -739,7 +783,7 @@ fun BookshelfScreen(
                             ),
                         contentPadding = adaptiveContentPaddingBookshelf(
                             top = paddingValues.calculateTopPadding(),
-                            bottom = 120.dp,
+                            bottom = if (ThemeConfig.useFloatingBottomBar) 120.dp else 8.dp,
                             horizontal = if (isGridMode) 8.dp else 4.dp
                         ),
                         verticalArrangement = Arrangement.spacedBy(if (isGridMode) 8.dp else 0.dp),
@@ -830,7 +874,7 @@ fun BookshelfScreen(
                                         if (this != null) Modifier.skipToLookaheadSize() else Modifier
                                     }
                                 ),
-                            beyondViewportPageCount = 2,
+                            beyondViewportPageCount = 1,
                             key = { if (it < uiState.groups.size) uiState.groups[it].groupId else it }
                         ) { pageIndex ->
                             val group = uiState.groups.getOrNull(pageIndex)
@@ -1310,7 +1354,7 @@ fun BookshelfPage(
                 ),
             contentPadding = adaptiveContentPaddingBookshelf(
                 top = paddingValues.calculateTopPadding(),
-                bottom = 120.dp,
+                bottom = if (ThemeConfig.useFloatingBottomBar) 120.dp else 8.dp,
                 horizontal = if (isGridMode) 8.dp else 4.dp
             ),
             verticalArrangement = Arrangement.spacedBy(if (isGridMode) 8.dp else 0.dp),
