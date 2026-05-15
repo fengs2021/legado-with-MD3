@@ -238,6 +238,18 @@ class BookshelfViewModel(
         filterBooks(books, searchKey, isSearchMode)
     }.distinctUntilChanged()
 
+    private val selectedGroupCanReorderFlow = combine(
+        isEditModeFlow,
+        searchModeFlow,
+        groupIdFlow,
+        groupsFlow,
+        sortConfigFlow
+    ) { isEditMode, isSearchMode, groupId, groups, sortConfig ->
+        val group = groups.find { it.groupId == groupId }
+        val bookSort = group?.bookSort?.takeIf { it >= 0 } ?: sortConfig.sort
+        isEditMode && !isSearchMode && bookSort == 3
+    }.distinctUntilChanged()
+
     private val selectedVisibleBookUrlsFlow = combine(
         selectedBookUrlsFlow,
         visibleBooksFlow
@@ -510,6 +522,13 @@ class BookshelfViewModel(
         viewModelScope.launch {
             allGroupBooksImmutableFlow.collect { allGroupBooksStateFlow.value = it }
         }
+        viewModelScope.launch {
+            combine(booksFlow, selectedGroupCanReorderFlow) { books, canReorderBooks ->
+                books to canReorderBooks
+            }.collect { (books, canReorderBooks) ->
+                syncDragState(books, canReorderBooks)
+            }
+        }
 
         viewModelScope.launch {
             isInitialLoadingFlow.filter { !it }.collect {
@@ -765,7 +784,7 @@ class BookshelfViewModel(
         saveBookOrder(reorderedBooks)
     }
 
-    fun syncDragState(books: List<BookShelfItem>, canReorderBooks: Boolean) {
+    private fun syncDragState(books: List<BookShelfItem>, canReorderBooks: Boolean) {
         if (!canReorderBooks) {
             clearDragState()
             return
