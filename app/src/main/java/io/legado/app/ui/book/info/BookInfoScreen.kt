@@ -82,6 +82,7 @@ import io.legado.app.ui.theme.LocalHazeState
 import io.legado.app.ui.theme.ProvideThemeOverride
 import io.legado.app.ui.theme.ThemeOverrideState
 import io.legado.app.ui.theme.ThemeResolver
+import io.legado.app.ui.theme.fadingEdge
 import io.legado.app.ui.theme.rememberImageSeedColor
 import io.legado.app.ui.theme.rememberThemeOverride
 import io.legado.app.ui.theme.responsiveHazeEffectFixedStyle
@@ -737,8 +738,12 @@ private fun BookInfoHeader(
                 }
             }
             if (kindLabels.isNotEmpty() || !groupNames.isNullOrBlank()) {
+                val kindListState = rememberLazyListState()
                 LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
+                    state = kindListState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fadingEdge(kindListState),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     groupNames?.takeIf { it.isNotBlank() }?.let {
@@ -963,101 +968,106 @@ private fun BookInfoDialogs(
     var deleteOriginal by remember(dialog, state.deleteOriginal) { mutableStateOf(state.deleteOriginal) }
     var remarkText by remember(dialog) { mutableStateOf((dialog as? BookInfoDialog.EditRemark)?.remark.orEmpty()) }
 
-    if (dialog is BookInfoDialog.DeleteBook) {
-        AppAlertDialog(
-            show = true,
-            onDismissRequest = { onIntent(BookInfoIntent.DismissDialog) },
-            title = stringResource(R.string.draw),
-            text = stringResource(R.string.sure_del),
-            confirmText = stringResource(android.R.string.ok),
-            onConfirm = {
-                onIntent(BookInfoIntent.ConfirmDelete(deleteOriginal))
-            },
-            dismissText = stringResource(android.R.string.cancel),
-            onDismiss = { onIntent(BookInfoIntent.DismissDialog) },
-            content = {
-                if (dialog.isLocal) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        androidx.compose.material3.Checkbox(
-                            checked = deleteOriginal,
-                            onCheckedChange = { deleteOriginal = it },
-                            colors = androidx.compose.material3.CheckboxDefaults.colors(
-                                checkedColor = LegadoTheme.colorScheme.primary,
-                                checkmarkColor = LegadoTheme.colorScheme.onPrimary,
-                                uncheckedColor = LegadoTheme.colorScheme.onSurfaceVariant,
-                            )
+    AppAlertDialog(
+        data = dialog as? BookInfoDialog.DeleteBook,
+        onDismissRequest = { onIntent(BookInfoIntent.DismissDialog) },
+        title = stringResource(R.string.draw),
+        text = stringResource(R.string.sure_del),
+        confirmText = stringResource(android.R.string.ok),
+        onConfirm = {
+            onIntent(BookInfoIntent.ConfirmDelete(deleteOriginal))
+        },
+        dismissText = stringResource(android.R.string.cancel),
+        onDismiss = { onIntent(BookInfoIntent.DismissDialog) },
+        content = { d ->
+            if (d.isLocal) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.Checkbox(
+                        checked = deleteOriginal,
+                        onCheckedChange = { deleteOriginal = it },
+                        colors = androidx.compose.material3.CheckboxDefaults.colors(
+                            checkedColor = LegadoTheme.colorScheme.primary,
+                            checkmarkColor = LegadoTheme.colorScheme.onPrimary,
+                            uncheckedColor = LegadoTheme.colorScheme.onSurfaceVariant,
                         )
-                        Text(text = stringResource(R.string.delete_book_file))
-                    }
+                    )
+                    Text(text = stringResource(R.string.delete_book_file))
                 }
             }
-        )
-    }
+        }
+    )
 
-    if (dialog is BookInfoDialog.EditRemark) {
-        AppAlertDialog(
-            show = true,
-            onDismissRequest = { onIntent(BookInfoIntent.DismissDialog) },
-            title = stringResource(R.string.edit_remark),
-            confirmText = stringResource(android.R.string.ok),
-            onConfirm = { onIntent(BookInfoIntent.UpdateRemark(remarkText)) },
-            dismissText = stringResource(android.R.string.cancel),
-            onDismiss = { onIntent(BookInfoIntent.DismissDialog) },
-            content = {
-                AppTextField(
-                    value = remarkText,
-                    onValueChange = { remarkText = it },
-                    label = "备注",
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        )
-    }
+    AppAlertDialog(
+        data = dialog as? BookInfoDialog.EditRemark,
+        onDismissRequest = { onIntent(BookInfoIntent.DismissDialog) },
+        title = stringResource(R.string.edit_remark),
+        confirmText = stringResource(android.R.string.ok),
+        onConfirm = { onIntent(BookInfoIntent.UpdateRemark(remarkText)) },
+        dismissText = stringResource(android.R.string.cancel),
+        onDismiss = { onIntent(BookInfoIntent.DismissDialog) },
+        content = {
+            AppTextField(
+                value = remarkText,
+                onValueChange = { remarkText = it },
+                label = stringResource(R.string.book_remark),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    )
 
-    if (dialog is BookInfoDialog.UnsupportedWebFile) {
-        AppAlertDialog(
-            show = true,
-            onDismissRequest = { onIntent(BookInfoIntent.DismissDialog) },
-            title = stringResource(R.string.draw),
-            text = stringResource(R.string.file_not_supported, dialog.webFile.name),
-            confirmText = stringResource(R.string.open_fun),
-            onConfirm = { onIntent(BookInfoIntent.OpenUnsupportedWebFile(dialog.webFile)) },
-            dismissText = stringResource(android.R.string.cancel),
-            onDismiss = { onIntent(BookInfoIntent.DismissDialog) },
-        )
-    }
+    val unsupportedWebFile = dialog as? BookInfoDialog.UnsupportedWebFile
+    AppAlertDialog(
+        data = unsupportedWebFile,
+        onDismissRequest = { onIntent(BookInfoIntent.DismissDialog) },
+        title = stringResource(R.string.draw),
+        text = unsupportedWebFile?.let {
+            stringResource(
+                R.string.file_not_supported,
+                it.webFile.name
+            )
+        },
+        confirmText = stringResource(R.string.open_fun),
+        onConfirm = { onIntent(BookInfoIntent.OpenUnsupportedWebFile(it.webFile)) },
+        dismissText = stringResource(android.R.string.cancel),
+        onDismiss = { onIntent(BookInfoIntent.DismissDialog) },
+    )
 
-    if (dialog is BookInfoDialog.PhotoPreview) {
-        AppAlertDialog(
-            show = true,
-            onDismissRequest = { onIntent(BookInfoIntent.DismissDialog) },
-            title = stringResource(R.string.img_cover),
-            confirmText = stringResource(android.R.string.ok),
-            onConfirm = { onIntent(BookInfoIntent.DismissDialog) },
-            content = {
-                AsyncImage(
-                    model = dialog.path,
-                    contentDescription = null,
+    AppAlertDialog(
+        data = dialog as? BookInfoDialog.PhotoPreview,
+        onDismissRequest = { onIntent(BookInfoIntent.DismissDialog) },
+        title = stringResource(R.string.img_cover),
+        confirmText = "保存到相册",
+        onConfirm = { d ->
+            onIntent(BookInfoIntent.SaveCover(d.path))
+            onIntent(BookInfoIntent.DismissDialog)
+        },
+        dismissText = stringResource(android.R.string.cancel),
+        onDismiss = { onIntent(BookInfoIntent.DismissDialog) },
+        content = { d ->
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CoilBookCover(
+                    name = state.book?.name,
+                    author = state.book?.author,
+                    path = d.path,
+                    sourceOrigin = state.book?.origin,
+                    ignoreUseDefaultCover = true,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 420.dp),
-                    contentScale = ContentScale.Fit,
+                        .heightIn(max = 420.dp)
+                        .fillMaxWidth(0.6f)
                 )
             }
-        )
-    }
+        }
+    )
 
-    if (state.isBusy) {
-        AppAlertDialog(
-            show = true,
-            onDismissRequest = {},
-            content = {
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    AppCircularProgressIndicator()
-                }
+    AppAlertDialog(
+        show = state.isBusy,
+        onDismissRequest = {},
+        content = {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                AppCircularProgressIndicator()
             }
-        )
-    }
+        }
+    )
 
     AppLogSheet(show = state.showAppLogSheet, onDismissRequest = { onIntent(BookInfoIntent.DismissAppLogSheet) })
 }

@@ -5,13 +5,16 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,14 +54,15 @@ import io.legado.app.ui.theme.LegadoTheme
 import io.legado.app.ui.theme.adaptiveContentPadding
 import io.legado.app.ui.widget.components.SourceIcon
 import io.legado.app.ui.widget.components.alert.AppAlertDialog
+import io.legado.app.ui.widget.components.card.GlassCard
 import io.legado.app.ui.widget.components.divider.PillDivider
 import io.legado.app.ui.widget.components.divider.PillHeaderDivider
+import io.legado.app.ui.widget.components.icon.AppIcon
 import io.legado.app.ui.widget.components.list.ListScaffold
 import io.legado.app.ui.widget.components.menuItem.MenuItemIcon
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenu
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenuItem
 import io.legado.app.ui.widget.components.text.AppText
-import io.legado.app.ui.widget.components.topbar.TopBarActionButton
 import io.legado.app.utils.openUrl
 import io.legado.app.utils.startActivity
 import kotlinx.coroutines.flow.collectLatest
@@ -136,18 +140,6 @@ fun RssScreen(
         onSearchToggle = { viewModel.toggleSearchVisible(it) },
         onSearchQueryChange = { viewModel.search(it) },
         searchPlaceholder = stringResource(R.string.search_rss_source),
-        topBarActions = {
-            TopBarActionButton(
-                onClick = { viewModel.openRuleSub() },
-                imageVector = Icons.Default.Subscriptions,
-                contentDescription = stringResource(R.string.rule_subscription)
-            )
-            TopBarActionButton(
-                onClick = { viewModel.openFavorites() },
-                imageVector = Icons.Default.Star,
-                contentDescription = stringResource(R.string.favorite)
-            )
-        },
         dropDownMenuContent = { dismiss ->
             RoundDropdownMenuItem(
                 onClick = {
@@ -185,6 +177,58 @@ fun RssScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    GlassCard(
+                        modifier = Modifier.weight(1f),
+                        onClick = { viewModel.openRuleSub() }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(all = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            AppIcon(
+                                imageVector = Icons.Default.Subscriptions,
+                                contentDescription = null
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            AppText(
+                                text = stringResource(R.string.rule_subscription),
+                                style = LegadoTheme.typography.labelMediumEmphasized
+                            )
+                        }
+                    }
+                    GlassCard(
+                        modifier = Modifier.weight(1f),
+                        onClick = { viewModel.openFavorites() }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(all = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            AppIcon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            AppText(
+                                text = stringResource(R.string.favorite),
+                                style = LegadoTheme.typography.labelMediumEmphasized
+                            )
+                        }
+                    }
+                }
+            }
+
             items(uiState.items, key = { it.sourceUrl }) { source ->
                 RssSourceGridItem(
                     modifier = Modifier.animateItem(),

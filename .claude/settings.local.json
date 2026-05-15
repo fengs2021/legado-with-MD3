@@ -82,7 +82,8 @@
       "Bash(findstr /i \"miuix.*\\\\.kt\")",
       "Bash(findstr /v \"\\\\\\\\build\\\\\\\\\")",
       "Bash(dir /s /b \"D:\\\\AndroidPrj\\\\legado-with-MD3\\\\.gradle\\\\*miuix*\")",
-      "Skill(legado-compose-review)"
+      "Skill(legado-compose-review)",
+      "Bash(cmd /c \".\\\\gradlew.bat :app:compileAppDebugKotlin\")"
     ]
   }
 }

@@ -4,8 +4,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -86,11 +84,7 @@ fun RuleSubScreen(
             RoundDropdownMenuItem(
                 text = stringResource(R.string.sort),
                 leadingIcon = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.AutoMirrored.Filled.Sort, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.size(12.dp))
-                        AppText(stringResource(R.string.sort))
-                    }
+                    Icon(Icons.AutoMirrored.Filled.Sort, null, modifier = Modifier.size(18.dp))
                 },
                 onClick = {
                     viewModel.resetOrder()
@@ -231,12 +225,14 @@ fun RuleSubEditDialog(
                     value = name,
                     onValueChange = { name = it },
                     label = stringResource(R.string.name),
+                    backgroundColor = LegadoTheme.colorScheme.onSheetContent,
                     modifier = Modifier.fillMaxWidth()
                 )
                 AppTextField(
                     value = url,
                     onValueChange = { url = it },
                     label = "URL",
+                    backgroundColor = LegadoTheme.colorScheme.onSheetContent,
                     modifier = Modifier.fillMaxWidth()
                 )
 

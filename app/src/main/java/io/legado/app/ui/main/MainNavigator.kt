@@ -128,6 +128,17 @@ object MainNavigator {
                 }
             }
 
+            MainRouteRssFavorites,
+            MainRouteRuleSub -> {
+                if (currentRoute == MainRouteHome) {
+                    backStack.add(route)
+                } else {
+                    backStack.clear()
+                    backStack.add(MainRouteHome)
+                    backStack.add(route)
+                }
+            }
+
             MainRouteReadRecord -> {
                 if (currentRoute == MainRouteHome) {
                     backStack.add(route)
