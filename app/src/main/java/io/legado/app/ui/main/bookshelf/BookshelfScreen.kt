@@ -13,22 +13,19 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.SeekableTransitionState
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,7 +56,6 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.ImportExport
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
@@ -67,16 +63,12 @@ import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.ExperimentalMaterial3Api
-import io.legado.app.ui.widget.components.progressIndicator.AppCircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
+import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Surface
-import io.legado.app.ui.widget.components.AppPullToRefresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -87,26 +79,23 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.zIndex
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.legado.app.R
 import io.legado.app.base.BaseRuleEvent
-import io.legado.app.ui.about.AppLogSheet
 import io.legado.app.data.entities.BookGroup
+import io.legado.app.ui.about.AppLogSheet
 import io.legado.app.ui.book.group.GroupEditSheet
 import io.legado.app.ui.book.info.GroupSelectSheet
 import io.legado.app.ui.config.bookshelfConfig.BookshelfConfig
@@ -114,33 +103,31 @@ import io.legado.app.ui.config.themeConfig.ThemeConfig
 import io.legado.app.ui.main.bookCoverSharedElementKey
 import io.legado.app.ui.theme.LegadoTheme
 import io.legado.app.ui.theme.ThemeResolver
-import io.legado.app.ui.theme.adaptiveContentPadding
 import io.legado.app.ui.theme.adaptiveContentPaddingBookshelf
-import io.legado.app.ui.theme.adaptiveHorizontalPadding
 import io.legado.app.ui.theme.adaptiveHorizontalPaddingTab
 import io.legado.app.ui.widget.components.ActionItem
+import io.legado.app.ui.widget.components.AppPullToRefresh
 import io.legado.app.ui.widget.components.AppScaffold
 import io.legado.app.ui.widget.components.EmptyMessage
-import io.legado.app.ui.widget.components.SelectionActions
 import io.legado.app.ui.widget.components.SelectionBottomBar
-import io.legado.app.ui.widget.components.button.SmallOutlinedIconToggleButton
-import io.legado.app.ui.widget.components.topbar.TopBarActionButton
 import io.legado.app.ui.widget.components.alert.AppAlertDialog
+import io.legado.app.ui.widget.components.button.SmallOutlinedIconToggleButton
 import io.legado.app.ui.widget.components.card.NormalCard
 import io.legado.app.ui.widget.components.card.TextCard
 import io.legado.app.ui.widget.components.divider.PillHeaderDivider
 import io.legado.app.ui.widget.components.filePicker.FilePickerSheet
-import io.legado.app.ui.widget.components.icon.AppIcon
 import io.legado.app.ui.widget.components.icon.AppIcons
 import io.legado.app.ui.widget.components.importComponents.SourceInputDialog
 import io.legado.app.ui.widget.components.lazylist.FastScrollLazyVerticalGrid
 import io.legado.app.ui.widget.components.list.TopFloatingStickyItem
-import io.legado.app.ui.widget.components.topbar.DynamicTopAppBar
-import io.legado.app.ui.widget.components.topbar.GlassTopAppBarDefaults
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenu
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenuItem
+import io.legado.app.ui.widget.components.progressIndicator.AppCircularProgressIndicator
 import io.legado.app.ui.widget.components.tabRow.AppTabRow
 import io.legado.app.ui.widget.components.text.AppText
+import io.legado.app.ui.widget.components.topbar.DynamicTopAppBar
+import io.legado.app.ui.widget.components.topbar.GlassTopAppBarDefaults
+import io.legado.app.ui.widget.components.topbar.TopBarActionButton
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
@@ -172,20 +159,6 @@ fun BookshelfScreen(
     val scope = rememberCoroutineScope()
 
     ReportDrawnWhen { uiState.groups.isNotEmpty() }
-
-    val activeOverlay = uiState.activeOverlay
-    val showGroupMenu = activeOverlay == BookshelfOverlay.GroupMenu
-    val isEditMode = uiState.isEditMode
-    val selectedBookUrls = uiState.selectedBookUrls
-    val isInFolderRoot = uiState.isInFolderRoot
-    val bookGroupStyle = uiState.bookGroupStyle
-
-    val transitionState = remember { SeekableTransitionState(isInFolderRoot) }
-    LaunchedEffect(isInFolderRoot) {
-        if (transitionState.targetState != isInFolderRoot) {
-            transitionState.animateTo(isInFolderRoot)
-        }
-    }
 
     val clipboardManager = LocalClipboard.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -275,6 +248,21 @@ fun BookshelfScreen(
             }
         }
         return
+    }
+
+    val activeOverlay = uiState.activeOverlay
+    val showGroupMenu = activeOverlay == BookshelfOverlay.GroupMenu
+    val isEditMode = uiState.isEditMode
+    val selectedBookUrls = uiState.selectedBookUrls
+    val isInFolderRoot = uiState.isInFolderRoot
+    val bookGroupStyle = uiState.bookGroupStyle
+
+    val transitionState = remember { SeekableTransitionState(isInFolderRoot) }
+    val folderTransition = rememberTransition(transitionState, label = "FolderTransition")
+    LaunchedEffect(isInFolderRoot) {
+        if (transitionState.targetState != isInFolderRoot) {
+            transitionState.animateTo(isInFolderRoot)
+        }
     }
 
     val pagerState = rememberPagerState(
@@ -742,25 +730,36 @@ fun BookshelfScreen(
                 isRefreshing = uiState.isRefreshing,
                 onRefresh = { viewModel.refreshBooks(uiState.items) },
                 enabled = pullToRefreshEnabled,
+                topPadding = paddingValues.calculateTopPadding()
             ) {
-            val transition = rememberTransition(
-                transitionState, 
-                label = "FolderTransition"
-            )
-            transition.AnimatedContent(
+                folderTransition.AnimatedContent(
                 transitionSpec = {
                     val easing = FastOutSlowInEasing
                     val duration = 480
                     if (targetState) {
-                        (fadeIn(animationSpec = tween(duration, easing = easing)) + 
-                                scaleIn(initialScale = 1.05f, animationSpec = tween(duration, easing = easing)))
-                            .togetherWith(fadeOut(animationSpec = tween(duration, easing = easing)) + 
-                                    scaleOut(targetScale = 0.95f, animationSpec = tween(duration, easing = easing)))
+                        (fadeIn(animationSpec = tween(duration, easing = easing)) +
+                                scaleIn(
+                                    initialScale = 1.2f,
+                                    animationSpec = tween(duration, easing = easing)
+                                ))
+                            .togetherWith(fadeOut(animationSpec = tween(duration, easing = easing)) +
+                                    scaleOut(
+                                        targetScale = 0.8f,
+                                        animationSpec = tween(duration, easing = easing)
+                                    )
+                            )
                     } else {
-                        (fadeIn(animationSpec = tween(duration, easing = easing)) + 
-                                scaleIn(initialScale = 0.95f, animationSpec = tween(duration, easing = easing)))
-                            .togetherWith(fadeOut(animationSpec = tween(duration, easing = easing)) + 
-                                    scaleOut(targetScale = 1.05f, animationSpec = tween(duration, easing = easing)))
+                        (fadeIn(animationSpec = tween(duration, easing = easing)) +
+                                scaleIn(
+                                    initialScale = 0.8f,
+                                    animationSpec = tween(duration, easing = easing)
+                                ))
+                            .togetherWith(fadeOut(animationSpec = tween(duration, easing = easing)) +
+                                    scaleOut(
+                                        targetScale = 1.2f,
+                                        animationSpec = tween(duration, easing = easing)
+                                    )
+                            )
                     }
                 }
             ) { isRoot ->

@@ -67,16 +67,15 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -160,7 +159,11 @@ class BookshelfViewModel(
     val events = _eventChannel.receiveAsFlow()
 
     val groupsFlow: StateFlow<List<BookGroup>> = bookGroupRepository.flowShow()
-        .onEach { isInitialLoadingFlow.value = false }
+        .onEach {
+            if (it.isNotEmpty()) {
+                isInitialLoadingFlow.value = false
+            }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val allGroupsFlow: StateFlow<List<BookGroup>> = bookGroupRepository.flowAll()
@@ -477,6 +480,10 @@ class BookshelfViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BookshelfUiState())
 
     init {
+        viewModelScope.launch {
+            delay(500)
+            isInitialLoadingFlow.value = false
+        }
         viewModelScope.launch {
             FlowEventBus.with<Unit>(EventBus.UP_ALL_BOOK_TOC).collect {
                 upAllBookToc()

@@ -33,7 +33,6 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
-import io.legado.app.ui.widget.components.AppPullToRefresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -59,16 +58,15 @@ import io.legado.app.data.entities.RssArticle
 import io.legado.app.data.entities.RssSource
 import io.legado.app.ui.theme.LegadoTheme
 import io.legado.app.ui.theme.adaptiveContentPadding
+import io.legado.app.ui.widget.components.AppPullToRefresh
 import io.legado.app.ui.widget.components.EmptyMessage
 import io.legado.app.ui.widget.components.card.GlassCard
 import io.legado.app.ui.widget.components.cover.buildCoverImageRequest
 import io.legado.app.utils.toastOnUi
-import io.legado.app.ui.config.themeConfig.ThemeConfig
-import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import org.koin.compose.koinInject
 
 private enum class RssArticleLayout {
@@ -136,6 +134,7 @@ fun RssArticlesPage(
         isRefreshing = loadState.isRefreshing,
         onRefresh = { rssSource?.let(viewModel::loadArticles) },
         modifier = modifier.fillMaxSize(),
+        topPadding = paddingValues.calculateTopPadding()
     ) {
         when (layout) {
             RssArticleLayout.List, RssArticleLayout.LargeCard -> {
@@ -392,7 +391,9 @@ private fun RssArticleItem(
             }
 
             RssArticleLayout.LargeCard -> {
-                Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                Column(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)) {
                     RssArticleImage(
                         article = article,
                         showPlaceholder = false,
@@ -421,7 +422,9 @@ private fun RssArticleItem(
             }
 
             RssArticleLayout.GridCard -> {
-                Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                Column(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)) {
                     RssArticleImage(
                         article = article,
                         showPlaceholder = true,
@@ -450,7 +453,9 @@ private fun RssArticleItem(
             }
 
             RssArticleLayout.Waterfall -> {
-                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                Column(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)) {
                     RssArticleImage(
                         article = article,
                         showPlaceholder = false,

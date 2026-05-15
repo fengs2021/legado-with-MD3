@@ -23,8 +23,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.FormatListBulleted
 import androidx.compose.material.icons.filled.Book
@@ -37,7 +37,6 @@ import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
-import io.legado.app.ui.widget.components.progressIndicator.AppCircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -45,7 +44,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import io.legado.app.ui.widget.components.AppPullToRefresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -82,29 +80,31 @@ import io.legado.app.ui.config.coverConfig.CoverConfig
 import io.legado.app.ui.theme.LegadoTheme
 import io.legado.app.ui.theme.LocalHazeState
 import io.legado.app.ui.theme.ProvideThemeOverride
-import io.legado.app.ui.theme.ThemeResolver
 import io.legado.app.ui.theme.ThemeOverrideState
+import io.legado.app.ui.theme.ThemeResolver
 import io.legado.app.ui.theme.rememberImageSeedColor
 import io.legado.app.ui.theme.rememberThemeOverride
 import io.legado.app.ui.theme.responsiveHazeEffectFixedStyle
+import io.legado.app.ui.widget.components.AppPullToRefresh
 import io.legado.app.ui.widget.components.AppScaffold
 import io.legado.app.ui.widget.components.AppTextField
 import io.legado.app.ui.widget.components.alert.AppAlertDialog
-import io.legado.app.ui.widget.components.topbar.TopBarActionButton
-import io.legado.app.ui.widget.components.topbar.TopBarNavigationButton
 import io.legado.app.ui.widget.components.card.GlassCard
 import io.legado.app.ui.widget.components.card.TextCard
 import io.legado.app.ui.widget.components.cover.CoilBookCover
+import io.legado.app.ui.widget.components.cover.buildCoverImageRequest
 import io.legado.app.ui.widget.components.icon.AppIcon
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenu
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenuItem
-import io.legado.app.ui.widget.components.cover.buildCoverImageRequest
+import io.legado.app.ui.widget.components.progressIndicator.AppCircularProgressIndicator
 import io.legado.app.ui.widget.components.text.AnimatedTextLine
 import io.legado.app.ui.widget.components.text.AppText
-import io.legado.app.ui.widget.components.topbar.GlassTopAppBarScrollBehavior
 import io.legado.app.ui.widget.components.topbar.GlassTopAppBarDefaults
+import io.legado.app.ui.widget.components.topbar.GlassTopAppBarScrollBehavior
 import io.legado.app.ui.widget.components.topbar.M3GlassScrollBehavior
 import io.legado.app.ui.widget.components.topbar.MiuixGlassScrollBehavior
+import io.legado.app.ui.widget.components.topbar.TopBarActionButton
+import io.legado.app.ui.widget.components.topbar.TopBarNavigationButton
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -192,6 +192,7 @@ private fun BookInfoScreenContent(
                     modifier = Modifier.fillMaxSize(),
                     isRefreshing = state.isTocLoading,
                     onRefresh = { onIntent(BookInfoIntent.MenuAction(BookInfoMenuAction.Refresh)) },
+                    topPadding = paddingValues.calculateTopPadding()
                 ) {
                     LazyColumn(
                         state = listState,
@@ -692,7 +693,9 @@ private fun BookInfoHeader(
                         author = book.author,
                         path = book.getDisplayCover(),
                         sourceOrigin = book.origin,
-                        modifier = Modifier.width(112.dp).aspectRatio(5f / 7f),
+                        modifier = Modifier
+                            .width(112.dp)
+                            .aspectRatio(5f / 7f),
                         showLoadingPlaceholder = sharedCoverKey == null,
                         sharedTransitionScope = sharedTransitionScope,
                         animatedVisibilityScope = animatedVisibilityScope,

@@ -73,7 +73,15 @@
       "WebFetch(domain:compose-miuix-ui.github.io)",
       "Bash(Select-Object -Last 60)",
       "PowerShell(.\\\\gradlew.bat :app:compileAppDebugKotlin 2>&1 | Select-Object -Last 60)",
-      "Bash(New-Item *)"
+      "Bash(New-Item *)",
+      "Bash(dir /s /b \"%USERPROFILE%\\\\.gradle\\\\caches\\\\*miuix*\")",
+      "Bash(findstr /i \"jar\\\\|aar\")",
+      "Bash(dir /s /b \"%USERPROFILE%\\\\.gradle\\\\caches\\\\transforms-*\\\\*PullToRefresh*\")",
+      "Bash(dir /s /b \"D:\\\\AndroidPrj\\\\legado-with-MD3\\\\app\\\\build\\\\*PullToRefresh*\")",
+      "Bash(dir /s /b \"D:\\\\AndroidPrj\\\\legado-with-MD3\")",
+      "Bash(findstr /i \"miuix.*\\\\.kt\")",
+      "Bash(findstr /v \"\\\\\\\\build\\\\\\\\\")",
+      "Bash(dir /s /b \"D:\\\\AndroidPrj\\\\legado-with-MD3\\\\.gradle\\\\*miuix*\")"
     ]
   }
 }
