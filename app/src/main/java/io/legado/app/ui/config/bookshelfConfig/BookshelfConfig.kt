@@ -269,11 +269,16 @@ object BookshelfConfig {
     /**
      * 书架卡片背景颜色
      */
-    private val _bookshelfCardColor = prefStateDelegate(PreferKey.bookshelfCardColor, 0) {
-        postEvent(EventBus.NOTIFY_MAIN, false)
-    }
+    private val _bookshelfCardColor = prefStateDelegate(PreferKey.bookshelfCardColor, 0)
     var bookshelfCardColor by _bookshelfCardColor
     val bookshelfCardColorState: State<Int> get() = _bookshelfCardColor.state
+
+    /**
+     * 书架卡片背景颜色 (夜间)
+     */
+    private val _bookshelfCardColorDark = prefStateDelegate(PreferKey.bookshelfCardColorDark, 0)
+    var bookshelfCardColorDark by _bookshelfCardColorDark
+    val bookshelfCardColorDarkState: State<Int> get() = _bookshelfCardColorDark.state
 
     /**
      * 文件夹在列表模式下的样式: 0: 默认, 2: 横排封面

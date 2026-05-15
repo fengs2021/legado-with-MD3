@@ -723,8 +723,8 @@ interface BookDao {
             type, `group`, `order`, canUpdate,
             ifnull(customIntro, intro) as intro, kind
         FROM books
-        ORDER BY CASE WHEN (coverUrl IS NOT NULL OR customCoverUrl IS NOT NULL) THEN 0 ELSE 1 END, durChapterTime DESC
-        LIMIT 4
+        ORDER BY durChapterTime DESC
+        LIMIT 10
         """
     )
     fun flowBookShelfPreview(): Flow<List<BookShelfItem>>
@@ -741,8 +741,8 @@ interface BookDao {
         WHERE type & ${BookType.text} > 0 AND type & ${BookType.local} = 0
             AND ((SELECT COALESCE(SUM(groupId), 0) FROM book_groups WHERE groupId > 0) & `group`) = 0
             AND (SELECT show FROM book_groups WHERE groupId = ${BookGroup.IdNetNone}) != 1
-        ORDER BY CASE WHEN (coverUrl IS NOT NULL OR customCoverUrl IS NOT NULL) THEN 0 ELSE 1 END, durChapterTime DESC
-        LIMIT 4
+        ORDER BY durChapterTime DESC
+        LIMIT 10
         """
     )
     fun flowBookShelfRootPreview(): Flow<List<BookShelfItem>>
@@ -757,8 +757,8 @@ interface BookDao {
             ifnull(customIntro, intro) as intro, kind
         FROM books
         WHERE type & ${BookType.local} > 0
-        ORDER BY CASE WHEN (coverUrl IS NOT NULL OR customCoverUrl IS NOT NULL) THEN 0 ELSE 1 END, durChapterTime DESC
-        LIMIT 4
+        ORDER BY durChapterTime DESC
+        LIMIT 10
         """
     )
     fun flowBookShelfLocalPreview(): Flow<List<BookShelfItem>>
@@ -773,8 +773,8 @@ interface BookDao {
             ifnull(customIntro, intro) as intro, kind
         FROM books
         WHERE type & ${BookType.audio} > 0
-        ORDER BY CASE WHEN (coverUrl IS NOT NULL OR customCoverUrl IS NOT NULL) THEN 0 ELSE 1 END, durChapterTime DESC
-        LIMIT 4
+        ORDER BY durChapterTime DESC
+        LIMIT 10
         """
     )
     fun flowBookShelfAudioPreview(): Flow<List<BookShelfItem>>
@@ -790,8 +790,8 @@ interface BookDao {
         FROM books
         WHERE type & ${BookType.audio} = 0 AND type & ${BookType.local} = 0
             AND ((SELECT COALESCE(SUM(groupId), 0) FROM book_groups WHERE groupId > 0) & `group`) = 0
-        ORDER BY CASE WHEN (coverUrl IS NOT NULL OR customCoverUrl IS NOT NULL) THEN 0 ELSE 1 END, durChapterTime DESC
-        LIMIT 4
+        ORDER BY durChapterTime DESC
+        LIMIT 10
         """
     )
     fun flowBookShelfNetNoGroupPreview(): Flow<List<BookShelfItem>>
@@ -807,8 +807,8 @@ interface BookDao {
         FROM books
         WHERE type & ${BookType.local} > 0
             AND ((SELECT COALESCE(SUM(groupId), 0) FROM book_groups WHERE groupId > 0) & `group`) = 0
-        ORDER BY CASE WHEN (coverUrl IS NOT NULL OR customCoverUrl IS NOT NULL) THEN 0 ELSE 1 END, durChapterTime DESC
-        LIMIT 4
+        ORDER BY durChapterTime DESC
+        LIMIT 10
         """
     )
     fun flowBookShelfLocalNoGroupPreview(): Flow<List<BookShelfItem>>
@@ -823,8 +823,8 @@ interface BookDao {
             ifnull(customIntro, intro) as intro, kind
         FROM books
         WHERE type & ${BookType.image} > 0
-        ORDER BY CASE WHEN (coverUrl IS NOT NULL OR customCoverUrl IS NOT NULL) THEN 0 ELSE 1 END, durChapterTime DESC
-        LIMIT 4
+        ORDER BY durChapterTime DESC
+        LIMIT 10
         """
     )
     fun flowBookShelfMangaPreview(): Flow<List<BookShelfItem>>
@@ -839,8 +839,8 @@ interface BookDao {
             ifnull(customIntro, intro) as intro, kind
         FROM books
         WHERE type & ${BookType.text} > 0
-        ORDER BY CASE WHEN (coverUrl IS NOT NULL OR customCoverUrl IS NOT NULL) THEN 0 ELSE 1 END, durChapterTime DESC
-        LIMIT 4
+        ORDER BY durChapterTime DESC
+        LIMIT 10
         """
     )
     fun flowBookShelfTextPreview(): Flow<List<BookShelfItem>>
@@ -855,8 +855,8 @@ interface BookDao {
             ifnull(customIntro, intro) as intro, kind
         FROM books
         WHERE type & ${BookType.updateError} > 0
-        ORDER BY CASE WHEN (coverUrl IS NOT NULL OR customCoverUrl IS NOT NULL) THEN 0 ELSE 1 END, durChapterTime DESC
-        LIMIT 4
+        ORDER BY durChapterTime DESC
+        LIMIT 10
         """
     )
     fun flowBookShelfUpdateErrorPreview(): Flow<List<BookShelfItem>>
@@ -871,8 +871,8 @@ interface BookDao {
             ifnull(customIntro, intro) as intro, kind
         FROM books
         WHERE durChapterIndex = 0 AND durChapterPos = 0
-        ORDER BY CASE WHEN (coverUrl IS NOT NULL OR customCoverUrl IS NOT NULL) THEN 0 ELSE 1 END, durChapterTime DESC
-        LIMIT 4
+        ORDER BY durChapterTime DESC
+        LIMIT 10
         """
     )
     fun flowBookShelfUnreadPreview(): Flow<List<BookShelfItem>>
@@ -887,8 +887,8 @@ interface BookDao {
             ifnull(customIntro, intro) as intro, kind
         FROM books
         WHERE totalChapterNum > 0 AND durChapterIndex > 0 AND durChapterIndex < totalChapterNum - 1
-        ORDER BY CASE WHEN (coverUrl IS NOT NULL OR customCoverUrl IS NOT NULL) THEN 0 ELSE 1 END, durChapterTime DESC
-        LIMIT 4
+        ORDER BY durChapterTime DESC
+        LIMIT 10
         """
     )
     fun flowBookShelfReadingPreview(): Flow<List<BookShelfItem>>
@@ -903,8 +903,8 @@ interface BookDao {
             ifnull(customIntro, intro) as intro, kind
         FROM books
         WHERE totalChapterNum > 0 AND durChapterIndex >= totalChapterNum - 1
-        ORDER BY CASE WHEN (coverUrl IS NOT NULL OR customCoverUrl IS NOT NULL) THEN 0 ELSE 1 END, durChapterTime DESC
-        LIMIT 4
+        ORDER BY durChapterTime DESC
+        LIMIT 10
         """
     )
     fun flowBookShelfReadFinishedPreview(): Flow<List<BookShelfItem>>
@@ -919,8 +919,8 @@ interface BookDao {
             ifnull(customIntro, intro) as intro, kind
         FROM books
         WHERE (`group` & :groupId) > 0
-        ORDER BY CASE WHEN (coverUrl IS NOT NULL OR customCoverUrl IS NOT NULL) THEN 0 ELSE 1 END, durChapterTime DESC
-        LIMIT 4
+        ORDER BY durChapterTime DESC
+        LIMIT 10
         """
     )
     fun flowBookShelfPreviewByUserGroup(groupId: Long): Flow<List<BookShelfItem>>

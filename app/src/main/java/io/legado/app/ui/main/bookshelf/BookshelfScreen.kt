@@ -778,7 +778,7 @@ fun BookshelfScreen(
                             ),
                         contentPadding = adaptiveContentPaddingBookshelf(
                             top = paddingValues.calculateTopPadding(),
-                            bottom = if (ThemeConfig.useFloatingBottomBar) 120.dp else 8.dp,
+                            bottom = if (ThemeConfig.useFloatingBottomBar || ThemeConfig.enableBlur) 120.dp else 8.dp,
                             horizontal = if (isGridMode) 8.dp else 4.dp
                         ),
                         verticalArrangement = Arrangement.spacedBy(if (isGridMode) 8.dp else 0.dp),
@@ -1342,7 +1342,7 @@ fun BookshelfPage(
                 ),
             contentPadding = adaptiveContentPaddingBookshelf(
                 top = paddingValues.calculateTopPadding(),
-                bottom = if (ThemeConfig.useFloatingBottomBar) 120.dp else 8.dp,
+                bottom = if (ThemeConfig.useFloatingBottomBar || ThemeConfig.enableBlur) 120.dp else 8.dp,
                 horizontal = if (isGridMode) 8.dp else 4.dp
             ),
             verticalArrangement = Arrangement.spacedBy(if (isGridMode) 8.dp else 0.dp),

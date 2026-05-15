@@ -26,7 +26,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,12 +35,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import io.legado.app.R
@@ -49,13 +48,11 @@ import io.legado.app.constant.BookType
 import io.legado.app.ui.config.bookshelfConfig.BookshelfConfig
 import io.legado.app.ui.config.themeConfig.ThemeConfig
 import io.legado.app.ui.theme.LegadoTheme
-import io.legado.app.ui.widget.components.card.GlassCard
 import io.legado.app.ui.widget.components.card.NormalCard
 import io.legado.app.ui.widget.components.card.TextCard
-import io.legado.app.ui.widget.components.cover.CoilBookCover
 import io.legado.app.ui.widget.components.cover.BookshelfCover
+import io.legado.app.ui.widget.components.cover.CoilBookCover
 import io.legado.app.ui.widget.components.icon.AppIcon
-import io.legado.app.ui.widget.components.icon.AppIcons
 import io.legado.app.ui.widget.components.text.AppText
 import io.legado.app.utils.splitNotBlank
 import io.legado.app.utils.toTimeAgo
@@ -90,10 +87,11 @@ fun BookshelfItem(
     onClick: () -> Unit,
     onLongClick: (() -> Unit)?
 ) {
-    val containerColor = if (!isGrid && BookshelfConfig.bookshelfCardColor != 0) {
-        Color(BookshelfConfig.bookshelfCardColor)
-    } else if (ThemeConfig.enableDeepPersonalization && ThemeConfig.secondaryThemeColor != 0) {
-        Color(ThemeConfig.secondaryThemeColor)
+    val isDark = LegadoTheme.isDark
+    val bookshelfCardColor =
+        if (isDark) BookshelfConfig.bookshelfCardColorDark else BookshelfConfig.bookshelfCardColor
+    val containerColor = if (!isGrid && bookshelfCardColor != 0) {
+        Color(bookshelfCardColor)
     } else {
         LegadoTheme.colorScheme.cardContainer
     }
@@ -189,7 +187,7 @@ fun BookshelfItem(
                     Box(
                         modifier = Modifier
                             .align(Alignment.Top)
-                            .width(if (!isCompact) 80.dp else 56.dp)
+                            .width(if (!isCompact) 84.dp else 56.dp)
                             .padding(end = 8.dp)
                     ) {
                         Box(
@@ -209,11 +207,13 @@ fun BookshelfItem(
                         }
                     }
                     Column(
-                        modifier = Modifier.weight(1f).padding(top = 8.dp, bottom = 8.dp, end = 8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(top = 8.dp, bottom = 8.dp, end = 8.dp),
                         verticalArrangement = Arrangement.Center
                     ) {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.Top
                     ) {
                         AppText(
                             text = title,
@@ -222,11 +222,15 @@ fun BookshelfItem(
                             } else {
                                 LegadoTheme.typography.titleMediumEmphasized
                             },
-                            maxLines = 1,
+                            maxLines = BookshelfConfig.bookshelfTitleMaxLines,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
                         )
-                        titleEnd?.invoke()
+                        titleEnd?.let {
+                            Box(modifier = Modifier.padding(top = 4.dp)) {
+                                it.invoke()
+                            }
+                        }
                     }
                         subTitle?.let {
                             AppText(
@@ -296,68 +300,82 @@ fun BookGroupCover(
                 modifier = Modifier.fillMaxSize()
             )
         } else {
-            Column(modifier = Modifier.fillMaxSize()) {
-                Row(modifier = Modifier.weight(1f)) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .padding(1.dp)
-                    ) {
-                        books.getOrNull(0)?.let {
-                            CoilBookCover(
-                                name = it.name,
-                                author = it.author,
-                                path = it.getDisplayCover(),
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                    }
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .padding(1.dp)
-                    ) {
-                        books.getOrNull(1)?.let {
-                            CoilBookCover(
-                                name = it.name,
-                                author = it.author,
-                                path = it.getDisplayCover(),
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
+            Box(
+                modifier = Modifier.run {
+                    if (BookshelfConfig.bookshelfCoverShadow) {
+                        background(LegadoTheme.colorScheme.surface)
+                    } else {
+                        this
                     }
                 }
-                Row(modifier = Modifier.weight(1f)) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .padding(1.dp)
-                    ) {
-                        books.getOrNull(2)?.let {
-                            CoilBookCover(
-                                name = it.name,
-                                author = it.author,
-                                path = it.getDisplayCover(),
-                                modifier = Modifier.fillMaxSize()
-                            )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 1.dp),
+                ) {
+                    Row(modifier = Modifier.weight(1f)) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .padding(1.dp)
+                        ) {
+                            books.getOrNull(0)?.let {
+                                CoilBookCover(
+                                    name = it.name,
+                                    author = it.author,
+                                    path = it.getDisplayCover(),
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .padding(1.dp)
+                        ) {
+                            books.getOrNull(1)?.let {
+                                CoilBookCover(
+                                    name = it.name,
+                                    author = it.author,
+                                    path = it.getDisplayCover(),
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                         }
                     }
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .padding(1.dp)
-                    ) {
-                        books.getOrNull(3)?.let {
-                            CoilBookCover(
-                                name = it.name,
-                                author = it.author,
-                                path = it.getDisplayCover(),
-                                modifier = Modifier.fillMaxSize()
-                            )
+                    Row(modifier = Modifier.weight(1f)) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .padding(1.dp)
+                        ) {
+                            books.getOrNull(2)?.let {
+                                CoilBookCover(
+                                    name = it.name,
+                                    author = it.author,
+                                    path = it.getDisplayCover(),
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .padding(1.dp)
+                        ) {
+                            books.getOrNull(3)?.let {
+                                CoilBookCover(
+                                    name = it.name,
+                                    author = it.author,
+                                    path = it.getDisplayCover(),
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                         }
                     }
                 }
@@ -482,13 +500,16 @@ fun BookGroupItemHorizontalCovers(
     onBookClick: ((BookShelfItem) -> Unit)? = null
 ) {
     Column {
+        val isDark = LegadoTheme.isDark
+        val bookshelfCardColor =
+            if (isDark) BookshelfConfig.bookshelfCardColorDark else BookshelfConfig.bookshelfCardColor
         NormalCard(
             modifier = modifier
                 .fillMaxWidth()
                 .padding(all = 4.dp),
             cornerRadius = 12.dp,
-            containerColor = if (BookshelfConfig.bookshelfCardColor != 0) {
-                Color(BookshelfConfig.bookshelfCardColor)
+            containerColor = if (bookshelfCardColor != 0) {
+                Color(bookshelfCardColor)
             } else {
                 LegadoTheme.colorScheme.cardContainer
             },
@@ -634,7 +655,9 @@ fun BookItem(
                 path = book.getDisplayCover(),
                 isUpdating = isUpdating,
                 modifier = modifier,
-                coverModifier = Modifier.fillMaxWidth().aspectRatio(5f / 7f),
+                coverModifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(5f / 7f),
                 sourceOrigin = book.origin,
                 badgeText = if (layoutMode != 0) unreadText else null,
                 showBadgeDot = BookshelfConfig.showUnread && BookshelfConfig.showUnreadNew && book.isNew,

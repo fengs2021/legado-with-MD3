@@ -271,6 +271,7 @@ object PreferKey {
     const val bookshelfCoverShadow = "bookshelfCoverShadow"
     const val bookshelfSearchActionDirectToSearch = "bookshelfSearchActionDirectToSearch"
     const val bookshelfCardColor = "bookshelfCardColor"
+    const val bookshelfCardColorDark = "bookshelfCardColorDark"
     const val bookshelfGroupListStyle = "bookshelfGroupListStyle"
     const val bookshelfGroupCoverCount = "bookshelfGroupCoverCount"
 

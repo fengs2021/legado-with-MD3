@@ -45,10 +45,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.legado.app.R
 import io.legado.app.data.entities.RssSource
 import io.legado.app.ui.login.SourceLoginActivity
-import io.legado.app.ui.rss.favorites.RssFavoritesActivity
 import io.legado.app.ui.rss.source.edit.RssSourceEditActivity
 import io.legado.app.ui.rss.source.manage.RssSourceActivity
-import io.legado.app.ui.rss.subscription.RuleSubActivity
 import io.legado.app.ui.theme.LegadoTheme
 import io.legado.app.ui.theme.adaptiveContentPadding
 import io.legado.app.ui.widget.components.SourceIcon
@@ -71,7 +69,9 @@ import org.koin.androidx.compose.koinViewModel
 fun RssScreen(
     viewModel: RssViewModel = koinViewModel(),
     onOpenSort: (sourceUrl: String, sortUrl: String?, key: String?) -> Unit,
-    onOpenRead: (title: String?, origin: String, link: String?, openUrl: String?) -> Unit
+    onOpenRead: (title: String?, origin: String, link: String?, openUrl: String?) -> Unit,
+    onOpenRuleSub: () -> Unit,
+    onOpenFavorites: () -> Unit,
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -82,6 +82,8 @@ fun RssScreen(
     val currentContext by rememberUpdatedState(context)
     val currentOnOpenSort by rememberUpdatedState(onOpenSort)
     val currentOnOpenRead by rememberUpdatedState(onOpenRead)
+    val currentOnOpenRuleSub by rememberUpdatedState(onOpenRuleSub)
+    val currentOnOpenFavorites by rememberUpdatedState(onOpenFavorites)
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collectLatest { effect ->
@@ -112,11 +114,11 @@ fun RssScreen(
                 }
 
                 RssEffect.OpenRuleSub -> {
-                    currentContext.startActivity<RuleSubActivity>()
+                    currentOnOpenRuleSub()
                 }
 
                 RssEffect.OpenFavorites -> {
-                    currentContext.startActivity<RssFavoritesActivity>()
+                    currentOnOpenFavorites()
                 }
 
                 RssEffect.OpenSourceManage -> {

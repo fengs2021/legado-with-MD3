@@ -113,6 +113,8 @@ fun MainScreen(
     onNavigateToExploreShow: (title: String?, sourceUrl: String, exploreUrl: String?) -> Unit,
     onNavigateToRssSort: (sourceUrl: String, sortUrl: String?, key: String?) -> Unit,
     onNavigateToRssRead: (title: String?, origin: String, link: String?, openUrl: String?) -> Unit,
+    onNavigateToRssFavorites: () -> Unit,
+    onNavigateToRuleSub: () -> Unit,
     onNavigateToReadRecord: () -> Unit,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
@@ -383,7 +385,9 @@ fun MainScreen(
                                 },
                                 onOpenRead = { title, origin, link, openUrl ->
                                     onNavigateToRssRead(title, origin, link, openUrl)
-                                }
+                                },
+                                onOpenFavorites = onNavigateToRssFavorites,
+                                onOpenRuleSub = onNavigateToRuleSub
                             )
                             MainDestination.My -> MyScreen(
                                 onOpenSettings = onOpenSettings,

@@ -193,11 +193,6 @@
             android:name=".ui.qrcode.QrCodeActivity"
             android:enableOnBackInvokedCallback="true"
             android:launchMode="singleTask" />
-        <!-- 规则订阅 -->
-        <activity
-            android:name=".ui.rss.subscription.RuleSubActivity"
-            android:enableOnBackInvokedCallback="true"
-            android:launchMode="singleTask" />
         <!-- 书源编辑 -->
         <activity
             android:name=".ui.book.source.edit.BookSourceEditActivity"
@@ -266,11 +261,6 @@
         <!-- 订阅源调试 -->
         <activity
             android:name=".ui.rss.source.debug.RssSourceDebugActivity"
-            android:enableOnBackInvokedCallback="true"
-            android:launchMode="singleTop" />
-        <!-- Rss收藏 -->
-        <activity
-            android:name=".ui.rss.favorites.RssFavoritesActivity"
             android:enableOnBackInvokedCallback="true"
             android:launchMode="singleTop" />
         <!-- 书签 -->

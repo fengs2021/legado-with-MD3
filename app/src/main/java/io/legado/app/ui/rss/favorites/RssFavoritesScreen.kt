@@ -28,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import io.legado.app.R
 import io.legado.app.data.entities.RssStar
 import io.legado.app.ui.theme.adaptiveContentPadding
@@ -41,13 +40,14 @@ import io.legado.app.ui.widget.components.dialog.TextListInputDialog
 import io.legado.app.ui.widget.components.divider.PillDivider
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenuItem
 import io.legado.app.ui.widget.components.rules.RuleListScaffold
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RssFavoritesScreen(
     onBackClick: () -> Unit,
     onOpenRead: (title: String?, origin: String, link: String?, openUrl: String?) -> Unit,
-    viewModel: RssFavoritesViewModel = viewModel()
+    viewModel: RssFavoritesViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsState()
     val groups by viewModel.groups.collectAsState()

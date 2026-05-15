@@ -14,23 +14,23 @@ import io.legado.app.data.repository.BookRepository
 import io.legado.app.data.repository.BookSourceCallbackRepository
 import io.legado.app.data.repository.CacheBookDownloadRepository
 import io.legado.app.data.repository.DatabaseMaintenanceRepository
-import io.legado.app.data.repository.DirectLinkUploadRepository
 import io.legado.app.data.repository.DictRuleRepository
+import io.legado.app.data.repository.DirectLinkUploadRepository
 import io.legado.app.data.repository.ExploreRepository
 import io.legado.app.data.repository.ExploreRepositoryImpl
 import io.legado.app.data.repository.LocalBookRepository
 import io.legado.app.data.repository.ReadRecordRepository
 import io.legado.app.data.repository.RemoteBookRepository
 import io.legado.app.data.repository.RssRepository
+import io.legado.app.data.repository.SearchContentRepository
 import io.legado.app.data.repository.SearchRepository
 import io.legado.app.data.repository.SearchRepositoryImpl
-import io.legado.app.data.repository.SearchContentRepository
 import io.legado.app.data.repository.SettingsRepository
 import io.legado.app.data.repository.UploadRepository
 import io.legado.app.data.repository.WebDavBackupRepository
 import io.legado.app.data.repository.WebDavReadingProgressRepository
-import io.legado.app.domain.gateway.BookCacheCleanupGateway
 import io.legado.app.domain.gateway.AppStartupGateway
+import io.legado.app.domain.gateway.BookCacheCleanupGateway
 import io.legado.app.domain.gateway.BookCacheDownloadGateway
 import io.legado.app.domain.gateway.BookSearchGateway
 import io.legado.app.domain.gateway.BookSourceCallbackGateway
@@ -47,14 +47,13 @@ import io.legado.app.domain.usecase.ClearBookCacheUseCase
 import io.legado.app.domain.usecase.DeleteBooksUseCase
 import io.legado.app.domain.usecase.GetReadingProgressUseCase
 import io.legado.app.domain.usecase.RemoveBookGroupAssignmentUseCase
-import io.legado.app.ui.widget.components.explore.ExploreKindUiUseCase
 import io.legado.app.domain.usecase.ResolveBookShelfStateUseCase
-import io.legado.app.domain.usecase.readRecord.GetReadRecordOverviewUseCase
 import io.legado.app.domain.usecase.SearchBooksUseCase
 import io.legado.app.domain.usecase.ShrinkDatabaseUseCase
 import io.legado.app.domain.usecase.UpdateBooksGroupUseCase
 import io.legado.app.domain.usecase.UploadReadingProgressUseCase
 import io.legado.app.domain.usecase.WebDavBackupUseCase
+import io.legado.app.domain.usecase.readRecord.GetReadRecordOverviewUseCase
 import io.legado.app.help.coil.CoverFetcher
 import io.legado.app.help.coil.CoverInterceptor
 import io.legado.app.help.http.okHttpClient
@@ -64,7 +63,6 @@ import io.legado.app.ui.book.cache.manage.BookCacheManageViewModel
 import io.legado.app.ui.book.changecover.ChangeCoverViewModel
 import io.legado.app.ui.book.changesource.ChangeBookSourceComposeViewModel
 import io.legado.app.ui.book.changesource.ChangeBookSourceViewModel
-import io.legado.app.ui.book.manage.BookshelfManageScreenViewModel
 import io.legado.app.ui.book.explore.ExploreShowViewModel
 import io.legado.app.ui.book.group.GroupViewModel
 import io.legado.app.ui.book.import.local.ImportBookViewModel
@@ -72,10 +70,11 @@ import io.legado.app.ui.book.import.remote.RemoteBookViewModel
 import io.legado.app.ui.book.import.remote.ServerConfigViewModel
 import io.legado.app.ui.book.import.remote.ServersViewModel
 import io.legado.app.ui.book.info.BookInfoViewModel
+import io.legado.app.ui.book.manage.BookshelfManageScreenViewModel
 import io.legado.app.ui.book.manga.ReadMangaViewModel
 import io.legado.app.ui.book.read.ReadBookViewModel
-import io.legado.app.ui.book.readRecord.ReadRecordViewModel
 import io.legado.app.ui.book.readRecord.ReadRecordOverviewViewModel
+import io.legado.app.ui.book.readRecord.ReadRecordViewModel
 import io.legado.app.ui.book.search.SearchViewModel
 import io.legado.app.ui.book.searchContent.SearchContentViewModel
 import io.legado.app.ui.book.toc.TocViewModel
@@ -97,10 +96,13 @@ import io.legado.app.ui.main.rss.RssViewModel
 import io.legado.app.ui.replace.ReplaceEditRoute
 import io.legado.app.ui.replace.ReplaceRuleViewModel
 import io.legado.app.ui.replace.edit.ReplaceEditViewModel
-import io.legado.app.ui.rss.source.manage.RssSourceViewModel
 import io.legado.app.ui.rss.article.RssArticlesViewModel
 import io.legado.app.ui.rss.article.RssSortViewModel
+import io.legado.app.ui.rss.favorites.RssFavoritesViewModel
 import io.legado.app.ui.rss.read.ReadRssViewModel
+import io.legado.app.ui.rss.source.manage.RssSourceViewModel
+import io.legado.app.ui.rss.subscription.RuleSubViewModel
+import io.legado.app.ui.widget.components.explore.ExploreKindUiUseCase
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
@@ -179,6 +181,8 @@ val appModule = module {
     viewModelOf(::RssSortViewModel)
     viewModelOf(::RssArticlesViewModel)
     viewModelOf(::ReadRssViewModel)
+    viewModelOf(::RssFavoritesViewModel)
+    viewModelOf(::RuleSubViewModel)
     viewModelOf(::ReadRecordViewModel)
     viewModelOf(::ReadRecordOverviewViewModel)
     viewModelOf(::ExploreShowViewModel)
