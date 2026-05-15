@@ -12,6 +12,7 @@ import io.legado.app.constant.NotificationId
 import io.legado.app.data.appDb
 import io.legado.app.help.book.update
 import io.legado.app.model.CacheBook
+import io.legado.app.model.CacheBookModel
 import io.legado.app.model.cache.CacheDownloadAdmissionQueue
 import io.legado.app.model.cache.CacheDownloadRequest
 import io.legado.app.model.cache.CacheDownloadSource
@@ -24,11 +25,11 @@ import io.legado.app.utils.activityPendingIntent
 import io.legado.app.utils.servicePendingIntent
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -310,10 +311,10 @@ class CacheBookService : BaseService() {
                     kotlin.runCatching {
                         WebBook.getBookInfoAwait(cacheBook.bookSource, book)
                     }.onFailure {
-                        removeDownload(request.bookUrl)
                         markBookAdmissionFailed(
                             request.bookUrl,
-                            getString(R.string.error_get_book_info)
+                            getString(R.string.error_get_book_info),
+                            model = cacheBook,
                         )
                         AppLog.put(
                             "《$name》目录为空且加载详情页失败\n${it.localizedMessage}",
@@ -333,10 +334,10 @@ class CacheBookService : BaseService() {
                         book.totalChapterNum = 0
                         book.update()
                     }
-                    removeDownload(request.bookUrl)
                     markBookAdmissionFailed(
                         request.bookUrl,
-                        getString(R.string.error_get_chapter_list)
+                        getString(R.string.error_get_chapter_list),
+                        model = cacheBook,
                     )
                     AppLog.put(
                         "《$name》目录为空且加载目录失败\n${it.localizedMessage}",
@@ -408,8 +409,15 @@ class CacheBookService : BaseService() {
         return removedQueued || removedAdmission || removedActive
     }
 
-    private fun markBookAdmissionFailed(bookUrl: String, message: String) {
+    private fun markBookAdmissionFailed(
+        bookUrl: String,
+        message: String,
+        model: CacheBookModel? = null,
+    ) {
         removeQueuedBook(bookUrl)
+        if (model != null) {
+            CacheBook.removeModelFromService(bookUrl, model)
+        }
         CacheBook.markBookFailed(bookUrl, message)
     }
 
@@ -475,15 +483,6 @@ class CacheBookService : BaseService() {
         }
     }
 
-
-    private fun removeDownload(bookUrl: String?) {
-        CacheBook.cacheBookMap[bookUrl]?.stop()
-        if (CacheBook.isRun) {
-            ensureDownloadJob()
-            return
-        }
-        stopIfIdle()
-    }
 
     private suspend fun runDownloadLoop() {
         try {

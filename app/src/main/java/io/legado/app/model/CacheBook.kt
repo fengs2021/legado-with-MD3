@@ -78,7 +78,7 @@ object CacheBook {
                     }
                     var emitted = false
                     taskMap.forEach { (_, model) ->
-                        if (model.hasRunnableDownloads()) {
+                        if (model.hasLaunchableChapters()) {
                             emit(model)
                             emitted = true
                         }

@@ -153,6 +153,16 @@ class CacheBookModel(
                 )
     }
 
+    /**
+     * 有可启动的下载任务（队列中有待下载章节或正在加载目录）。
+     * 与 [hasRunnableDownloads] 不同，不包含已在执行中的任务。
+     * 用于判断是否需要向下载循环 emit 模型，避免无新章节可取时的高频空转。
+     */
+    @Synchronized
+    fun hasLaunchableChapters(): Boolean {
+        return !isPaused && (queue.waitingCount() > 0 || isLoading)
+    }
+
     @Synchronized
     fun diagnostics(): Diagnostics {
         return Diagnostics(
@@ -579,7 +589,7 @@ class CacheBookModel(
                 return true
             }
         }
-        repository.downloadContentTask(
+        val task = repository.downloadContentTask(
             scope = scope,
             bookSource = bookSource,
             book = book,
@@ -604,8 +614,13 @@ class CacheBookModel(
             onCancel(chapter.index, requeue = false)
             downloadFinish(chapter, "download canceled", resetPageOffset, true)
         }.onFinally {
+            chapterTasks.remove(chapter.index)
             host.onTaskQueuesChanged(book.bookUrl)
-        }.start()
+        }
+        task.start()
+        synchronized(this) {
+            chapterTasks[chapter.index] = task
+        }
         return true
     }
 
