@@ -1,6 +1,5 @@
 package io.legado.app.ui.widget.components
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,52 +34,47 @@ fun AppPullToRefresh(
     content: @Composable () -> Unit,
 ) {
     if (ThemeResolver.isMiuixEngine(composeEngine)) {
-        if (enabled) {
-            // Let the miuix library handle gesture/animation, but skip the persistent
-            // Refreshing state that blocks all scroll events.
-            // localIsRefreshing is true only briefly so the indicator shows then hides,
-            // while the actual refresh runs independently.
-            var localIsRefreshing by remember { mutableStateOf(false) }
+        // Let the miuix library handle gesture/animation, but skip the persistent
+        // Refreshing state that blocks all scroll events.
+        // localIsRefreshing is true only briefly so the indicator shows then hides,
+        // while the actual refresh runs independently.
+        var localIsRefreshing by remember { mutableStateOf(false) }
 
-            LaunchedEffect(localIsRefreshing) {
-                if (localIsRefreshing) {
-                    delay(300)
-                    localIsRefreshing = false
-                }
-            }
-
-            MiuixPullToRefresh(
-                isRefreshing = localIsRefreshing,
-                onRefresh = {
-                    localIsRefreshing = true
-                    onRefresh()
-                },
-                modifier = modifier,
-                contentPadding = PaddingValues(top = topPadding + 16.dp),
-                pullToRefreshState = miuixRememberPullToRefreshState(),
-                refreshTexts = listOf(
-                    "下拉刷新",
-                    "松开刷新",
-                    "正在刷新",
-                    "正在刷新"
-                )
-            ) {
-                content()
-            }
-        } else {
-            Box(modifier) {
-                content()
+        LaunchedEffect(localIsRefreshing) {
+            if (localIsRefreshing) {
+                delay(300)
+                localIsRefreshing = false
             }
         }
+
+        MiuixPullToRefresh(
+            isRefreshing = localIsRefreshing,
+            onRefresh = {
+                localIsRefreshing = true
+                onRefresh()
+            },
+            modifier = modifier,
+            contentPadding = PaddingValues(top = topPadding + 16.dp),
+            pullToRefreshState = miuixRememberPullToRefreshState(),
+            refreshTexts = listOf(
+                "下拉刷新",
+                "松开刷新",
+                "正在刷新",
+                "正在刷新"
+            )
+        ) {
+            content()
+        }
     } else {
-        if (enabled) {
-            val state = rememberPullToRefreshState()
-            PullToRefreshBox(
-                isRefreshing = isRefreshing,
-                onRefresh = onRefresh,
-                modifier = modifier,
-                state = state,
-                indicator = {
+        val state = rememberPullToRefreshState()
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+            modifier = modifier,
+            state = state,
+            enabled = enabled,
+            indicator = {
+                if (enabled) {
                     PullToRefreshDefaults.LoadingIndicator(
                         state = state,
                         isRefreshing = isRefreshing,
@@ -89,13 +83,9 @@ fun AppPullToRefresh(
                             .align(Alignment.TopCenter),
                     )
                 }
-            ) {
-                content()
             }
-        } else {
-            Box(modifier) {
-                content()
-            }
+        ) {
+            content()
         }
     }
 }

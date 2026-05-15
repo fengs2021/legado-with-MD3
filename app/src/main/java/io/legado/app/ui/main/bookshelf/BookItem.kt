@@ -100,6 +100,13 @@ fun BookshelfItem(
         Box(
             modifier = modifier
                 .clip(RoundedCornerShape(4.dp))
+                .then(
+                    if (isSelected) {
+                        Modifier.background(LegadoTheme.colorScheme.secondaryContainer)
+                    } else {
+                        Modifier
+                    }
+                )
                 .combinedClickable(
                     onClick = onClick,
                     onLongClick = onLongClick
