@@ -29,6 +29,11 @@ class CacheBookModel(
     private val host: Host,
 ) {
 
+    private companion object {
+        /** Download timeout: 2 minutes */
+        const val DOWNLOAD_TIMEOUT_MS = 120_000L
+    }
+
     interface Host {
         val stateStore: CacheDownloadStateStore
         val cacheBookMap: ConcurrentHashMap<String, CacheBookModel>
@@ -58,9 +63,13 @@ class CacheBookModel(
     private val tasks = CompositeCoroutine()
     private val repository = CacheDownloadRepository()
     private val retryCountMap = hashMapOf<Int, Int>()
+    @Volatile
     private var isStopped = false
+    @Volatile
     private var waitingRetry = false
+    @Volatile
     private var isLoading = false
+    @Volatile
     private var isPaused = false
 
     @Synchronized
@@ -91,7 +100,6 @@ class CacheBookModel(
     @Synchronized
     fun isDownloading(index: Int): Boolean = onDownloadSet.contains(index)
 
-    @Synchronized
     fun isPaused(): Boolean = isPaused
 
     @Synchronized
@@ -120,12 +128,10 @@ class CacheBookModel(
         return queue.waitingCount() > 0 || onDownloadSet.isNotEmpty() || isLoading || chapterTasks.isNotEmpty()
     }
 
-    @Synchronized
     fun isStop(): Boolean {
         return isStopped || (!isRun() && !waitingRetry)
     }
 
-    @Synchronized
     fun isLoading(): Boolean = isLoading
 
     @Synchronized
@@ -498,20 +504,23 @@ class CacheBookModel(
         chapter: BookChapter,
         chapterIndex: Int,
     ) {
-        task.onSuccess {
+        task.onSuccess(IO) {
             onSuccess(chapter)
             (it as? String)?.let { content ->
                 emitPendingReadContent(chapter, content)
             }
-        }.onError {
+        }.onError(IO) {
             onPreError(chapter, it)
-            delay(1000)
-            onPostError(chapter, it)
+            try {
+                delay(1000)
+            } finally {
+                onPostError(chapter, it)
+            }
             emitPendingReadError(chapter, it)
-        }.onCancel {
+        }.onCancel(IO) {
             onCancel(chapterIndex)
             emitPendingReadCanceled(chapter)
-        }.onFinally {
+        }.onFinally(IO) {
             chapterTasks.remove(chapterIndex)?.let { tasks.delete(it) }
             onFinally()
         }
@@ -548,10 +557,27 @@ class CacheBookModel(
         chapter: BookChapter,
         semaphore: Semaphore?,
         resetPageOffset: Boolean = false
-    ) {
+    ): Boolean {
         if (!markChapterDownloadStarted(chapter.index)) {
-            markPendingReadRequest(chapter.index, resetPageOffset)
-            return
+            // Chapter is already in onDownloadSet. Check if the task is actually alive.
+            val hasLiveTask = synchronized(this) {
+                chapterTasks.containsKey(chapter.index)
+            }
+            if (!hasLiveTask) {
+                // Stale entry: onDownloadSet has the index but no live task.
+                // Clean up and retry.
+                synchronized(this) {
+                    onDownloadSet.remove(chapter.index)
+                }
+                notifyDownloadSetChanged()
+                if (!markChapterDownloadStarted(chapter.index)) {
+                    markPendingReadRequest(chapter.index, resetPageOffset)
+                    return false
+                }
+            } else {
+                markPendingReadRequest(chapter.index, resetPageOffset)
+                return true
+            }
         }
         repository.downloadContentTask(
             scope = scope,
@@ -562,7 +588,7 @@ class CacheBookModel(
             context = IO,
             executeContext = IO,
             semaphore = semaphore
-        ).onSuccess { content ->
+        ).timeout(DOWNLOAD_TIMEOUT_MS).onSuccess { content ->
             onSuccess(chapter)
             ReadBook.downloadedChapters.add(chapter.index)
             ReadBook.downloadFailChapters.remove(chapter.index)
@@ -580,6 +606,7 @@ class CacheBookModel(
         }.onFinally {
             host.onTaskQueuesChanged(book.bookUrl)
         }.start()
+        return true
     }
 
     @Synchronized

@@ -128,6 +128,10 @@ object CacheBook {
     @Volatile
     private var lastQueueStats = QueueStats(0, 0)
 
+    @Volatile
+    private var lastSummaryUpdateTime = 0L
+    private const val SUMMARY_UPDATE_THROTTLE_MS = 100L
+
     private val successDownloadCount = AtomicInteger(0)
 
     val cacheBookMap: ConcurrentHashMap<String, CacheBookModel>
@@ -177,6 +181,17 @@ object CacheBook {
     }
 
     private fun updateSummary() {
+        val now = System.currentTimeMillis()
+        if (now - lastSummaryUpdateTime < SUMMARY_UPDATE_THROTTLE_MS) {
+            return
+        }
+        lastSummaryUpdateTime = now
+        val stats = collectQueueStats()
+        lastQueueStats = stats
+        _downloadSummaryFlow.value = buildSummary(stats)
+    }
+
+    private fun updateSummaryImmediate() {
         val stats = collectQueueStats()
         lastQueueStats = stats
         _downloadSummaryFlow.value = buildSummary(stats)
@@ -482,7 +497,7 @@ object CacheBook {
         } else {
             stateStore.clearRuntimeState()
         }
-        updateSummary()
+        updateSummaryImmediate()
     }
 
     fun shutdownPreservingPaused() {
@@ -502,7 +517,7 @@ object CacheBook {
         pendingRemoveRequests.clear()
         clearPendingAdmissions()
         stateStore.clearRuntimeState()
-        updateSummary()
+        updateSummaryImmediate()
     }
 
     fun setWorkingState(value: Boolean) {
