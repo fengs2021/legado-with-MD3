@@ -1,7 +1,6 @@
 package io.legado.app.ui.main
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AppCompatActivity
@@ -24,7 +23,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -52,24 +50,22 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.Color
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import io.legado.app.R
 import io.legado.app.ui.config.themeConfig.ThemeConfig
 import io.legado.app.ui.main.bookshelf.BookshelfScreen
@@ -78,7 +74,6 @@ import io.legado.app.ui.main.explore.ExploreScreen
 import io.legado.app.ui.main.my.MyScreen
 import io.legado.app.ui.main.my.PrefClickEvent
 import io.legado.app.ui.main.rss.RssScreen
-import io.legado.app.ui.theme.regularHazeEffect
 import io.legado.app.ui.widget.components.AppNavigationBar
 import io.legado.app.ui.widget.components.AppNavigationBarItem
 import io.legado.app.ui.widget.components.AppScaffold
@@ -95,6 +90,7 @@ import io.legado.app.utils.sendToClip
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.startActivityForBook
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
@@ -124,20 +120,21 @@ fun MainScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val mainUiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val defaultHelpTitle = stringResource(R.string.help)
 
     LaunchedEffect(viewModel, context) {
-        viewModel.effects.collect { effect ->
+        viewModel.effects.collectLatest { effect ->
             when (effect) {
                 is MainEffect.OpenUrl -> {
                     context.startActivity(
-                        Intent(Intent.ACTION_VIEW, Uri.parse(effect.url))
+                        Intent(Intent.ACTION_VIEW, effect.url.toUri())
                     )
                 }
 
                 is MainEffect.CopyUrl -> context.sendToClip(effect.url)
                 is MainEffect.ShowMarkdown -> {
-                    val activity = context as? AppCompatActivity ?: return@collect
-                    val title = effect.title.ifBlank { context.getString(R.string.help) }
+                    val activity = context as? AppCompatActivity ?: return@collectLatest
+                    val title = effect.title.ifBlank { defaultHelpTitle }
                     val mdText = withContext(Dispatchers.IO) {
                         context.assets
                             .open("web/help/md/${effect.path}.md")
@@ -288,12 +285,7 @@ fun MainScreen(
                             }
                         },
                         label = if (labelVisibilityMode != "unlabeled") {
-                            val hasCustomIcon = when (destination) {
-                                MainDestination.Bookshelf -> ThemeConfig.navIconBookshelf.isNotEmpty()
-                                MainDestination.Explore -> ThemeConfig.navIconExplore.isNotEmpty()
-                                MainDestination.Rss -> ThemeConfig.navIconRss.isNotEmpty()
-                                MainDestination.My -> ThemeConfig.navIconMy.isNotEmpty()
-                            }
+                            val hasCustomIcon = destination.customIconPath.isNotEmpty()
                             if (hasCustomIcon) null else {{ AppText(stringResource(destination.labelId)) }}
                         } else null
                     )
@@ -308,12 +300,7 @@ fun MainScreen(
                     AppNavigationBar() {
                         destinations.forEachIndexed { index, destination ->
                             val selected = pagerState.targetPage == index
-                            val customIconPath = when (destination) {
-                                MainDestination.Bookshelf -> ThemeConfig.navIconBookshelf
-                                MainDestination.Explore -> ThemeConfig.navIconExplore
-                                MainDestination.Rss -> ThemeConfig.navIconRss
-                                MainDestination.My -> ThemeConfig.navIconMy
-                            }
+                            val customIconPath = destination.customIconPath
                             AppNavigationBarItem(
                                 modifier = Modifier.semantics(mergeDescendants = true) {
                                     contentDescription = "nav_${destination.route}"
@@ -442,22 +429,12 @@ fun MainScreen(
                             tabsCount = destinations.size,
                             isBlurEnabled = useLiquidGlass,
                             hasCustomIcons = destinations.any { dest ->
-                                when (dest) {
-                                    MainDestination.Bookshelf -> ThemeConfig.navIconBookshelf.isNotEmpty()
-                                    MainDestination.Explore -> ThemeConfig.navIconExplore.isNotEmpty()
-                                    MainDestination.Rss -> ThemeConfig.navIconRss.isNotEmpty()
-                                    MainDestination.My -> ThemeConfig.navIconMy.isNotEmpty()
-                                }
+                                dest.customIconPath.isNotEmpty()
                             }
                         ) {
                             destinations.forEachIndexed { index, destination ->
                                 val selected = pagerState.targetPage == index
-                                val hasCustomIcon = when (destination) {
-                                    MainDestination.Bookshelf -> ThemeConfig.navIconBookshelf.isNotEmpty()
-                                    MainDestination.Explore -> ThemeConfig.navIconExplore.isNotEmpty()
-                                    MainDestination.Rss -> ThemeConfig.navIconRss.isNotEmpty()
-                                    MainDestination.My -> ThemeConfig.navIconMy.isNotEmpty()
-                                }
+                                val hasCustomIcon = destination.customIconPath.isNotEmpty()
                                 FloatingBottomBarItem(
                                     onClick = {
                                         coroutineScope.launch {
@@ -536,31 +513,13 @@ private fun NavigationIcon(
     selected: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val customIconPath = when (destination) {
-        MainDestination.Bookshelf -> ThemeConfig.navIconBookshelf
-        MainDestination.Explore -> ThemeConfig.navIconExplore
-        MainDestination.Rss -> ThemeConfig.navIconRss
-        MainDestination.My -> ThemeConfig.navIconMy
-    }
+    val customIconPath = destination.customIconPath
     if (customIconPath.isNotEmpty()) {
-        val context = LocalContext.current
-        val bitmap = remember(customIconPath) {
-            kotlin.runCatching {
-                android.graphics.BitmapFactory.decodeFile(customIconPath)
-            }.getOrNull()
-        }
-        if (bitmap != null) {
-            Image(
-                painter = remember(bitmap) {
-                    BitmapPainter(bitmap.asImageBitmap())
-                },
-                contentDescription = null,
-                modifier = modifier.size(40.dp)
-            )
-        } else {
-            val icon = AppIcons.mainDestination(destination, selected)
-            AppIcon(icon, contentDescription = null, modifier = modifier)
-        }
+        AsyncImage(
+            model = customIconPath,
+            contentDescription = null,
+            modifier = modifier.size(40.dp)
+        )
     } else {
         val icon = AppIcons.mainDestination(destination, selected)
         AppIcon(icon, contentDescription = null, modifier = modifier)

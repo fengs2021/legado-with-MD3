@@ -1,6 +1,7 @@
 package io.legado.app.ui.main.my
 
 import android.app.Application
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.viewModelScope
 import io.legado.app.base.BaseViewModel
 import io.legado.app.constant.EventBus
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+@Stable
 data class MyUiState(
     val isWebServiceRun: Boolean = false,
     val webServiceAddress: String = ""

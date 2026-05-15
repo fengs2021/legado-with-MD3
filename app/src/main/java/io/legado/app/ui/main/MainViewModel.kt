@@ -2,9 +2,10 @@ package io.legado.app.ui.main
 
 import android.app.Application
 import android.content.SharedPreferences
+import androidx.compose.runtime.Stable
 import io.legado.app.base.BaseViewModel
-import io.legado.app.constant.PreferKey
 import io.legado.app.constant.EventBus
+import io.legado.app.constant.PreferKey
 import io.legado.app.domain.usecase.AppStartupMaintenanceUseCase
 import io.legado.app.domain.usecase.WebDavBackupUseCase
 import io.legado.app.ui.config.themeConfig.ThemeConfig
@@ -13,13 +14,13 @@ import io.legado.app.utils.defaultSharedPreferences
 import io.legado.app.utils.eventBus.FlowEventBus
 import io.legado.app.utils.getPrefBoolean
 import io.legado.app.utils.getPrefString
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
 
 class MainViewModel(
     application: Application,
@@ -133,6 +134,7 @@ sealed interface MainEffect {
     data object NavigateToReadRecord : MainEffect
 }
 
+@Stable
 data class MainUiState(
     val destinations: ImmutableList<MainDestination> = MainDestination.mainDestinations,
     val defaultHomePage: String = "bookshelf",

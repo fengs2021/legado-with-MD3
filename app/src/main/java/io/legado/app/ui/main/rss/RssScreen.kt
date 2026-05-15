@@ -5,7 +5,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,27 +17,22 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
-import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Subscriptions
 import androidx.compose.material.icons.filled.VerticalAlignTop
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,7 +53,6 @@ import io.legado.app.ui.theme.LegadoTheme
 import io.legado.app.ui.theme.adaptiveContentPadding
 import io.legado.app.ui.widget.components.SourceIcon
 import io.legado.app.ui.widget.components.alert.AppAlertDialog
-import io.legado.app.ui.widget.components.topbar.TopBarActionButton
 import io.legado.app.ui.widget.components.divider.PillDivider
 import io.legado.app.ui.widget.components.divider.PillHeaderDivider
 import io.legado.app.ui.widget.components.list.ListScaffold
@@ -67,6 +60,7 @@ import io.legado.app.ui.widget.components.menuItem.MenuItemIcon
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenu
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenuItem
 import io.legado.app.ui.widget.components.text.AppText
+import io.legado.app.ui.widget.components.topbar.TopBarActionButton
 import io.legado.app.utils.openUrl
 import io.legado.app.utils.startActivity
 import kotlinx.coroutines.flow.collectLatest
@@ -103,20 +97,32 @@ fun RssScreen(
                 is RssEffect.OpenExternalUrl -> {
                     currentContext.openUrl(effect.url)
                 }
+
+                is RssEffect.OpenSourceEdit -> {
+                    currentContext.startActivity<RssSourceEditActivity> {
+                        putExtra("sourceUrl", effect.sourceUrl)
+                    }
+                }
+
+                is RssEffect.Login -> {
+                    currentContext.startActivity<SourceLoginActivity> {
+                        putExtra("type", "rssSource")
+                        putExtra("key", effect.sourceUrl)
+                    }
+                }
+
+                RssEffect.OpenRuleSub -> {
+                    currentContext.startActivity<RuleSubActivity>()
+                }
+
+                RssEffect.OpenFavorites -> {
+                    currentContext.startActivity<RssFavoritesActivity>()
+                }
+
+                RssEffect.OpenSourceManage -> {
+                    currentContext.startActivity<RssSourceActivity>()
+                }
             }
-        }
-    }
-
-    val edit: (RssSource) -> Unit = { rssSource ->
-        context.startActivity<RssSourceEditActivity> {
-            putExtra("sourceUrl", rssSource.sourceUrl)
-        }
-    }
-
-    val login: (RssSource) -> Unit = { rssSource ->
-        context.startActivity<SourceLoginActivity> {
-            putExtra("type", "rssSource")
-            putExtra("key", rssSource.sourceUrl)
         }
     }
 
@@ -130,12 +136,12 @@ fun RssScreen(
         searchPlaceholder = stringResource(R.string.search_rss_source),
         topBarActions = {
             TopBarActionButton(
-                onClick = { context.startActivity<RuleSubActivity>() },
+                onClick = { viewModel.openRuleSub() },
                 imageVector = Icons.Default.Subscriptions,
                 contentDescription = stringResource(R.string.rule_subscription)
             )
             TopBarActionButton(
-                onClick = { context.startActivity<RssFavoritesActivity>() },
+                onClick = { viewModel.openFavorites() },
                 imageVector = Icons.Default.Star,
                 contentDescription = stringResource(R.string.favorite)
             )
@@ -143,7 +149,7 @@ fun RssScreen(
         dropDownMenuContent = { dismiss ->
             RoundDropdownMenuItem(
                 onClick = {
-                    context.startActivity<RssSourceActivity>()
+                    viewModel.openSourceManage()
                     dismiss()
                 },
                 text = stringResource(R.string.rss_feed_management),
@@ -183,10 +189,10 @@ fun RssScreen(
                     source = source,
                     onClick = { viewModel.openSource(source) },
                     onTop = { viewModel.topSource(source) },
-                    onEdit = { edit(source) },
+                    onEdit = { viewModel.openSourceEdit(source) },
                     onDelete = { sourceToDeleteUrl = source.sourceUrl },
                     onDisable = { viewModel.disable(source) },
-                    onLogin = { login(source) }
+                    onLogin = { viewModel.login(source) }
                 )
             }
         }
