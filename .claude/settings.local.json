@@ -83,7 +83,13 @@
       "Bash(findstr /v \"\\\\\\\\build\\\\\\\\\")",
       "Bash(dir /s /b \"D:\\\\AndroidPrj\\\\legado-with-MD3\\\\.gradle\\\\*miuix*\")",
       "Skill(legado-compose-review)",
-      "Bash(cmd /c \".\\\\gradlew.bat :app:compileAppDebugKotlin\")"
+      "Bash(cmd /c \".\\\\gradlew.bat :app:compileAppDebugKotlin\")",
+      "PowerShell(gh search *)",
+      "WebFetch(domain:repo1.maven.org)",
+      "WebFetch(domain:s01.oss.sonatype.org)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(javap -public /tmp/classes.jar!top/yukonga/miuix/kmp/basic/NavigationBarKt.class)",
+      "Bash(javap -public -cp /tmp/classes.jar top.yukonga.miuix.kmp.basic.NavigationBarKt)"
     ]
   }
 }

@@ -74,8 +74,6 @@ import io.legado.app.ui.main.explore.ExploreScreen
 import io.legado.app.ui.main.my.MyScreen
 import io.legado.app.ui.main.my.PrefClickEvent
 import io.legado.app.ui.main.rss.RssScreen
-import io.legado.app.ui.widget.components.AppNavigationBar
-import io.legado.app.ui.widget.components.AppNavigationBarItem
 import io.legado.app.ui.widget.components.AppScaffold
 import io.legado.app.ui.widget.components.FloatingBottomBar
 import io.legado.app.ui.widget.components.FloatingBottomBarItem
@@ -84,6 +82,8 @@ import io.legado.app.ui.widget.components.icon.AppIcon
 import io.legado.app.ui.widget.components.icon.AppIcons
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenu
 import io.legado.app.ui.widget.components.menuItem.RoundDropdownMenuItem
+import io.legado.app.ui.widget.components.navigation.AppNavigationBar
+import io.legado.app.ui.widget.components.navigation.AppNavigationBarItem
 import io.legado.app.ui.widget.components.text.AppText
 import io.legado.app.ui.widget.dialog.TextDialog
 import io.legado.app.utils.sendToClip
@@ -324,7 +324,7 @@ fun MainScreen(
                                     blurAlpha = GlassDefaults.ThickBlurAlpha
                                 ),
                                 m3ShowLabel = showLabel && !customIconPath.isNotEmpty(),
-                                m3AlwaysShowLabel = alwaysShowLabel && !customIconPath.isNotEmpty(),
+                                m3AlwaysShowLabel = alwaysShowLabel,
                                 useCustomIcon = customIconPath.isNotEmpty()
                             )
                         }
