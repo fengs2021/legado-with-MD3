@@ -48,6 +48,7 @@ import io.legado.app.ui.book.source.manage.BookSourceActivity
 import io.legado.app.ui.book.toc.rule.TxtTocRuleActivity
 import io.legado.app.ui.dict.rule.DictRuleActivity
 import io.legado.app.ui.file.FileManageActivity
+import io.legado.app.ui.main.my.aiCorrection.AICorrectionActivity
 import io.legado.app.ui.replace.ReplaceRuleActivity
 import io.legado.app.ui.theme.adaptiveContentPadding
 import io.legado.app.ui.widget.components.AppScaffold
@@ -120,47 +121,56 @@ fun MyScreen(
                 )
             }
 
-            SplicedColumnGroup(
-                title = stringResource(R.string.rule_segment),
-            ) {
-                ClickableSettingItem(
-                    title = stringResource(R.string.book_source_manage),
-                    description = stringResource(R.string.book_source_manage_desc),
-                    imageVector = Icons.Default.Source,
-                    onClick = {
-                        onNavigate(
-                            PrefClickEvent.StartActivity(BookSourceActivity::class.java)
-                        )
-                    }
-                )
-                ClickableSettingItem(
-                    title = stringResource(R.string.replace_purify),
-                    imageVector = Icons.Default.FindReplace,
-                    onClick = {
-                        onNavigate(
-                            PrefClickEvent.StartActivity(ReplaceRuleActivity::class.java)
-                        )
-                    }
-                )
-                ClickableSettingItem(
-                    title = stringResource(R.string.txt_toc_rule),
-                    imageVector = Icons.AutoMirrored.Filled.Rule,
-                    onClick = {
-                        onNavigate(
-                            PrefClickEvent.StartActivity(TxtTocRuleActivity::class.java)
-                        )
-                    }
-                )
-                ClickableSettingItem(
-                    title = stringResource(R.string.dict_rule),
-                    imageVector = Icons.AutoMirrored.Filled.LibraryBooks,
-                    onClick = {
-                        onNavigate(
-                            PrefClickEvent.StartActivity(DictRuleActivity::class.java)
-                        )
-                    }
-                )
-            }
+                SplicedColumnGroup(
+                    title = stringResource(R.string.rule_segment),
+                ) {
+                    ClickableSettingItem(
+                        title = stringResource(R.string.book_source_manage),
+                        description = stringResource(R.string.book_source_manage_desc),
+                        imageVector = Icons.Default.Source,
+                        onClick = {
+                            onNavigate(
+                                PrefClickEvent.StartActivity(BookSourceActivity::class.java)
+                            )
+                        }
+                    )
+                    ClickableSettingItem(
+                        title = stringResource(R.string.replace_purify),
+                        imageVector = Icons.Default.FindReplace,
+                        onClick = {
+                            onNavigate(
+                                PrefClickEvent.StartActivity(ReplaceRuleActivity::class.java)
+                            )
+                        }
+                    )
+                    ClickableSettingItem(
+                        title = stringResource(R.string.txt_toc_rule),
+                        imageVector = Icons.AutoMirrored.Filled.Rule,
+                        onClick = {
+                            onNavigate(
+                                PrefClickEvent.StartActivity(TxtTocRuleActivity::class.java)
+                            )
+                        }
+                    )
+                    ClickableSettingItem(
+                        title = stringResource(R.string.dict_rule),
+                        imageVector = Icons.AutoMirrored.Filled.LibraryBooks,
+                        onClick = {
+                            onNavigate(
+                                PrefClickEvent.StartActivity(DictRuleActivity::class.java)
+                            )
+                        }
+                    )
+                    ClickableSettingItem(
+                        title = stringResource(R.string.ai_correction),
+                        imageVector = Icons.Default.Edit,
+                        onClick = {
+                            onNavigate(
+                                PrefClickEvent.StartActivity(AICorrectionActivity::class.java)
+                            )
+                        }
+                    )
+                }
 
             SplicedColumnGroup(
                 title = stringResource(R.string.other)
