@@ -39,7 +39,20 @@ import io.legado.app.service.WebService
 import io.legado.app.ui.about.CrashLogsDialog
 import io.legado.app.ui.about.UpdateDialog
 import io.legado.app.ui.book.read.ReadBookActivity
-import io.legado.app.ui.config.themeConfig.ThemeConfig
+import io.legado.app.ui.config.themeConfig.ThemeConfigScreen
+import io.legado.app.ui.config.ConfigNavScreen
+import io.legado.app.ui.config.ConfigTag
+import io.legado.app.ui.config.backupConfig.BackupConfigScreen
+import io.legado.app.ui.config.coverConfig.CoverConfigScreen
+import io.legado.app.ui.config.mainConfig.MainConfig
+import io.legado.app.ui.config.otherConfig.OtherConfigScreen
+import io.legado.app.ui.config.readConfig.ReadConfigScreen
+import io.legado.app.ui.config.themeConfig.ThemeConfigScreen
+import io.legado.app.ui.main.my.aiCorrection.AICorrectionActivity
+import io.legado.app.ui.rss.article.MainRouteRssSort
+import io.legado.app.ui.rss.article.RssSortRouteScreen
+import io.legado.app.ui.rss.read.MainRouteRssRead
+import io.legado.app.ui.rss.read.RssReadRouteScreen
 import io.legado.app.ui.welcome.WelcomeActivity
 import io.legado.app.ui.widget.dialog.TextDialog
 import io.legado.app.ui.widget.dialog.VariableDialog
@@ -119,6 +132,48 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
     private val routeEvents = MutableSharedFlow<NavKey>(extraBufferCapacity = 1)
     private var bookInfoVariableSetter: ((String, String?) -> Unit)? = null
 
+    @Serializable
+    private sealed interface MainRoute : NavKey
+
+    @Serializable
+    private data object MainRouteHome : MainRoute
+
+    @Serializable
+    private data object MainRouteSettings : MainRoute
+
+    @Serializable
+    private data object MainRouteSettingsOther : MainRoute
+
+    @Serializable
+    private data object MainRouteSettingsRead : MainRoute
+
+    @Serializable
+    private data object MainRouteSettingsCover : MainRoute
+
+    @Serializable
+    private data object MainRouteSettingsTheme : MainRoute
+
+    @Serializable
+    private data object MainRouteSettingsBackup : MainRoute
+
+    private data object MainRouteAICorrection : MainRoute
+
+    @Serializable
+    private data object MainRouteImportLocal : MainRoute
+
+    @Serializable
+    private data object MainRouteImportRemote : MainRoute
+
+    @Serializable
+    private data class MainRouteCache(val groupId: Long) : MainRoute
+
+    @Serializable
+    private data class MainRouteSearch(
+        val key: String?,
+        val scopeRaw: String? = null
+    ) : MainRoute
+>>>>>>> 546cade60 (fix: add AICorrection entry in ConfigNavScreen)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -175,19 +230,195 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
             }
         }
 
-        SharedTransitionLayout {
-            NavDisplay(
-                backStack = backStack,
-                sceneStrategies = listOf(SinglePaneSceneStrategy()),
-                transitionSpec = {
-                    (slideIntoContainer(
-                        towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                        animationSpec = tween(durationMillis = 480, easing = FastOutSlowInEasing),
-                        initialOffset = { fullWidth -> fullWidth }
-                    ) + fadeIn(
-                        animationSpec = tween(
-                            durationMillis = 360,
-                            easing = LinearOutSlowInEasing
+        NavDisplay(
+            backStack = backStack,
+            transitionSpec = {
+                (slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                    animationSpec = tween(
+                        durationMillis = 480,
+                        easing = FastOutSlowInEasing
+                    ),
+                    initialOffset = { fullWidth -> fullWidth }
+                ) + fadeIn(
+                    animationSpec = tween(
+                        durationMillis = 360,
+                        easing = LinearOutSlowInEasing
+                    )
+                )) togetherWith (slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                    animationSpec = tween(
+                        durationMillis = 480,
+                        easing = FastOutSlowInEasing
+                    ),
+                    targetOffset = { fullWidth -> fullWidth / 4 }
+                ) + fadeOut(
+                    animationSpec = tween(
+                        durationMillis = 360,
+                        easing = LinearOutSlowInEasing
+                    )
+                ))
+            },
+            popTransitionSpec = {
+                (slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                    animationSpec = tween(
+                        durationMillis = 480,
+                        easing = FastOutSlowInEasing
+                    ),
+                    initialOffset = { fullWidth -> -fullWidth / 4 }
+                ) + fadeIn(
+                    animationSpec = tween(
+                        durationMillis = 360,
+                        easing = LinearOutSlowInEasing
+                    )
+                )) togetherWith (scaleOut(
+                    targetScale = 0.8f,
+                    animationSpec = tween(
+                        durationMillis = 480,
+                        easing = FastOutSlowInEasing
+                    )
+                ) + fadeOut(
+                    animationSpec = tween(durationMillis = 360)
+                ))
+            },
+            predictivePopTransitionSpec = { _ ->
+                (slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                    animationSpec = tween(
+                        easing = FastOutSlowInEasing
+                    ),
+                    initialOffset = { fullWidth -> -fullWidth / 4 }
+                ) + fadeIn(
+                    animationSpec = tween(
+                        easing = LinearOutSlowInEasing
+                    )
+                )) togetherWith (scaleOut(
+                    targetScale = 0.8f,
+                    animationSpec = tween(
+                        easing = FastOutSlowInEasing
+                    )
+                ) + fadeOut(
+                    animationSpec = tween()
+                ))
+            },
+            onBack = {
+                if (backStack.size > 1) {
+                    backStack.removeLastOrNull()
+                } else {
+                    finish()
+                }
+            },
+            entryProvider = entryProvider {
+                entry<MainRouteHome> {
+                    MainScreen(
+                        useRail = useRail,
+                        onOpenSettings = {
+                            navigateToRoute(backStack, MainRouteSettings)
+                        },
+                        onNavigateToSearch = { key ->
+                            navigateToRoute(
+                                backStack,
+                                MainRouteSearch(
+                                    key = key?.trim()?.takeIf { it.isNotEmpty() }
+                                )
+                            )
+                        },
+                        onNavigateToRemoteImport = {
+                            navigateToRoute(backStack, MainRouteImportRemote)
+                        },
+                        onNavigateToLocalImport = {
+                            navigateToRoute(backStack, MainRouteImportLocal)
+                        },
+                        onNavigateToCache = { groupId ->
+                            navigateToRoute(backStack, MainRouteCache(groupId))
+                        },
+                        onNavigateToRssSort = { sourceUrl, sortUrl, key ->
+                            navigateToRoute(
+                                backStack,
+                                MainRouteRssSort(
+                                    sourceUrl = sourceUrl,
+                                    sortUrl = sortUrl,
+                                    key = key
+                                )
+                            )
+                        },
+                        onNavigateToRssRead = { title, origin, link, openUrl ->
+                            navigateToRoute(
+                                backStack,
+                                MainRouteRssRead(
+                                    title = title,
+                                    origin = origin,
+                                    link = link,
+                                    openUrl = openUrl
+                                )
+                            )
+                        }
+                    )
+                }
+
+                entry<MainRouteSettings> {
+                    ConfigNavScreen(
+                        onBackClick = { navigateBack(backStack) },
+                        onNavigateToOther = { backStack.add(MainRouteSettingsOther) },
+                        onNavigateToRead = { backStack.add(MainRouteSettingsRead) },
+                        onNavigateToCover = { backStack.add(MainRouteSettingsCover) },
+                        onNavigateToTheme = { backStack.add(MainRouteSettingsTheme) },
+                        onNavigateToBackup = { backStack.add(MainRouteSettingsBackup) },
+                        onNavigateToAICorrection = { startActivity<AICorrectionActivity>() }
+                    )
+                }
+
+                entry<MainRouteSettingsOther> {
+                    OtherConfigScreen(onBackClick = { navigateBack(backStack) })
+                }
+
+                entry<MainRouteSettingsRead> {
+                    ReadConfigScreen(onBackClick = { navigateBack(backStack) })
+                }
+
+                entry<MainRouteSettingsCover> {
+                    CoverConfigScreen(onBackClick = { navigateBack(backStack) })
+                }
+
+                entry<MainRouteSettingsTheme> {
+                    ThemeConfigScreen(onBackClick = { navigateBack(backStack) })
+                }
+
+                entry<MainRouteSettingsBackup> {
+                    BackupConfigScreen(onBackClick = { navigateBack(backStack) })
+                }
+
+                entry<MainRouteImportLocal> {
+                    ImportBookScreen(
+                        onBackClick = { navigateBack(backStack) }
+                    )
+                }
+
+                entry<MainRouteImportRemote> {
+                    RemoteBookScreen(
+                        onBackClick = { navigateBack(backStack) }
+                    )
+                }
+
+                entry<MainRouteCache> { route ->
+                    CacheRouteScreen(
+                        groupId = route.groupId,
+                        onBackClick = { navigateBack(backStack) }
+                    )
+                }
+
+                entry<MainRouteSearch> { route ->
+                    val searchViewModel = koinViewModel<SearchViewModel>()
+                    val lifecycleOwner = LocalLifecycleOwner.current
+
+                    LaunchedEffect(route.key, route.scopeRaw, searchViewModel) {
+                        searchViewModel.onIntent(
+                            SearchIntent.Initialize(
+                                key = route.key,
+                                scopeRaw = route.scopeRaw
+                            )
+>>>>>>> 546cade60 (fix: add AICorrection entry in ConfigNavScreen)
                         )
                     )) togetherWith (slideOutOfContainer(
                         towards = AnimatedContentTransitionScope.SlideDirection.Start,
