@@ -1758,7 +1758,6 @@
     <string name="homepage_infinite_module_slot">Infinite Module Slot</string>
     <string name="homepage_new_custom_set">+ New Custom Set</string>
     <string name="homepage_rename_custom_set">Rename Custom Set</string>
-    <string name="homepage_name_label">Name</string>
     <string name="homepage_new_custom_set_title">New Custom Set</string>
     <string name="homepage_delete_custom_set">Delete Custom Set</string>
     <string name="homepage_delete_custom_set_confirm">Are you sure you want to delete this set and all its module copies?</string>
@@ -1815,4 +1814,24 @@
     <string name="eye_protection_schedule_summary">Only apply during the configured time range</string>
     <string name="eye_protection_start_time">Start Time</string>
     <string name="eye_protection_end_time">End Time</string>
+
+    <string name="ai_correction">AI Correction</string>
+    <string name="ai_correction_enable">Enable AI Correction</string>
+    <string name="ai_correction_enable_desc">Use AI to correct novel content</string>
+    <string name="ai_correction_model">AI Model</string>
+    <string name="ai_correction_default_model">MiniMax-Text-01</string>
+    <string name="ai_correction_api_key">API Key</string>
+    <string name="ai_correction_rules">Correction Rules</string>
+    <string name="ai_correction_rules_hint">Enter correction rules</string>
+    <string name="ai_correction_rules_desc">Additional AI correction rules</string>
+    <string name="ai_correction_test">Test Correction</string>
+    <string name="ai_correction_test_desc">Click to test AI correction</string>
+    <string name="ai_correction_test_success">Test successful!</string>
+    <string name="ai_correction_test_failed">Test failed, check API key</string>
+    <string name="ai_correction_api_key_empty">API key cannot be empty</string>
+    <string name="ai_correction_in_reader">阅读时启用AI修正</string>
+    <string name="ai_correction_in_reader_desc">开启后阅读时自动对正文进行AI修正</string>
+    <string name="ai_correction_clear_cache">Clear Correction Cache</string>
+    <string name="ai_correction_clear_cache_desc">Clear cached AI-corrected chapters</string>
+    <string name="ai_correction_cleared">Correction history cleared</string>
 </resources>
