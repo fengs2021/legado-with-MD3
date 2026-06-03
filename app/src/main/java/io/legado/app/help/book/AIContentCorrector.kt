@@ -29,13 +29,6 @@ object AIContentCorrector {
         .readTimeout(300, TimeUnit.SECONDS)
         .build()
 
-    private const val API_URL_MINIMAX = "https://api.minimaxi.com/v1/text/chatcompletion_v2"
-    private const val API_URL_KIMI = "https://api.moonshot.cn/v1/chat/completions"
-    private const val API_URL_KIMI_CODE = "https://api.kimi.com/coding/v1/chat/completions"
-    private const val API_URL_DEEPSEEK = "https://api.deepseek.com/chat/completions"
-    private const val API_URL_QWEN = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
-    private const val API_URL_OPENAI = "https://api.openai.com/v1/chat/completions"
-
     /** 修正结果最大允许倍数（相对原文长度），防止 AI 无限膨胀 */
     private const val MAX_RESULT_LENGTH_MULTIPLIER = 3.0
 
@@ -51,10 +44,9 @@ object AIContentCorrector {
      */
     suspend fun correct(content: String, chapterTitle: String = "", source: String = ""): String = withContext(Dispatchers.IO) {
         val apiKey = AICorrectionConfig.apiKey
-        val provider = AICorrectionConfig.provider
-        val model = AICorrectionConfig.getEffectiveModel()
+        val model = AICorrectionConfig.model
         val rules = AICorrectionConfig.rules
-        val apiUrl = AICorrectionConfig.getEffectiveApiUrl()
+        val apiUrl = AICorrectionConfig.apiUrl
 
         if (apiKey.isBlank() || apiUrl.isBlank()) {
             return@withContext content

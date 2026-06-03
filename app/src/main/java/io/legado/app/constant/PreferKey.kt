@@ -353,11 +353,6 @@ object PreferKey {
 
     // AI修正配置
     const val aiCorrectionEnabled = "aiCorrectionEnabled"
-    const val aiCorrectionProvider = "aiCorrectionProvider"
-    const val aiCorrectionModel = "aiCorrectionModel"
-    const val aiCorrectionApiKey = "aiCorrectionApiKey"
-    const val aiCorrectionCustomApiUrl = "aiCorrectionCustomApiUrl"
-    const val aiCorrectionCustomModel = "aiCorrectionCustomModel"
     const val aiCorrectionRules = "aiCorrectionRules"
     const val aiCorrectionInReader = "aiCorrectionInReader"
 }
