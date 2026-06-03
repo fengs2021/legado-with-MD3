@@ -70,7 +70,7 @@ object AIContentCorrector {
             .toRequestBody("application/json".toMediaType())
 
         val request = Request.Builder()
-            .url(apiUrl)
+            .url(apiUrl.trimEnd('/') + "/v1/chat/completions")
             .addHeader("Authorization", "Bearer $apiKey")
             .addHeader("Content-Type", "application/json")
             .post(requestBody)
