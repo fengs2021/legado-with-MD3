@@ -151,41 +151,29 @@ class WebService : BaseService() {
         ktorServer?.stop()
         val addressList = NetworkUtils.getLocalIPAddress()
         if (addressList.any()) {
-            val basePort = getPort()
-            val maxAttempts = 10
-            for (offset in 0 until maxAttempts) {
-                val port = basePort + offset
-                try {
-                    val server = KtorServer(port)
-                    server.start()
-                    try {
-                        server.startWebSocket(port + 1)
-                    } catch (e: IOException) {
-                        server.stop()
-                        throw e
-                    }
-                    ktorServer = server
-                    notificationList.clear()
-                    notificationList.addAll(addressList.map { address ->
-                        getString(
-                            R.string.http_ip,
-                            address.hostAddress,
-                            port
-                        )
-                    })
-                    hostAddress = notificationList.first()
-                    isRun = true
-                    postEvent(EventBus.WEB_SERVICE, hostAddress)
-                    FlowEventBus.post(EventBus.WEB_SERVICE, hostAddress)
-                    startForegroundNotification()
-                    return
-                } catch (e: IOException) {
-                    ktorServer?.stop()
-                    ktorServer = null
-                }
+            val port = getPort()
+            ktorServer = KtorServer(port)
+            try {
+                ktorServer?.start()
+                ktorServer?.startWebSocket(port + 1)
+                notificationList.clear()
+                notificationList.addAll(addressList.map { address ->
+                    getString(
+                        R.string.http_ip,
+                        address.hostAddress,
+                        port
+                    )
+                })
+                hostAddress = notificationList.first()
+                isRun = true
+                postEvent(EventBus.WEB_SERVICE, hostAddress)
+                FlowEventBus.post(EventBus.WEB_SERVICE, hostAddress)
+                startForegroundNotification()
+            } catch (e: IOException) {
+                toastOnUi("端口 $port 被占用，请关闭占用该端口的应用后重试")
+                e.printOnDebug()
+                stopSelf()
             }
-            toastOnUi("WebService: 端口都被占用了，换个端口后再试")
-            stopSelf()
         } else {
             toastOnUi("web service cant start, no ip address")
             stopSelf()
