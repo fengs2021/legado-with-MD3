@@ -172,7 +172,6 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
         val key: String?,
         val scopeRaw: String? = null
     ) : MainRoute
->>>>>>> 546cade60 (fix: add AICorrection entry in ConfigNavScreen)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -418,58 +417,9 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
                                 key = route.key,
                                 scopeRaw = route.scopeRaw
                             )
->>>>>>> 546cade60 (fix: add AICorrection entry in ConfigNavScreen)
                         )
-                    )) togetherWith (slideOutOfContainer(
-                        towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                        animationSpec = tween(durationMillis = 480, easing = FastOutSlowInEasing),
-                        targetOffset = { fullWidth -> fullWidth / 4 }
-                    ) + fadeOut(
-                        animationSpec = tween(
-                            durationMillis = 360,
-                            easing = LinearOutSlowInEasing
-                        )
-                    ))
-                },
-                popTransitionSpec = {
-                    (slideIntoContainer(
-                        towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                        animationSpec = tween(durationMillis = 480, easing = FastOutSlowInEasing),
-                        initialOffset = { fullWidth -> -fullWidth / 4 }
-                    ) + fadeIn(
-                        animationSpec = tween(
-                            durationMillis = 360,
-                            easing = LinearOutSlowInEasing
-                        )
-                    )) togetherWith (scaleOut(
-                        targetScale = 0.8f,
-                        animationSpec = tween(durationMillis = 480, easing = FastOutSlowInEasing)
-                    ) + fadeOut(animationSpec = tween(durationMillis = 360)))
-                },
-                predictivePopTransitionSpec = { _ ->
-                    (slideIntoContainer(
-                        towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                        animationSpec = tween(easing = FastOutSlowInEasing),
-                        initialOffset = { fullWidth -> -fullWidth / 4 }
-                    ) + fadeIn(animationSpec = tween(easing = LinearOutSlowInEasing))) togetherWith (scaleOut(
-                        targetScale = 0.8f,
-                        animationSpec = tween(easing = FastOutSlowInEasing)
-                    ) + fadeOut(animationSpec = tween()))
-                },
-                onBack = { MainNavigator.navigateBack(this@MainActivity, backStack) },
-                entryProvider = mainEntryProvider(
-                    backStack = backStack,
-                    useRail = useRail,
-                    sharedTransitionScope = this@SharedTransitionLayout,
-                    onNavigateToRoute = { route ->
-                        MainNavigator.navigateToRoute(
-                            backStack,
-                            route
-                        )
-                    },
-                    onNavigateBack = { MainNavigator.navigateBack(this@MainActivity, backStack) },
-                    onRegisterVariableSetter = { setter -> bookInfoVariableSetter = setter }
-                )
+                    }
+                }
             )
         }
     }

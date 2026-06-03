@@ -161,7 +161,8 @@ fun MainActivity.mainEntryProvider(
             onNavigateToBackup = { backStack.add(MainRouteSettingsBackup) },
             onNavigateToDownloadCache = { backStack.add(MainRouteSettingsDownloadCache) },
             onNavigateToTranslation = { backStack.add(MainRouteSettingsTranslation) },
-            onNavigateToLab = { backStack.add(MainRouteSettingsLabConfig) }
+            onNavigateToLab = { backStack.add(MainRouteSettingsLabConfig) },
+            onNavigateToAICorrection = { startActivity<AICorrectionActivity>() }
         )
     }
 

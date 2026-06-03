@@ -1770,6 +1770,7 @@
     <string name="or">OR</string>
     <string name="homepage_add_button_group">Add Button Group</string>
     <string name="homepage_module_title_label">Module Title</string>
+    <string name="homepage_name_label">Name</string>
     <string name="homepage_custom_title">Custom Title</string>
     <string name="homepage_title_label">Title</string>
     <string name="homepage_edit_module">Edit Module</string>

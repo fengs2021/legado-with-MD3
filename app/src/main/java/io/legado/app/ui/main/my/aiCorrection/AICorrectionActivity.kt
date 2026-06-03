@@ -1,7 +1,9 @@
 package io.legado.app.ui.main.my.aiCorrection
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,7 +56,7 @@ class AICorrectionActivity : BaseComposeActivity() {
                     navigationIcon = {
                         androidx.compose.material3.IconButton(onClick = { finish() }) {
                             androidx.compose.material3.Icon(
-                                androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
+                                Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = null
                             )
                         }
