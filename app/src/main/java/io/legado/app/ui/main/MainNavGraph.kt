@@ -46,7 +46,7 @@ import io.legado.app.ui.config.labConfig.LabConfigScreen
 import io.legado.app.ui.config.translation.TranslationConfigScreen
 import io.legado.app.ui.rss.article.MainRouteRssSort
 import io.legado.app.ui.rss.article.RssSortRouteScreen
-import io.legado.app.ui.rss.favorites.RssFavoritesScreen
+import io.legado.app.ui.main.my.aiCorrection.AICorrectionActivity
 import io.legado.app.ui.rss.read.MainRouteRssRead
 import io.legado.app.ui.rss.read.RssReadRouteScreen
 import io.legado.app.ui.rss.subscription.RuleSubScreen

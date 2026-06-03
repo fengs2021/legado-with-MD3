@@ -48,6 +48,8 @@ import io.legado.app.ui.config.mainConfig.MainConfig
 import io.legado.app.ui.config.otherConfig.OtherConfigScreen
 import io.legado.app.ui.config.readConfig.ReadConfigScreen
 import io.legado.app.ui.config.themeConfig.ThemeConfigScreen
+import io.legado.app.ui.book.search.SearchIntent
+import io.legado.app.ui.book.search.SearchViewModel
 import io.legado.app.ui.main.my.aiCorrection.AICorrectionActivity
 import io.legado.app.ui.rss.article.MainRouteRssSort
 import io.legado.app.ui.rss.article.RssSortRouteScreen
@@ -64,7 +66,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import org.koin.androidx.compose.koinViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
