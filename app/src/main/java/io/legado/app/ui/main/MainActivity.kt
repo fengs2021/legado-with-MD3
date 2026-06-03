@@ -8,6 +8,7 @@ import android.text.format.DateUtils
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -18,8 +19,10 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
@@ -40,6 +43,7 @@ import io.legado.app.ui.about.CrashLogsDialog
 import io.legado.app.ui.about.UpdateDialog
 import io.legado.app.ui.book.read.ReadBookActivity
 import io.legado.app.ui.config.themeConfig.ThemeConfigScreen
+import io.legado.app.ui.config.themeConfig.ThemeConfig
 import io.legado.app.ui.config.ConfigNavScreen
 import io.legado.app.ui.config.ConfigTag
 import io.legado.app.ui.config.backupConfig.BackupConfigScreen
@@ -318,10 +322,10 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
                     MainScreen(
                         useRail = useRail,
                         onOpenSettings = {
-                            navigateToRoute(backStack, MainRouteSettings)
+                            MainNavigator.navigateToRoute(backStack, MainRouteSettings)
                         },
                         onNavigateToSearch = { key ->
-                            navigateToRoute(
+                            MainNavigator.navigateToRoute(
                                 backStack,
                                 MainRouteSearch(
                                     key = key?.trim()?.takeIf { it.isNotEmpty() }
@@ -329,16 +333,16 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
                             )
                         },
                         onNavigateToRemoteImport = {
-                            navigateToRoute(backStack, MainRouteImportRemote)
+                            MainNavigator.navigateToRoute(backStack, MainRouteImportRemote)
                         },
                         onNavigateToLocalImport = {
-                            navigateToRoute(backStack, MainRouteImportLocal)
+                            MainNavigator.navigateToRoute(backStack, MainRouteImportLocal)
                         },
                         onNavigateToCache = { groupId ->
-                            navigateToRoute(backStack, MainRouteCache(groupId))
+                            MainNavigator.navigateToRoute(backStack, MainRouteCache(groupId))
                         },
                         onNavigateToRssSort = { sourceUrl, sortUrl, key ->
-                            navigateToRoute(
+                            MainNavigator.navigateToRoute(
                                 backStack,
                                 MainRouteRssSort(
                                     sourceUrl = sourceUrl,
@@ -348,7 +352,7 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
                             )
                         },
                         onNavigateToRssRead = { title, origin, link, openUrl ->
-                            navigateToRoute(
+                            MainNavigator.navigateToRoute(
                                 backStack,
                                 MainRouteRssRead(
                                     title = title,
@@ -363,7 +367,7 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
 
                 entry<MainRouteSettings> {
                     ConfigNavScreen(
-                        onBackClick = { navigateBack(backStack) },
+                        onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() },
                         onNavigateToOther = { backStack.add(MainRouteSettingsOther) },
                         onNavigateToRead = { backStack.add(MainRouteSettingsRead) },
                         onNavigateToCover = { backStack.add(MainRouteSettingsCover) },
@@ -374,41 +378,41 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
                 }
 
                 entry<MainRouteSettingsOther> {
-                    OtherConfigScreen(onBackClick = { navigateBack(backStack) })
+                    OtherConfigScreen(onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() })
                 }
 
                 entry<MainRouteSettingsRead> {
-                    ReadConfigScreen(onBackClick = { navigateBack(backStack) })
+                    ReadConfigScreen(onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() })
                 }
 
                 entry<MainRouteSettingsCover> {
-                    CoverConfigScreen(onBackClick = { navigateBack(backStack) })
+                    CoverConfigScreen(onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() })
                 }
 
                 entry<MainRouteSettingsTheme> {
-                    ThemeConfigScreen(onBackClick = { navigateBack(backStack) })
+                    ThemeConfigScreen(onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() })
                 }
 
                 entry<MainRouteSettingsBackup> {
-                    BackupConfigScreen(onBackClick = { navigateBack(backStack) })
+                    BackupConfigScreen(onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() })
                 }
 
                 entry<MainRouteImportLocal> {
                     ImportBookScreen(
-                        onBackClick = { navigateBack(backStack) }
+                        onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() }
                     )
                 }
 
                 entry<MainRouteImportRemote> {
                     RemoteBookScreen(
-                        onBackClick = { navigateBack(backStack) }
+                        onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() }
                     )
                 }
 
                 entry<MainRouteCache> { route ->
                     CacheRouteScreen(
                         groupId = route.groupId,
-                        onBackClick = { navigateBack(backStack) }
+                        onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() }
                     )
                 }
 
