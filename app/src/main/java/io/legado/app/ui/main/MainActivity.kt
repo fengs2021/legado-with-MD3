@@ -238,6 +238,7 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
             }
         }
 
+        SharedTransitionLayout {
         NavDisplay(
             backStack = backStack,
             transitionSpec = {
@@ -317,120 +318,23 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
                     finish()
                 }
             },
-            entryProvider = entryProvider {
-                entry<MainRouteHome> {
-                    MainScreen(
-                        useRail = useRail,
-                        onOpenSettings = {
-                            MainNavigator.navigateToRoute(backStack, MainRouteSettings)
-                        },
-                        onNavigateToSearch = { key ->
-                            MainNavigator.navigateToRoute(
-                                backStack,
-                                MainRouteSearch(
-                                    key = key?.trim()?.takeIf { it.isNotEmpty() }
-                                )
-                            )
-                        },
-                        onNavigateToRemoteImport = {
-                            MainNavigator.navigateToRoute(backStack, MainRouteImportRemote)
-                        },
-                        onNavigateToLocalImport = {
-                            MainNavigator.navigateToRoute(backStack, MainRouteImportLocal)
-                        },
-                        onNavigateToCache = { groupId ->
-                            MainNavigator.navigateToRoute(backStack, MainRouteCache(groupId))
-                        },
-                        onNavigateToRssSort = { sourceUrl, sortUrl, key ->
-                            MainNavigator.navigateToRoute(
-                                backStack,
-                                MainRouteRssSort(
-                                    sourceUrl = sourceUrl,
-                                    sortUrl = sortUrl,
-                                    key = key
-                                )
-                            )
-                        },
-                        onNavigateToRssRead = { title, origin, link, openUrl ->
-                            MainNavigator.navigateToRoute(
-                                backStack,
-                                MainRouteRssRead(
-                                    title = title,
-                                    origin = origin,
-                                    link = link,
-                                    openUrl = openUrl
-                                )
-                            )
-                        }
-                    )
-                }
-
-                entry<MainRouteSettings> {
-                    ConfigNavScreen(
-                        onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() },
-                        onNavigateToOther = { backStack.add(MainRouteSettingsOther) },
-                        onNavigateToRead = { backStack.add(MainRouteSettingsRead) },
-                        onNavigateToCover = { backStack.add(MainRouteSettingsCover) },
-                        onNavigateToTheme = { backStack.add(MainRouteSettingsTheme) },
-                        onNavigateToBackup = { backStack.add(MainRouteSettingsBackup) },
-                        onNavigateToAICorrection = { startActivity<AICorrectionActivity>() }
-                    )
-                }
-
-                entry<MainRouteSettingsOther> {
-                    OtherConfigScreen(onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() })
-                }
-
-                entry<MainRouteSettingsRead> {
-                    ReadConfigScreen(onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() })
-                }
-
-                entry<MainRouteSettingsCover> {
-                    CoverConfigScreen(onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() })
-                }
-
-                entry<MainRouteSettingsTheme> {
-                    ThemeConfigScreen(onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() })
-                }
-
-                entry<MainRouteSettingsBackup> {
-                    BackupConfigScreen(onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() })
-                }
-
-                entry<MainRouteImportLocal> {
-                    ImportBookScreen(
-                        onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() }
-                    )
-                }
-
-                entry<MainRouteImportRemote> {
-                    RemoteBookScreen(
-                        onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() }
-                    )
-                }
-
-                entry<MainRouteCache> { route ->
-                    CacheRouteScreen(
-                        groupId = route.groupId,
-                        onBackClick = { if (backStack.size > 1) backStack.removeLastOrNull() else finish() }
-                    )
-                }
-
-                entry<MainRouteSearch> { route ->
-                    val searchViewModel = koinViewModel<SearchViewModel>()
-                    val lifecycleOwner = LocalLifecycleOwner.current
-
-                    LaunchedEffect(route.key, route.scopeRaw, searchViewModel) {
-                        searchViewModel.onIntent(
-                            SearchIntent.Initialize(
-                                key = route.key,
-                                scopeRaw = route.scopeRaw
-                            )
-                        )
+            entryProvider = mainEntryProvider(
+                backStack = backStack,
+                useRail = useRail,
+                sharedTransitionScope = this@SharedTransitionLayout,
+                onNavigateToRoute = { MainNavigator.navigateToRoute(backStack, it) },
+                onNavigateBack = {
+                    if (backStack.size > 1) {
+                        backStack.removeLastOrNull()
+                    } else {
+                        finish()
                     }
-                }
+                },
+                onRegisterVariableSetter = { setter -> bookInfoVariableSetter = setter }
             )
+        )
         }
+
     }
 
     private fun checkStartupRoute(): Boolean {
@@ -557,3 +461,5 @@ class Launcher4 : MainActivity()
 class Launcher5 : MainActivity()
 class Launcher6 : MainActivity()
 class Launcher0 : MainActivity()
+
+
