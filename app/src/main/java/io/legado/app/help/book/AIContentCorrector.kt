@@ -3,6 +3,7 @@ package io.legado.app.help.book
 import io.legado.app.constant.AppLog
 import io.legado.app.ui.main.my.aiCorrection.AICorrectionConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -83,64 +84,102 @@ object AIContentCorrector {
             .post(requestBody)
             .build()
 
-        try {
-            val response = client.newCall(request).execute()
-            val body = response.body?.string() ?: run {
-                AppLog.put("[${chapterTitle}] AI修正失败: 空响应")
-                throw CorrectionException("空响应")
-            }
-            AppLog.put("[${chapterTitle}] AI修正响应: ${body.take(200)}")
-            // 检测API错误（如overloaded、timeout等）
-            if (body.contains("overloaded_error") || body.contains("timeout") || body.contains("rate_limit")) {
-                val errMsg = if (body.contains("overloaded_error")) "API服务器过载(overloaded)" 
-                    else if (body.contains("timeout")) "API超时(timeout)"
-                    else "API限流(rate_limit)"
-                AppLog.put("[${chapterTitle}] AI修正失败: $errMsg")
-                throw CorrectionException(errMsg)
-            }
-            val json = JSONObject(body)
-            // 检查是否有 API 错误
-            val errorObj = json.optJSONObject("error")
-            if (errorObj != null) {
-                val errorMsg = errorObj.optString("message", "")
-                    .ifEmpty { errorObj.optString("type", "未知错误") }
-                AppLog.put("[${chapterTitle}] AI修正失败: API错误 - $errorMsg")
-                AppLog.put("[${chapterTitle}] AI修正完整响应: $body")
-                throw CorrectionException("API错误: $errorMsg")
-            }
-            val choices = json.optJSONArray("choices") ?: run {
-                AppLog.put("[${chapterTitle}] AI修正失败: 无choices")
-                AppLog.put("[${chapterTitle}] AI修正完整响应: $body")
-                throw CorrectionException("无choices")
-            }
-            if (choices.length() == 0) {
-                AppLog.put("[${chapterTitle}] AI修正失败: choices为空")
-                throw CorrectionException("choices为空")
-            }
-            val message = choices.getJSONObject(0).optJSONObject("message")
-                ?: run {
-                    AppLog.put("[${chapterTitle}] AI修正失败: 无message")
-                    throw CorrectionException("无message")
+        // 空内容时最多重试1次（可能为限流/瞬态故障）
+        val maxAttempts = 2
+        for (attempt in 1..maxAttempts) {
+            try {
+                if (attempt > 1) {
+                    delay(3000)
+                    AppLog.put("[${chapterTitle}] AI修正重试第${attempt}次 (来源: $source)")
                 }
-            val result = message.optString("content") ?: run {
-                AppLog.put("[${chapterTitle}] AI修正失败: 无content")
-                throw CorrectionException("无content")
+                AppLog.put("[${chapterTitle}] AI修正请求: 原文长度=${content.length} 模型=${model} 来源=$source")
+                val response = client.newCall(request).execute()
+                val body = response.body?.string() ?: run {
+                    AppLog.put("[${chapterTitle}] AI修正失败: 空响应")
+                    if (attempt < maxAttempts) continue
+                    throw CorrectionException("空响应")
+                }
+                AppLog.put("[${chapterTitle}] AI修正响应: ${body.take(200)}")
+                // 检测API错误（如overloaded、timeout等）
+                if (body.contains("overloaded_error") || body.contains("timeout") || body.contains("rate_limit")) {
+                    val errMsg = if (body.contains("overloaded_error")) "API服务器过载(overloaded)" 
+                        else if (body.contains("timeout")) "API超时(timeout)"
+                        else "API限流(rate_limit)"
+                    AppLog.put("[${chapterTitle}] AI修正失败: $errMsg")
+                    if (attempt < maxAttempts) continue
+                    throw CorrectionException(errMsg)
+                }
+                val json = JSONObject(body)
+                // 检查是否有 API 错误
+                val errorObj = json.optJSONObject("error")
+                if (errorObj != null) {
+                    val errorMsg = errorObj.optString("message", "")
+                        .ifEmpty { errorObj.optString("type", "未知错误") }
+                    AppLog.put("[${chapterTitle}] AI修正失败: API错误 - $errorMsg")
+                    AppLog.put("[${chapterTitle}] AI修正完整响应: $body")
+                    if (attempt < maxAttempts) continue
+                    throw CorrectionException("API错误: $errorMsg")
+                }
+                val choices = json.optJSONArray("choices") ?: run {
+                    AppLog.put("[${chapterTitle}] AI修正失败: 无choices")
+                    AppLog.put("[${chapterTitle}] AI修正完整响应: $body")
+                    if (attempt < maxAttempts) continue
+                    throw CorrectionException("无choices")
+                }
+                if (choices.length() == 0) {
+                    AppLog.put("[${chapterTitle}] AI修正失败: choices为空")
+                    if (attempt < maxAttempts) continue
+                    throw CorrectionException("choices为空")
+                }
+                val choice = choices.getJSONObject(0)
+                val finishReason = choice.optString("finish_reason", "unknown")
+                val message = choice.optJSONObject("message")
+                    ?: run {
+                        AppLog.put("[${chapterTitle}] AI修正失败: 无message (finish_reason=$finishReason)")
+                        if (attempt < maxAttempts) continue
+                        throw CorrectionException("无message")
+                    }
+                val result = message.optString("content") ?: run {
+                    AppLog.put("[${chapterTitle}] AI修正失败: 无content")
+                    if (attempt < maxAttempts) continue
+                    throw CorrectionException("无content")
+                }
+                // 检查 content 为空的原因
+                if (result.isBlank()) {
+                    val usage = json.optJSONObject("usage")
+                    val promptTokens = usage?.optInt("prompt_tokens", -1) ?: -1
+                    val completionTokens = usage?.optInt("completion_tokens", -1) ?: -1
+                    AppLog.put("[${chapterTitle}] AI修正返回空内容: finish_reason=$finishReason " +
+                        "prompt_tokens=$promptTokens completion_tokens=$completionTokens")
+                    AppLog.put("[${chapterTitle}] AI修正完整响应: $body")
+                    if (attempt < maxAttempts) {
+                        AppLog.put("[${chapterTitle}] AI修正返回空内容，延迟3秒重试")
+                        continue
+                    }
+                    when (finishReason) {
+                        "content_filter" -> throw ValidationException("内容被安全过滤")
+                        "length" -> throw ValidationException("输出被截断（max_tokens不足）")
+                        else -> throw ValidationException("返回内容为空")
+                    }
+                }
+                AppLog.put("[${chapterTitle}] AI修正成功 (来源: $source)")
+                AppLog.put("[${chapterTitle}] AI修正校验通过: 长度 ${result.trim().length} (来源: $source)")
+                validateResult(result, content, chapterTitle)
+                return@withContext parseResult(result)
+            } catch (e: ValidationException) {
+                AppLog.put("[${chapterTitle}] AI修正校验失败: ${e.message}")
+                throw e
+            } catch (e: CorrectionException) {
+                AppLog.put("[${chapterTitle}] AI修正失败: ${e.message}")
+                throw e
+            } catch (e: Exception) {
+                AppLog.put("[${chapterTitle}] AI修正异常: ${e.localizedMessage}")
+                e.printStackTrace()
+                if (attempt < maxAttempts) continue
+                throw CorrectionException("网络异常: ${e.localizedMessage}")
             }
-            AppLog.put("[${chapterTitle}] AI修正成功 (来源: $source)")
-            AppLog.put("[${chapterTitle}] AI修正校验通过: 长度 ${result.trim().length} (来源: $source)")
-            validateResult(result, content, chapterTitle)
-            parseResult(result)
-        } catch (e: ValidationException) {
-            AppLog.put("[${chapterTitle}] AI修正校验失败: ${e.message}")
-            throw e
-        } catch (e: CorrectionException) {
-            AppLog.put("[${chapterTitle}] AI修正失败: ${e.message}")
-            throw e
-        } catch (e: Exception) {
-            AppLog.put("[${chapterTitle}] AI修正异常: ${e.localizedMessage}")
-            e.printStackTrace()
-            throw CorrectionException("网络异常: ${e.localizedMessage}")
         }
+        throw CorrectionException("重试用尽")
     }
 
     /**
