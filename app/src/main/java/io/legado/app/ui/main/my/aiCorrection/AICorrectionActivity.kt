@@ -115,7 +115,7 @@ class AICorrectionActivity : BaseComposeActivity() {
                                             AIContentCorrector.correct(testContent, "测试章节", "AICorrectionActivity")
                                         }.getOrNull()
                                         isTesting = false
-                                        if (result.isNotBlank() && result != testContent) {
+                                        if (!result.isNullOrBlank() && result != testContent) {
                                             context.toastOnUi(context.getString(R.string.ai_correction_test_success))
                                         } else {
                                             context.toastOnUi(context.getString(R.string.ai_correction_test_failed))
