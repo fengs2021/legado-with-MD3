@@ -52,16 +52,23 @@ object AIContentCorrector {
             return@withContext content
         }
 
-        val prompt = buildPrompt(content, chapterTitle, rules)
+        val systemPrompt = buildSystemPrompt(chapterTitle, rules)
+        val userPrompt = buildUserPrompt(content)
 
         val jsonBody = JSONObject().apply {
             put("model", model)
-            put("messages", JSONArray().put(
-                JSONObject().apply {
-                    put("role", "user")
-                    put("content", prompt)
+            put("messages", JSONArray().apply {
+                if (systemPrompt.isNotBlank()) {
+                    put(JSONObject().apply {
+                        put("role", "system")
+                        put("content", systemPrompt)
+                    })
                 }
-            ))
+                put(JSONObject().apply {
+                    put("role", "user")
+                    put("content", userPrompt)
+                })
+            })
             put("max_tokens", 8192)
             put("temperature", 0.3)
         }
@@ -184,28 +191,30 @@ object AIContentCorrector {
         }
     }
 
-    private fun buildPrompt(content: String, chapterTitle: String, rules: String): String {
+    private fun buildSystemPrompt(chapterTitle: String, rules: String): String {
         val sb = StringBuilder()
         sb.append("你是一个专业的小说文本修正助手。\n\n")
 
         if (chapterTitle.isNotBlank()) {
-            sb.append("章节：$chapterTitle\n")
+            sb.append("当前章节：$chapterTitle\n")
         }
 
-        sb.append("请修正以下正文中的问题（错别字、标点、格式等），并按照要求的规则处理。\n\n")
+        sb.append("请修正用户发送的正文中的问题（错别字、标点、格式等），并按照以下规则处理。\n\n")
 
         if (rules.isNotBlank()) {
             sb.append("修正规则：\n$rules\n\n")
         }
 
-        sb.append("待修正的正文：\n")
-        sb.append(content)
-        sb.append("\n\n请直接返回修正后的正文，不需要任何解释。修正后的正文请用以下格式包裹：\n")
+        sb.append("请直接返回修正后的正文，不需要任何解释。修正后的正文请用以下格式包裹：\n")
         sb.append("【正文开始】\n")
         sb.append("修正后的内容...\n")
         sb.append("【正文结束】")
 
         return sb.toString()
+    }
+
+    private fun buildUserPrompt(content: String): String {
+        return "待修正的正文：\n$content"
     }
 
     private fun parseResult(raw: String): String {
