@@ -1257,7 +1257,9 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                     val originalContent = BookHelp.getContent(b, chapter) ?: return@launch
                     try {
                         val result = withTimeoutOrNull(300_000L) {
-                            AIContentCorrector.correct(originalContent, chapter.title, "preCorrect")
+                            kotlin.runCatching {
+                                AIContentCorrector.correct(originalContent, chapter.title, "preCorrect")
+                            }.getOrNull()
                         }
                         // 校验通过且与原文不同才保存
                         if (!result.isNullOrBlank() && result != originalContent) {

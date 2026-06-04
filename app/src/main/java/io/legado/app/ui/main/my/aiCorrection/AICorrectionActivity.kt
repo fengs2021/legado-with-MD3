@@ -111,7 +111,9 @@ class AICorrectionActivity : BaseComposeActivity() {
                                     isTesting = true
                                     scope.launch {
                                         val testContent = "「你好。」他说。\n\n『你好。』她回答。\n\nhttps://example.com"
-                                        val result = AIContentCorrector.correct(testContent, "测试章节", "AICorrectionActivity")
+                                        val result = kotlin.runCatching {
+                                            AIContentCorrector.correct(testContent, "测试章节", "AICorrectionActivity")
+                                        }.getOrNull()
                                         isTesting = false
                                         if (result.isNotBlank() && result != testContent) {
                                             context.toastOnUi(context.getString(R.string.ai_correction_test_success))

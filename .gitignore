@@ -1,20 +1,11 @@
 *.iml
 .gradle
-local.properties
+/local.properties
+/.idea
 .DS_Store
 /build
-build/
 /captures
 .externalNativeBuild
-/release
-/tmp
-node_modules/
-/app/app
-/app/google
-/app/gradle.properties
-/package-lock.json
-.idea/
-# Kotlin 2.0
-.kotlin/
-/.vscode/settings.json
-/.codex/skills
+.cxx
+local.properties
+*.zip
