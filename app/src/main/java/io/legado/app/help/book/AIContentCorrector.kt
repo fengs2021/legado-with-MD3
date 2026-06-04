@@ -116,13 +116,11 @@ object AIContentCorrector {
                     val errorMsg = errorObj.optString("message", "")
                         .ifEmpty { errorObj.optString("type", "未知错误") }
                     AppLog.put("[${chapterTitle}] AI修正失败: API错误 - $errorMsg")
-                    AppLog.put("[${chapterTitle}] AI修正完整响应: $body")
                     if (attempt < maxAttempts) continue
                     throw CorrectionException("API错误: $errorMsg")
                 }
                 val choices = json.optJSONArray("choices") ?: run {
                     AppLog.put("[${chapterTitle}] AI修正失败: 无choices")
-                    AppLog.put("[${chapterTitle}] AI修正完整响应: $body")
                     if (attempt < maxAttempts) continue
                     throw CorrectionException("无choices")
                 }
@@ -151,7 +149,6 @@ object AIContentCorrector {
                     val completionTokens = usage?.optInt("completion_tokens", -1) ?: -1
                     AppLog.put("[${chapterTitle}] AI修正返回空内容: finish_reason=$finishReason " +
                         "prompt_tokens=$promptTokens completion_tokens=$completionTokens")
-                    AppLog.put("[${chapterTitle}] AI修正完整响应: $body")
                     if (attempt < maxAttempts) {
                         AppLog.put("[${chapterTitle}] AI修正返回空内容，延迟3秒重试")
                         continue
