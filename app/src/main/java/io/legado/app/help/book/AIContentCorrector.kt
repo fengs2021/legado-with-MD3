@@ -223,8 +223,19 @@ object AIContentCorrector {
         val startIdx = raw.indexOf(startMark)
         val endIdx = raw.indexOf(endMark)
 
-        if (startIdx >= 0 && endIdx >= 0) {
-            return raw.substring(startIdx + startMark.length, endIdx).trim()
+        when {
+            // 正常：两个标记都存在，开头在前
+            startIdx >= 0 && endIdx > startIdx -> {
+                return raw.substring(startIdx + startMark.length, endIdx).trim()
+            }
+            // 只有开头标记 → 从其后全部取
+            startIdx >= 0 -> {
+                return raw.substring(startIdx + startMark.length).trim()
+            }
+            // 只有结尾标记 → 取其前全部
+            endIdx >= 0 -> {
+                return raw.substring(0, endIdx).trim()
+            }
         }
 
         val codeBlockPattern = Regex("```[\\s\\S]*?```")

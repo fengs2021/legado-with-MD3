@@ -906,22 +906,28 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
                 if (cached != null) {
                     finalContent = cached
                 } else {
-                    // AI 修正：5分钟超时保护，校验失败则不保存
-                    val correctionResult = withContext(IO) {
-                        withTimeoutOrNull(300_000L) {
-                            kotlin.runCatching {
-                                AIContentCorrector.correct(content, chapter.title, "contentLoadFinish")
-                            }.getOrNull()
-                        }
-                    }
-                    if (!isActive) return@async
-                    // 修正结果必须：非空、非原文、校验通过（correctionResult不为null表示校验通过）
-                    if (correctionResult != null && correctionResult.isNotBlank() && correctionResult != content) {
-                        BookHelp.saveCorrectedContent(book, chapter, correctionResult)
-                        finalContent = correctionResult
+                    // 注册到 correctingChapters，防止与 preCorrect 重复修正
+                    if (correctingChapters.putIfAbsent(cacheKey, true) != null) {
+                        // 已在修正中，跳过
                     } else {
-                        // 修正失败（超时/null），记录等待重试
-                        failedCorrectionChapters["${book.bookUrl}#${chapter.index}"] = 1
+                        val correctionResult = withContext(IO) {
+                            withTimeoutOrNull(300_000L) {
+                                kotlin.runCatching {
+                                    AIContentCorrector.correct(content, chapter.title, "contentLoadFinish")
+                                }.getOrNull()
+                            }
+                        }
+                        if (!isActive) {
+                            correctingChapters.remove(cacheKey)
+                            return@async
+                        }
+                        if (correctionResult != null && correctionResult.isNotBlank() && correctionResult != content) {
+                            BookHelp.saveCorrectedContent(book, chapter, correctionResult)
+                            finalContent = correctionResult
+                        } else {
+                            failedCorrectionChapters["${book.bookUrl}#${chapter.index}"] = 1
+                        }
+                        correctingChapters.remove(cacheKey)
                     }
                 }
             }
