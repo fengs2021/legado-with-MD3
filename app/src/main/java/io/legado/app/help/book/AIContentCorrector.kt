@@ -70,7 +70,7 @@ object AIContentCorrector {
                     put("content", userPrompt)
                 })
             })
-            put("max_tokens", 8192)
+            put("max_tokens", 24576)
             put("temperature", 0.3)
         }
 
