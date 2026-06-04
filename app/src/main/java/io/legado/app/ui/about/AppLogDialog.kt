@@ -17,9 +17,11 @@ import io.legado.app.databinding.ItemAppLogBinding
 //import io.legado.app.lib.theme.primaryColor
 import io.legado.app.ui.widget.dialog.TextDialog
 import io.legado.app.utils.LogUtils
+import io.legado.app.utils.share
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import splitties.views.onClick
+import java.io.File
 import java.util.*
 
 class AppLogDialog : BaseDialogFragment(R.layout.dialog_recycler_view),
@@ -56,8 +58,23 @@ class AppLogDialog : BaseDialogFragment(R.layout.dialog_recycler_view),
                 adapter.clearItems()
                 updateEmptyView()
             }
+            R.id.menu_export -> {
+                exportLogs()
+            }
         }
         return true
+    }
+
+    private fun exportLogs() {
+        val context = requireContext()
+        val file = File(context.externalCacheDir, "ai_correction_log.txt")
+        val logText = AppLog.logs.joinToString("\n") { (time, msg, throwable) ->
+            val ts = LogUtils.logTimeFormat.format(Date(time))
+            val line = "[$ts] $msg"
+            if (throwable != null) "$line\n${throwable.stackTraceToString()}" else line
+        }
+        file.writeText(logText.ifEmpty { "（无日志）" })
+        context.share(file, "text/plain")
     }
 
     inner class LogAdapter(context: Context) :

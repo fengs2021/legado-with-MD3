@@ -10,4 +10,10 @@
         android:icon="@drawable/ic_clear_all"
         app:showAsAction="always" />
 
+    <item
+        android:id="@+id/menu_export"
+        android:title="@string/export"
+        android:icon="@drawable/ic_export"
+        app:showAsAction="always" />
+
 </menu>
