@@ -6,7 +6,7 @@ on:
       branch:
         description: '要构建的分支'
         required: true
-        default: 'trae/solo-agent-vhkVM3'
+        default: 'build-ai-beta14-force'
       release_tag:
         description: 'Release 标签 (留空则不上传到 Release)'
         required: false
@@ -34,6 +34,10 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Decode signing keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > $GITHUB_WORKSPACE/legado-sign.jks
+
       - name: Clear 18PlusList.txt
         run: |
           echo "清空18PlusList.txt"
@@ -46,7 +50,11 @@ jobs:
       - name: Build Debug APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleAppDebug --no-daemon --no-configuration-cache
+          ./gradlew assembleAppDebug --no-daemon --no-configuration-cache \
+            -PRELEASE_STORE_FILE=$GITHUB_WORKSPACE/legado-sign.jks \
+            -PRELEASE_STORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }} \
+            -PRELEASE_KEY_ALIAS=${{ secrets.KEY_ALIAS }} \
+            -PRELEASE_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}
         env:
           COMMIT_NUMBER: ${{ github.run_number }}
           APP_VERSION_NAME: debug-${{ github.run_number }}
