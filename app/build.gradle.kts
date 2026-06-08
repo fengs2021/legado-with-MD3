@@ -48,7 +48,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "io.legato.kazusa"
+        applicationId = "io.legado.app.md3.ai"
         minSdk = 26
         targetSdk = 37
         versionCode = System.getenv("COMMIT_NUMBER")?.toInt()?.let { 10000 + it } ?: 32640
@@ -101,7 +101,6 @@ android {
             versionNameSuffix = "-noR8"
         }
         getByName("debug") {
-            applicationIdSuffix = ".debug"
             if (project.hasProperty("RELEASE_STORE_FILE")) {
                 signingConfig = signingConfigs.getByName("myConfig")
             }
