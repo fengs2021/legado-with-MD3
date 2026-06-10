@@ -1,19 +1,17 @@
 package io.legado.app.data.repository
 
 import android.content.Context
+import androidx.core.content.edit
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.SharedPreferencesMigration
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
-import io.legado.app.utils.putPrefBoolean
-import io.legado.app.utils.putPrefFloat
-import io.legado.app.utils.putPrefInt
-import io.legado.app.utils.putPrefLong
-import io.legado.app.utils.putPrefString
-import io.legado.app.utils.putPrefStringSet
+import io.legado.app.constant.PreferKey
+import io.legado.app.utils.defaultSharedPreferences
 import io.legado.app.utils.removePref
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
@@ -31,9 +29,8 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
 
 /**
  * 设置仓储
- * 采用 DataStore + SharedPreferences 桥接模式
- * 写入时同时写入两者，读取时以 DataStore 为准
- * 这样可以保持现有的基于 SP 的备份恢复功能正常工作
+ * 以 DataStore 为唯一写入源，读取以 DataStore 为准。
+ * SP 同步由 PrefDelegate 双写保证（阶段 1），此处不再回写 SP。
  */
 class SettingsRepository(private val context: Context) {
 
@@ -54,26 +51,8 @@ class SettingsRepository(private val context: Context) {
     }
 
     suspend fun <T> updatePreference(key: Preferences.Key<T>, value: T) {
-        // 1. 写入 DataStore (UI 响应式来源)
         dataStore.edit { preferences ->
             preferences[key] = value
-        }
-        // 2. 桥接：写回 SharedPreferences (保证备份功能正常)
-        syncToSharedPrefs(key.name, value)
-    }
-
-    private fun syncToSharedPrefs(key: String, value: Any?) {
-        when (value) {
-            is String -> context.putPrefString(key, value)
-            is Int -> context.putPrefInt(key, value)
-            is Boolean -> context.putPrefBoolean(key, value)
-            is Long -> context.putPrefLong(key, value)
-            is Float -> context.putPrefFloat(key, value)
-            is Set<*> -> {
-                @Suppress("UNCHECKED_CAST")
-                context.putPrefStringSet(key, value as MutableSet<String>)
-            }
-            null -> context.removePref(key)
         }
     }
 
@@ -83,6 +62,14 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun putString(key: String, value: String) =
         updatePreference(stringPreferencesKey(key), value)
+
+    suspend fun putStrings(values: Map<String, String>) {
+        dataStore.edit { preferences ->
+            values.forEach { (key, value) ->
+                preferences[stringPreferencesKey(key)] = value
+            }
+        }
+    }
 
     // Int 类型的快捷访问
     fun getInt(key: String, defaultValue: Int = 0): Flow<Int> =
@@ -133,6 +120,45 @@ class SettingsRepository(private val context: Context) {
                         @Suppress("UNCHECKED_CAST")
                         preferences[stringSetPreferencesKey(key)] = value as Set<String>
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * DataStore 迁移后同步校验：确保 SP 中的主题配置值未被迁移过程丢失。
+     *
+     * SharedPreferencesMigration 在首次访问 DataStore 时运行，将 SP 值复制到 DataStore。
+     * 在某些场景下（进程被杀、ROM 行为等），迁移可能导致 SP 中的值丢失。
+     * 此方法从 DataStore 读取关键主题配置，如果 SP 中缺失则补写回去。
+     */
+    suspend fun postMigrationSync() {
+        val prefs = dataStore.data.first()
+        val sp = context.defaultSharedPreferences
+        val themeKeys = listOf(
+            PreferKey.composeEngine,
+            PreferKey.appTheme,
+            PreferKey.themeMode,
+            PreferKey.paletteStyle,
+            PreferKey.materialVersion,
+            PreferKey.customContrast,
+            PreferKey.customMode,
+        )
+        var needsWrite = false
+        val editor = mutableMapOf<String, String>()
+        for (key in themeKeys) {
+            if (!sp.contains(key)) {
+                val dsValue = runCatching { prefs[stringPreferencesKey(key)] }.getOrNull()
+                if (dsValue != null) {
+                    editor[key] = dsValue
+                    needsWrite = true
+                }
+            }
+        }
+        if (needsWrite) {
+            sp.edit {
+                editor.forEach { (key, value) ->
+                    putString(key, value)
                 }
             }
         }

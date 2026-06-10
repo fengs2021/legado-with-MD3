@@ -1,11 +1,19 @@
 package io.legado.app.help.config
 
 import android.content.SharedPreferences
-import android.os.Build
 import io.legado.app.BuildConfig
 import io.legado.app.constant.PreferKey
 import io.legado.app.data.appDb
-import io.legado.app.ui.book.manga.config.MangaScrollMode
+import io.legado.app.data.repository.ReadPreferences
+import io.legado.app.ui.config.backupConfig.BackupConfig
+import io.legado.app.ui.config.bookshelfConfig.BookshelfConfig
+import io.legado.app.ui.config.coverConfig.CoverConfig
+import io.legado.app.ui.config.downloadCacheConfig.DownloadCacheConfig
+import io.legado.app.ui.config.importBookConfig.ImportBookConfig
+import io.legado.app.ui.config.otherConfig.OtherConfig
+import io.legado.app.ui.config.readConfig.ReadConfig
+import io.legado.app.ui.config.readMangaConfig.ReadMangaConfig
+import io.legado.app.ui.config.themeConfig.ThemeConfig
 import io.legado.app.utils.canvasrecorder.CanvasRecorderFactory
 import io.legado.app.utils.getPrefBoolean
 import io.legado.app.utils.getPrefInt
@@ -14,20 +22,19 @@ import io.legado.app.utils.isNightMode
 import io.legado.app.utils.putPrefBoolean
 import io.legado.app.utils.putPrefInt
 import io.legado.app.utils.putPrefString
-import io.legado.app.utils.removePref
 import io.legado.app.utils.sysConfiguration
 import io.legado.app.utils.toastOnUi
 import splitties.init.appCtx
 
 @Suppress("MemberVisibilityCanBePrivate", "ConstPropertyName")
 object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
-    val isCronet = appCtx.getPrefBoolean(PreferKey.cronet)
-    var useAntiAlias = appCtx.getPrefBoolean(PreferKey.antiAlias)
-    var userAgent: String = getPrefUserAgent()
+    val isCronet get() = DownloadCacheConfig.cronetEnable
+    val useAntiAlias get() = OtherConfig.antiAlias
+    val userAgent: String get() = DownloadCacheConfig.userAgent
 
     var isEInkMode = appCtx.getPrefString("app_theme", "0") == "4"
     var isTransparent = appCtx.getPrefString("app_theme", "0") == "13"
-    var customMode = appCtx.getPrefString(PreferKey.customMode)
+    val customMode get() = ThemeConfig.customMode
     var clickActionTL = appCtx.getPrefInt(PreferKey.clickActionTL, 2)
     var clickActionTC = appCtx.getPrefInt(PreferKey.clickActionTC, 2)
     var clickActionTR = appCtx.getPrefInt(PreferKey.clickActionTR, 1)
@@ -39,48 +46,110 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
     var clickActionBR = appCtx.getPrefInt(PreferKey.clickActionBR, 1)
 
     //    -1无操作 1下一页 2上一页 0显示菜单
-    var mangaClickActionTL = appCtx.getPrefInt(PreferKey.mangaClickActionTL, -1)
-    var mangaClickActionTC = appCtx.getPrefInt(PreferKey.mangaClickActionTC, -1)
-    var mangaClickActionTR = appCtx.getPrefInt(PreferKey.mangaClickActionTR, 1)
-    var mangaClickActionML = appCtx.getPrefInt(PreferKey.mangaClickActionML, 2)
-    var mangaClickActionMC = appCtx.getPrefInt(PreferKey.mangaClickActionMC, 0)
-    var mangaClickActionMR = appCtx.getPrefInt(PreferKey.mangaClickActionMR, 1)
-    var mangaClickActionBL = appCtx.getPrefInt(PreferKey.mangaClickActionBL, 2)
-    var mangaClickActionBC = appCtx.getPrefInt(PreferKey.mangaClickActionBC, 1)
-    var mangaClickActionBR = appCtx.getPrefInt(PreferKey.mangaClickActionBR, 1)
+    var mangaClickActionTL
+        get() = ReadMangaConfig.mangaClickActionTL
+        set(value) { ReadMangaConfig.mangaClickActionTL = value }
+    var mangaClickActionTC
+        get() = ReadMangaConfig.mangaClickActionTC
+        set(value) { ReadMangaConfig.mangaClickActionTC = value }
+    var mangaClickActionTR
+        get() = ReadMangaConfig.mangaClickActionTR
+        set(value) { ReadMangaConfig.mangaClickActionTR = value }
+    var mangaClickActionML
+        get() = ReadMangaConfig.mangaClickActionML
+        set(value) { ReadMangaConfig.mangaClickActionML = value }
+    var mangaClickActionMC
+        get() = ReadMangaConfig.mangaClickActionMC
+        set(value) { ReadMangaConfig.mangaClickActionMC = value }
+    var mangaClickActionMR
+        get() = ReadMangaConfig.mangaClickActionMR
+        set(value) { ReadMangaConfig.mangaClickActionMR = value }
+    var mangaClickActionBL
+        get() = ReadMangaConfig.mangaClickActionBL
+        set(value) { ReadMangaConfig.mangaClickActionBL = value }
+    var mangaClickActionBC
+        get() = ReadMangaConfig.mangaClickActionBC
+        set(value) { ReadMangaConfig.mangaClickActionBC = value }
+    var mangaClickActionBR
+        get() = ReadMangaConfig.mangaClickActionBR
+        set(value) { ReadMangaConfig.mangaClickActionBR = value }
 
-    var themeMode = appCtx.getPrefString(PreferKey.themeMode, "0")
-    var AppTheme = appCtx.getPrefString(PreferKey.appTheme, "0")
+    val AppTheme get() = ThemeConfig.appTheme
 
-    var swipeAnimation = appCtx.getPrefBoolean(PreferKey.swipeAnimation, true)
+    val swipeAnimation get() = ThemeConfig.swipeAnimation
 
-    var useDefaultCover = appCtx.getPrefBoolean(PreferKey.useDefaultCover, false)
-    var optimizeRender = CanvasRecorderFactory.isSupport
-            && appCtx.getPrefBoolean(PreferKey.optimizeRender, false)
-    var recordLog = appCtx.getPrefBoolean(PreferKey.recordLog)
+    val useDefaultCover get() = CoverConfig.useDefaultCover
+    var optimizeRender
+        get() = CanvasRecorderFactory.isSupport && ReadConfig.optimizeRender
+        set(value) {
+            ReadConfig.optimizeRender = value
+        }
+    val recordLog get() = OtherConfig.recordLog
     var webServiceAutoStart = appCtx.getPrefBoolean(PreferKey.webServiceAutoStart, false)
 
     // -- lyc 版本特性 --
-    var adaptSpecialStyle = appCtx.getPrefBoolean(PreferKey.adaptSpecialStyle, true)
-    var useUnderline = appCtx.getPrefBoolean(PreferKey.useUnderline, false)
+    val adaptSpecialStyle get() = ReadConfig.adaptSpecialStyle
+    val useUnderline get() = ReadConfig.useUnderline
+
+    private var readBarStyleFollowPageValue =
+        appCtx.getPrefBoolean(PreferKey.readBarStyleFollowPage, false)
+    private var readBarStyleValue = appCtx.getPrefInt(PreferKey.readBarStyle, 0)
+
+    fun syncReadPreferences(preferences: ReadPreferences) {
+        ReadConfig.optimizeRender = preferences.optimizeRender
+        ReadConfig.adaptSpecialStyle = preferences.adaptSpecialStyle
+        ReadConfig.useUnderline = preferences.useUnderline
+        clickActionTL = preferences.clickActionTL
+        clickActionTC = preferences.clickActionTC
+        clickActionTR = preferences.clickActionTR
+        clickActionML = preferences.clickActionML
+        clickActionMC = preferences.clickActionMC
+        clickActionMR = preferences.clickActionMR
+        clickActionBL = preferences.clickActionBL
+        clickActionBC = preferences.clickActionBC
+        clickActionBR = preferences.clickActionBR
+        ReadConfig.screenOrientation = preferences.screenOrientation
+        ReadConfig.noAnimScrollPage = preferences.noAnimScrollPage
+        ReadConfig.tocUiUseReplace = preferences.tocUiUseReplace
+        ReadConfig.tocCountWords = preferences.tocCountWords
+        ReadConfig.autoChangeSource = preferences.autoChangeSource
+        ReadConfig.clickImgWay = preferences.clickImgWay
+        ReadConfig.doubleHorizontalPage = preferences.doubleHorizontalPage
+        ReadConfig.progressBarBehavior = preferences.progressBarBehavior
+        ReadConfig.keyPageOnLongPress = preferences.keyPageOnLongPress
+        ReadConfig.volumeKeyPage = preferences.volumeKeyPage
+        ReadConfig.volumeKeyPageOnPlay = preferences.volumeKeyPageOnPlay
+        ReadConfig.mouseWheelPage = preferences.mouseWheelPage
+        ReadConfig.paddingDisplayCutouts = preferences.paddingDisplayCutouts
+        ReadConfig.pageTouchSlop = preferences.pageTouchSlop
+        ReadConfig.showReadTitleAddition = preferences.showReadTitleAddition
+        ReadConfig.titleBarMode = preferences.titleBarMode
+        ReadConfig.menuAlpha = preferences.menuAlpha
+        ReadConfig.readSliderMode = preferences.readSliderMode
+        readBarStyleFollowPageValue = preferences.readBarStyleFollowPage
+        readBarStyleValue = preferences.readBarStyle
+        ReadConfig.defaultSourceChangeAll = preferences.defaultSourceChangeAll
+        ReadConfig.sliderVibrator = preferences.sliderVibrator
+        ReadConfig.selectVibrator = preferences.selectVibrator
+    }
+
+    fun updateReadBarStyleCache(value: Int) {
+        readBarStyleValue = value.coerceIn(0, 2)
+    }
+
+    private fun syncReadPreferenceFromSharedPreferences(key: String?) {
+        when (key) {
+            PreferKey.readBarStyleFollowPage -> readBarStyleFollowPageValue =
+                appCtx.getPrefBoolean(PreferKey.readBarStyleFollowPage, false)
+            PreferKey.readBarStyle -> readBarStyleValue =
+                appCtx.getPrefInt(PreferKey.readBarStyle, 0)
+        }
+    }
 
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
+        syncReadPreferenceFromSharedPreferences(key)
         when (key) {
-
-            PreferKey.adaptSpecialStyle -> adaptSpecialStyle =
-                appCtx.getPrefBoolean(PreferKey.adaptSpecialStyle, true)
-
-            PreferKey.useUnderline -> useUnderline =
-                appCtx.getPrefBoolean(PreferKey.useUnderline, false)
-
-            PreferKey.appTheme -> {
-                AppTheme = appCtx.getPrefString(PreferKey.appTheme, "0")
-            }
-
-            PreferKey.themeMode -> {
-                themeMode = appCtx.getPrefString(PreferKey.themeMode, "0")
-            }
 
             PreferKey.clickActionTL -> clickActionTL =
                 appCtx.getPrefInt(PreferKey.clickActionTL, 2)
@@ -109,95 +178,56 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             PreferKey.clickActionBR -> clickActionBR =
                 appCtx.getPrefInt(PreferKey.clickActionBR, 1)
 
-            PreferKey.mangaClickActionTL -> mangaClickActionTL =
-                appCtx.getPrefInt(PreferKey.mangaClickActionTL, -1)
-
-            PreferKey.mangaClickActionTC -> mangaClickActionTC =
-                appCtx.getPrefInt(PreferKey.mangaClickActionTC, -1)
-
-            PreferKey.mangaClickActionTR -> mangaClickActionTR =
-                appCtx.getPrefInt(PreferKey.mangaClickActionTR, 1)
-
-            PreferKey.mangaClickActionML -> mangaClickActionML =
-                appCtx.getPrefInt(PreferKey.mangaClickActionML, 2)
-
-            PreferKey.mangaClickActionMC -> mangaClickActionMC =
-                appCtx.getPrefInt(PreferKey.mangaClickActionMC, 0)
-
-            PreferKey.mangaClickActionMR -> mangaClickActionMR =
-                appCtx.getPrefInt(PreferKey.mangaClickActionMR, 1)
-
-            PreferKey.mangaClickActionBL -> mangaClickActionBL =
-                appCtx.getPrefInt(PreferKey.mangaClickActionBL, 2)
-
-            PreferKey.mangaClickActionBC -> mangaClickActionBC =
-                appCtx.getPrefInt(PreferKey.mangaClickActionBC, 1)
-
-            PreferKey.mangaClickActionBR -> mangaClickActionBR =
-                appCtx.getPrefInt(PreferKey.mangaClickActionBR, 1)
-
             PreferKey.readBodyToLh -> ReadBookConfig.readBodyToLh =
                 appCtx.getPrefBoolean(PreferKey.readBodyToLh, true)
 
             PreferKey.useZhLayout -> ReadBookConfig.useZhLayout =
                 appCtx.getPrefBoolean(PreferKey.useZhLayout)
 
-            PreferKey.userAgent -> userAgent = getPrefUserAgent()
-
-            PreferKey.antiAlias -> useAntiAlias = appCtx.getPrefBoolean(PreferKey.antiAlias)
-
-            PreferKey.useDefaultCover -> useDefaultCover =
-                appCtx.getPrefBoolean(PreferKey.useDefaultCover, false)
-
-            PreferKey.optimizeRender -> optimizeRender = CanvasRecorderFactory.isSupport
-                    && appCtx.getPrefBoolean(PreferKey.optimizeRender, false)
-
-            PreferKey.recordLog -> recordLog = appCtx.getPrefBoolean(PreferKey.recordLog)
-
         }
     }
 
     var isNightTheme: Boolean
-        get() = when (themeMode) {
+        get() = when (ThemeConfig.themeMode) {
             "1" -> false
             "2" -> true
             else -> sysConfiguration.isNightMode
         }
         set(value) {
             val newMode = if (value) "2" else "1"
-            if (themeMode != newMode) {
-                appCtx.putPrefString(PreferKey.themeMode, newMode)
+            if (ThemeConfig.themeMode != newMode) {
+                ThemeConfig.themeMode = newMode
             }
         }
 
     var showUnread: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.showUnread, true)
+        get() = BookshelfConfig.showUnread
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.showUnread, value)
+            BookshelfConfig.showUnread = value
         }
 
     var showTip: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.showTip, false)
+        get() = BookshelfConfig.showTip
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.showTip, value)
+            BookshelfConfig.showTip = value
         }
 
     var showUnreadNew: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.showUnreadNew, true)
+        get() = BookshelfConfig.showUnreadNew
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.showUnreadNew, value)
+            BookshelfConfig.showUnreadNew = value
         }
 
     var showLastUpdateTime: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.showLastUpdateTime, false)
+        get() = BookshelfConfig.showLastUpdateTime
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.showLastUpdateTime, value)
+            BookshelfConfig.showLastUpdateTime = value
         }
 
     var showWaitUpCount: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.showWaitUpCount, false)
+        get() = BookshelfConfig.showWaitUpCount
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.showWaitUpCount, value)
+            BookshelfConfig.showWaitUpCount = value
         }
 
     var readBrightness: Int
@@ -230,30 +260,30 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
 //        get() = appCtx.getPrefBoolean(PreferKey.immNavigationBar, true)
 
     val screenOrientation: String?
-        get() = appCtx.getPrefString(PreferKey.screenOrientation)
+        get() = ReadConfig.screenOrientation
 
     var bookGroupStyle: Int
-        get() = appCtx.getPrefInt(PreferKey.bookGroupStyle, 0)
+        get() = BookshelfConfig.bookGroupStyle
         set(value) {
-            appCtx.putPrefInt(PreferKey.bookGroupStyle, value)
+            BookshelfConfig.bookGroupStyle = value
         }
 
     var bookshelfLayoutModePortrait: Int
-        get() = appCtx.getPrefInt(PreferKey.bookshelfLayoutModePortrait, 1)
+        get() = BookshelfConfig.bookshelfLayoutModePortrait
         set(value) {
-            appCtx.putPrefInt(PreferKey.bookshelfLayoutModePortrait, value)
+            BookshelfConfig.bookshelfLayoutModePortrait = value
         }
 
     var bookshelfLayoutModeLandscape: Int
-        get() = appCtx.getPrefInt(PreferKey.bookshelfLayoutModeLandscape, 1)
+        get() = BookshelfConfig.bookshelfLayoutModeLandscape
         set(value) {
-            appCtx.putPrefInt(PreferKey.bookshelfLayoutModeLandscape, value)
+            BookshelfConfig.bookshelfLayoutModeLandscape = value
         }
 
     var bookshelfLayoutGridPortrait: Int
-        get() = appCtx.getPrefInt(PreferKey.bookshelfLayoutGridPortrait, 3)
+        get() = BookshelfConfig.bookshelfLayoutGridPortrait
         set(value) {
-            appCtx.putPrefInt(PreferKey.bookshelfLayoutGridPortrait, value)
+            BookshelfConfig.bookshelfLayoutGridPortrait = value
         }
 
     var exploreLayoutGridLandscape: Int
@@ -269,9 +299,9 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         }
 
     var bookshelfLayoutGridLandscape: Int
-        get() = appCtx.getPrefInt(PreferKey.bookshelfLayoutGridLandscape, 7)
+        get() = BookshelfConfig.bookshelfLayoutGridLandscape
         set(value) {
-            appCtx.putPrefInt(PreferKey.bookshelfLayoutGridLandscape, value)
+            BookshelfConfig.bookshelfLayoutGridLandscape = value
         }
 
     var bookExportFileName: String?
@@ -288,38 +318,34 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         }
 
     var bookImportFileName: String?
-        get() = appCtx.getPrefString(PreferKey.bookImportFileName)
+        get() = ImportBookConfig.bookImportFileName
         set(value) {
-            appCtx.putPrefString(PreferKey.bookImportFileName, value)
+            ImportBookConfig.bookImportFileName = value
         }
 
     var backupPath: String?
-        get() = appCtx.getPrefString(PreferKey.backupPath)
+        get() = BackupConfig.backupPath
         set(value) {
-            if (value.isNullOrEmpty()) {
-                appCtx.removePref(PreferKey.backupPath)
-            } else {
-                appCtx.putPrefString(PreferKey.backupPath, value)
-            }
+            BackupConfig.backupPath = value
         }
 
     val showDiscovery: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.showDiscovery, true)
+        get() = ThemeConfig.showDiscovery
 
     val showHome: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.showHome, true)
+        get() = ThemeConfig.showHome
 
     val showRSS: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.showRss, true)
+        get() = ThemeConfig.showRss
 
     val showStatusBar: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.showStatusBar, true)
+        get() = ThemeConfig.showStatusBar
 
     val showBottomView: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.showBottomView, true)
+        get() = ThemeConfig.showBottomView
 
     val autoRefreshBook: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.autoRefresh)
+        get() = ThemeConfig.autoRefreshBook
 
     var enableReview: Boolean
         get() = BuildConfig.DEBUG && appCtx.getPrefBoolean(PreferKey.enableReview, false)
@@ -328,43 +354,39 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         }
 
     var threadCount: Int
-        get() = appCtx.getPrefInt(PreferKey.threadCount, 16)
+        get() = DownloadCacheConfig.threadCount
         set(value) {
-            appCtx.putPrefInt(PreferKey.threadCount, value)
+            DownloadCacheConfig.threadCount = value
         }
 
     // 添加本地选择的目录
     var importBookPath: String?
-        get() = appCtx.getPrefString("importBookPath")
+        get() = ImportBookConfig.importBookPath
         set(value) {
-            if (value == null) {
-                appCtx.removePref("importBookPath")
-            } else {
-                appCtx.putPrefString("importBookPath", value)
-            }
+            ImportBookConfig.importBookPath = value
         }
 
     var ttsFlowSys: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.ttsFollowSys, true)
+        get() = ReadConfig.ttsFollowSys
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.ttsFollowSys, value)
+            ReadConfig.ttsFollowSys = value
         }
 
     val noAnimScrollPage: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.noAnimScrollPage, false)
+        get() = ReadConfig.noAnimScrollPage
 
     const val defaultSpeechRate = 5
 
     var ttsSpeechRate: Int
-        get() = appCtx.getPrefInt(PreferKey.ttsSpeechRate, defaultSpeechRate)
+        get() = ReadConfig.ttsSpeechRate
         set(value) {
-            appCtx.putPrefInt(PreferKey.ttsSpeechRate, value)
+            ReadConfig.ttsSpeechRate = value
         }
 
     var ttsTimer: Int
-        get() = appCtx.getPrefInt(PreferKey.ttsTimer, 0)
+        get() = ReadConfig.ttsTimer
         set(value) {
-            appCtx.putPrefInt(PreferKey.ttsTimer, value)
+            ReadConfig.ttsTimer = value
         }
 
     val speechRatePlay: Int get() = if (ttsFlowSys) defaultSpeechRate else ttsSpeechRate
@@ -462,21 +484,21 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         }
 
     var webPort: Int
-        get() = appCtx.getPrefInt(PreferKey.webPort, 1122)
+        get() = OtherConfig.webPort
         set(value) {
-            appCtx.putPrefInt(PreferKey.webPort, value)
+            OtherConfig.webPort = value
         }
 
     var tocUiUseReplace: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.tocUiUseReplace)
+        get() = ReadConfig.tocUiUseReplace
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.tocUiUseReplace, value)
+            ReadConfig.tocUiUseReplace = value
         }
 
     var tocCountWords: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.tocCountWords, true)
+        get() = ReadConfig.tocCountWords
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.tocCountWords, value)
+            ReadConfig.tocCountWords = value
         }
 
     var enableReadRecord: Boolean
@@ -486,7 +508,7 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         }
 
     val autoChangeSource: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.autoChangeSource, true)
+        get() = ReadConfig.autoChangeSource
 
     var changeSourceLoadInfo: Boolean
         get() = appCtx.getPrefBoolean(PreferKey.changeSourceLoadInfo)
@@ -513,9 +535,9 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         }
 
     var showBookshelfFastScroller: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.showBookshelfFastScroller, false)
+        get() = BookshelfConfig.showBookshelfFastScroller
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.showBookshelfFastScroller, value)
+            BookshelfConfig.showBookshelfFastScroller = value
         }
 
     var contentSelectSpeakMod: Int
@@ -545,70 +567,78 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         }
 
     val clickImgWay: String?
-        get() = appCtx.getPrefString(PreferKey.clickImgWay)
+        get() = ReadConfig.clickImgWay
     var preDownloadNum
-        get() = appCtx.getPrefInt(PreferKey.preDownloadNum, 10)
+        get() = DownloadCacheConfig.preDownloadNum
         set(value) {
-            appCtx.putPrefInt(PreferKey.preDownloadNum, value)
+            DownloadCacheConfig.preDownloadNum = value
         }
 
-    val syncBookProgress get() = appCtx.getPrefBoolean(PreferKey.syncBookProgress, true)
+    val syncBookProgress get() = BackupConfig.syncBookProgress
 
-    val syncBookProgressPlus get() = appCtx.getPrefBoolean(PreferKey.syncBookProgressPlus, false)
+    val syncBookProgressPlus get() = BackupConfig.syncBookProgressPlus
 
     val mediaButtonOnExit get() = appCtx.getPrefBoolean(PreferKey.mediaButtonOnExit, true)
 
     val readAloudByMediaButton
         get() = appCtx.getPrefBoolean(PreferKey.readAloudByMediaButton, false)
 
-    val replaceEnableDefault get() = appCtx.getPrefBoolean(PreferKey.replaceEnableDefault, true)
+    val replaceEnableDefault get() = OtherConfig.replaceEnableDefault
 
-    val webDavDir get() = appCtx.getPrefString(PreferKey.webDavDir, "legado")
+    val webDavDir get() = BackupConfig.webDavDir
 
-    val webDavDeviceName get() = appCtx.getPrefString(PreferKey.webDavDeviceName, Build.MODEL)
+    val webDavDeviceName get() = BackupConfig.webDavDeviceName
 
-    val recordHeapDump get() = appCtx.getPrefBoolean(PreferKey.recordHeapDump, false)
+    val recordHeapDump get() = OtherConfig.recordHeapDump
 
-    val loadCoverOnlyWifi get() = appCtx.getPrefBoolean(PreferKey.loadCoverOnlyWifi, false)
+    val showAddToShelfAlert get() = OtherConfig.showAddToShelfAlert
 
-    val showAddToShelfAlert get() = appCtx.getPrefBoolean(PreferKey.showAddToShelfAlert, true)
-
-    val ignoreAudioFocus get() = appCtx.getPrefBoolean(PreferKey.ignoreAudioFocus, false)
+    var ignoreAudioFocus
+        get() = ReadConfig.ignoreAudioFocus
+        set(value) {
+            ReadConfig.ignoreAudioFocus = value
+        }
 
     var pauseReadAloudWhilePhoneCalls
-        get() = appCtx.getPrefBoolean(PreferKey.pauseReadAloudWhilePhoneCalls, false)
-        set(value) = appCtx.putPrefBoolean(PreferKey.pauseReadAloudWhilePhoneCalls, value)
+        get() = ReadConfig.pauseReadAloudWhilePhoneCalls
+        set(value) {
+            ReadConfig.pauseReadAloudWhilePhoneCalls = value
+        }
 
-    val onlyLatestBackup get() = appCtx.getPrefBoolean(PreferKey.onlyLatestBackup, true)
+    val onlyLatestBackup get() = BackupConfig.onlyLatestBackup
 
-    val autoCheckNewBackup get() = appCtx.getPrefBoolean(PreferKey.autoCheckNewBackup, true)
+    val autoCheckNewBackup get() = ThemeConfig.autoCheckNewBackup
 
-    val defaultHomePage get() = appCtx.getPrefString(PreferKey.defaultHomePage, "bookshelf")
+    val defaultHomePage get() = ThemeConfig.defaultHomePage
 
-    val updateToVariant get() = appCtx.getPrefString(PreferKey.updateToVariant, "official_version")
+    val updateToVariant get() = OtherConfig.updateToVariant
 
-    val streamReadAloudAudio get() = appCtx.getPrefBoolean(PreferKey.streamReadAloudAudio, false)
+    var streamReadAloudAudio
+        get() = ReadConfig.streamReadAloudAudio
+        set(value) {
+            ReadConfig.streamReadAloudAudio = value
+        }
 
     val doublePageHorizontal: String?
-        get() = appCtx.getPrefString(PreferKey.doublePageHorizontal)
+        get() = ReadConfig.doubleHorizontalPage
 
     val progressBarBehavior: String?
-        get() = appCtx.getPrefString(PreferKey.progressBarBehavior, "page")
+        get() = ReadConfig.progressBarBehavior
 
     val keyPageOnLongPress
-        get() = appCtx.getPrefBoolean(PreferKey.keyPageOnLongPress, false)
+        get() = ReadConfig.keyPageOnLongPress
 
     val volumeKeyPage
-        get() = appCtx.getPrefBoolean(PreferKey.volumeKeyPage, true)
+        get() = ReadConfig.volumeKeyPage
 
     val volumeKeyPageOnPlay
-        get() = appCtx.getPrefBoolean(PreferKey.volumeKeyPageOnPlay, true)
+        get() = ReadConfig.volumeKeyPageOnPlay
 
     val mouseWheelPage
-        get() = appCtx.getPrefBoolean(PreferKey.mouseWheelPage, true)
+        get() = ReadConfig.mouseWheelPage
 
     val paddingDisplayCutouts
-        get() = appCtx.getPrefBoolean(PreferKey.paddingDisplayCutouts, false)
+        get() = ReadConfig.paddingDisplayCutouts
 
     var searchScope: String
         get() = appCtx.getPrefString("searchScope") ?: ""
@@ -623,21 +653,21 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         }
 
     var pageTouchSlop: Int
-        get() = appCtx.getPrefInt(PreferKey.pageTouchSlop, 0)
+        get() = ReadConfig.pageTouchSlop
         set(value) {
-            appCtx.putPrefInt(PreferKey.pageTouchSlop, value)
+            ReadConfig.pageTouchSlop = value
         }
 
     var bookshelfSort: Int
-        get() = appCtx.getPrefInt(PreferKey.bookshelfSort, 0)
+        get() = BookshelfConfig.bookshelfSort
         set(value) {
-            appCtx.putPrefInt(PreferKey.bookshelfSort, value)
+            BookshelfConfig.bookshelfSort = value
         }
 
     var bookshelfSortOrder: Int
-        get() = appCtx.getPrefInt(PreferKey.bookshelfSortOrder, 1)
+        get() = BookshelfConfig.bookshelfSortOrder
         set(value) {
-            appCtx.putPrefInt(PreferKey.bookshelfSortOrder, value)
+            BookshelfConfig.bookshelfSortOrder = value
         }
 
     fun getBookSortByGroupId(groupId: Long): Int {
@@ -645,54 +675,42 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             ?: bookshelfSort
     }
 
-    private fun getPrefUserAgent(): String {
-        val ua = appCtx.getPrefString(PreferKey.userAgent)
-        if (ua.isNullOrBlank()) {
-            return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/" + BuildConfig.Cronet_Main_Version + " Safari/537.36"
-        }
-        return ua
-    }
-
     var bitmapCacheSize: Int
-        get() = appCtx.getPrefInt(PreferKey.bitmapCacheSize, 50)
+        get() = DownloadCacheConfig.bitmapCacheSize
         set(value) {
-            appCtx.putPrefInt(PreferKey.bitmapCacheSize, value)
+            DownloadCacheConfig.bitmapCacheSize = value
         }
 
     var imageRetainNum: Int
-        get() = appCtx.getPrefInt(PreferKey.imageRetainNum, 0)
+        get() = DownloadCacheConfig.imageRetainNum
         set(value) {
-            appCtx.putPrefInt(PreferKey.imageRetainNum, value)
+            DownloadCacheConfig.imageRetainNum = value
         }
 
     var showReadTitleBarAddition: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.showReadTitleAddition, true)
+        get() = ReadConfig.showReadTitleAddition
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.showReadTitleAddition, value)
+            ReadConfig.showReadTitleAddition = value
         }
 
     var readBarStyleFollowPage: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.readBarStyleFollowPage, false)
+        get() = readBarStyleFollowPageValue
         set(value) {
+            readBarStyleFollowPageValue = value
             appCtx.putPrefBoolean(PreferKey.readBarStyleFollowPage, value)
         }
 
     var readBarStyle: Int
-        get() = appCtx.getPrefInt(PreferKey.readBarStyle, 0)
+        get() = readBarStyleValue
         set(value) {
-            appCtx.putPrefInt(PreferKey.readBarStyle, value)
+            readBarStyleValue = value.coerceIn(0, 2)
+            appCtx.putPrefInt(PreferKey.readBarStyle, readBarStyleValue)
         }
 
     var sourceEditMaxLine: Int
-        get() {
-            val maxLine = appCtx.getPrefInt(PreferKey.sourceEditMaxLine, Int.MAX_VALUE)
-            if (maxLine < 10) {
-                return Int.MAX_VALUE
-            }
-            return maxLine
-        }
+        get() = OtherConfig.sourceEditMaxLine
         set(value) {
-            appCtx.putPrefInt(PreferKey.sourceEditMaxLine, value)
+            OtherConfig.sourceEditMaxLine = value
         }
 
     var audioPlayUseWakeLock: Boolean
@@ -718,162 +736,120 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
     }
 
     fun detectMangaClickArea() {
-        if (mangaClickActionTL * mangaClickActionTC * mangaClickActionTR
-            * mangaClickActionML * mangaClickActionMC * mangaClickActionMR
-            * mangaClickActionBL * mangaClickActionBC * mangaClickActionBR != 0
-        ) {
-            appCtx.putPrefInt(PreferKey.mangaClickActionMC, 0)
-            appCtx.toastOnUi("当前没有配置菜单区域,自动恢复中间区域为菜单.")
-        }
+        ReadMangaConfig.detectMangaClickArea()
     }
 
     var firebaseEnable: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.firebaseEnable, false)
+        get() = OtherConfig.firebaseEnable
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.firebaseEnable, value)
+            OtherConfig.firebaseEnable = value
         }
 
     //跳转到漫画界面不使用富文本模式
     val showMangaUi: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.showMangaUi, true)
+        get() = ReadMangaConfig.showMangaUi
 
     //禁用漫画缩放
     var disableMangaScale: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.disableMangaScale, true)
-        set(value) {
-            appCtx.putPrefBoolean(PreferKey.disableMangaScale, value)
-        }
+        get() = ReadMangaConfig.disableMangaScale
+        set(value) { ReadMangaConfig.disableMangaScale = value }
 
     var disableMangaScrollAnimation: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.disableMangaScrollAnimation, false)
-        set(value) {
-            appCtx.putPrefBoolean(PreferKey.disableMangaScrollAnimation, value)
-        }
+        get() = ReadMangaConfig.disableMangaScrollAnimation
+        set(value) { ReadMangaConfig.disableMangaScrollAnimation = value }
 
     var disableMangaCrossFade: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.disableMangaCrossFade, false)
-        set(value) {
-            appCtx.putPrefBoolean(PreferKey.disableMangaCrossFade, value)
-        }
+        get() = ReadMangaConfig.disableMangaCrossFade
+        set(value) { ReadMangaConfig.disableMangaCrossFade = value }
 
     var titleBarMode
-        get() = appCtx.getPrefString(PreferKey.titleBarMode, "1")
+        get() = ReadConfig.titleBarMode
         set(value) {
-            appCtx.putPrefString(PreferKey.titleBarMode, value)
+            ReadConfig.titleBarMode = value
         }
 
     //漫画预加载数量
     var mangaPreDownloadNum
-        get() = appCtx.getPrefInt(PreferKey.mangaPreDownloadNum, 10)
-        set(value) {
-            appCtx.putPrefInt(PreferKey.mangaPreDownloadNum, value)
-        }
+        get() = ReadMangaConfig.mangaPreDownloadNum
+        set(value) { ReadMangaConfig.mangaPreDownloadNum = value }
 
     //点击翻页
     var disableClickScroll
-        get() = appCtx.getPrefBoolean(PreferKey.disableClickScroll, false)
-        set(value) {
-            appCtx.putPrefBoolean(PreferKey.disableClickScroll, value)
-        }
+        get() = ReadMangaConfig.disableClickScroll
+        set(value) { ReadMangaConfig.disableClickScroll = value }
 
     //漫画滚动速度
     var mangaAutoPageSpeed
-        get() = appCtx.getPrefInt(PreferKey.mangaAutoPageSpeed, 3)
-        set(value) {
-            appCtx.putPrefInt(PreferKey.mangaAutoPageSpeed, value)
-        }
+        get() = ReadMangaConfig.mangaAutoPageSpeed
+        set(value) { ReadMangaConfig.mangaAutoPageSpeed = value }
 
     //漫画页脚配置
     var mangaFooterConfig
-        get() = appCtx.getPrefString(PreferKey.mangaFooterConfig, "")
-        set(value) {
-            appCtx.putPrefString(PreferKey.mangaFooterConfig, value)
-        }
+        get() = ReadMangaConfig.mangaFooterConfig
+        set(value) { ReadMangaConfig.mangaFooterConfig = value }
 
     //漫画滚动方式
     var mangaScrollMode: Int
-        get() = appCtx.getPrefInt(PreferKey.mangaScrollMode, MangaScrollMode.WEBTOON)
-        set(value) {
-            appCtx.putPrefInt(PreferKey.mangaScrollMode, value)
-        }
+        get() = ReadMangaConfig.mangaScrollMode
+        set(value) { ReadMangaConfig.mangaScrollMode = value }
 
     var mangaLongClick
-        get() = appCtx.getPrefBoolean(PreferKey.mangaLongClick, true)
-        set(value) {
-            appCtx.putPrefBoolean(PreferKey.mangaLongClick, value)
-        }
+        get() = ReadMangaConfig.mangaLongClick
+        set(value) { ReadMangaConfig.mangaLongClick = value }
 
     var mangaBackground: Int
-        get() = appCtx.getPrefInt(PreferKey.mangaBackground, 0xFF000000.toInt())
-        set(value) {
-            appCtx.putPrefInt(PreferKey.mangaBackground, value)
-        }
+        get() = ReadMangaConfig.mangaBackground
+        set(value) { ReadMangaConfig.mangaBackground = value }
 
     //漫画滤镜
     var mangaColorFilter
-        get() = appCtx.getPrefString(PreferKey.mangaColorFilter, "")
-        set(value) {
-            appCtx.putPrefString(PreferKey.mangaColorFilter, value)
-        }
+        get() = ReadMangaConfig.mangaColorFilter
+        set(value) { ReadMangaConfig.mangaColorFilter = value }
 
     //禁用漫画内标题
     var hideMangaTitle
-        get() = appCtx.getPrefBoolean(PreferKey.hideMangaTitle, false)
-        set(value) {
-            appCtx.putPrefBoolean(PreferKey.hideMangaTitle, value)
-        }
+        get() = ReadMangaConfig.hideMangaTitle
+        set(value) { ReadMangaConfig.hideMangaTitle = value }
 
     //开启墨水屏模式
     var enableMangaEInk
-        get() = appCtx.getPrefBoolean(PreferKey.enableMangaEInk, false)
-        set(value) {
-            appCtx.putPrefBoolean(PreferKey.enableMangaEInk, value)
-        }
+        get() = ReadMangaConfig.enableMangaEInk
+        set(value) { ReadMangaConfig.enableMangaEInk = value }
 
     //墨水屏阈值
     var mangaEInkThreshold
-        get() = appCtx.getPrefInt(PreferKey.mangaEInkThreshold, 150)
-        set(value) {
-            appCtx.putPrefInt(PreferKey.mangaEInkThreshold, value)
-        }
+        get() = ReadMangaConfig.mangaEInkThreshold
+        set(value) { ReadMangaConfig.mangaEInkThreshold = value }
 
     //漫画灰度
     var enableMangaGray
-        get() = appCtx.getPrefBoolean(PreferKey.enableMangaGray, false)
-        set(value) {
-            appCtx.putPrefBoolean(PreferKey.enableMangaGray, value)
-        }
+        get() = ReadMangaConfig.enableMangaGray
+        set(value) { ReadMangaConfig.enableMangaGray = value }
 
     //条漫侧边距
     var webtoonSidePaddingDp: Int
-        get() = appCtx.getPrefInt(PreferKey.webtoonSidePaddingDp, 0)
-        set(value) {
-            appCtx.putPrefInt(PreferKey.webtoonSidePaddingDp, value)
-        }
+        get() = ReadMangaConfig.webtoonSidePaddingDp
+        set(value) { ReadMangaConfig.webtoonSidePaddingDp = value }
 
     //漫画音量键翻页
     var MangaVolumeKeyPage: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.mangaVolumeKeyPage, false)
-        set(value) {
-            appCtx.putPrefBoolean(PreferKey.mangaVolumeKeyPage, value)
-        }
+        get() = ReadMangaConfig.mangaVolumeKeyPage
+        set(value) { ReadMangaConfig.mangaVolumeKeyPage = value }
 
     var reverseVolumeKeyPage: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.reverseVolumeKeyPage, false)
-        set(value) {
-            appCtx.putPrefBoolean(PreferKey.reverseVolumeKeyPage, value)
-        }
+        get() = ReadMangaConfig.reverseVolumeKeyPage
+        set(value) { ReadMangaConfig.reverseVolumeKeyPage = value }
 
     var tabletInterface
-        get() = appCtx.getPrefString(PreferKey.tabletInterface, "auto")
+        get() = ThemeConfig.tabletInterface
         set(value) {
-            appCtx.putPrefString(PreferKey.tabletInterface, value)
+            ThemeConfig.tabletInterface = value
         }
 
     var pureBlack
-        get() = appCtx.getPrefBoolean(PreferKey.pureBlack, false)
+        get() = ThemeConfig.isPureBlack
         set(value) {
-            appCtx.getPrefBoolean(PreferKey.pureBlack, value)
+            ThemeConfig.isPureBlack = value
         }
 
     val hasLightBg: Boolean
@@ -886,56 +862,56 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         get() = hasLightBg && hasDarkBg
 
     var labelVisibilityMode
-        get() = appCtx.getPrefString(PreferKey.labelVisibilityMode, "auto")
+        get() = ThemeConfig.labelVisibilityMode
         set(value) {
-            appCtx.putPrefString(PreferKey.labelVisibilityMode, value)
+            ThemeConfig.labelVisibilityMode = value
         }
 
     var paletteStyle
-        get() = appCtx.getPrefString(PreferKey.paletteStyle, "tonalSpot")
+        get() = ThemeConfig.paletteStyle
         set(value) {
-            appCtx.putPrefString(PreferKey.paletteStyle, value)
+            ThemeConfig.paletteStyle = value
         }
 
     var enableBlur
-        get() = appCtx.getPrefBoolean(PreferKey.enableBlur, false)
+        get() = ThemeConfig.enableBlur
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.enableBlur, value)
+            ThemeConfig.enableBlur = value
         }
     var menuAlpha: Int
-        get() = appCtx.getPrefInt(PreferKey.menuAlpha, 100)
+        get() = ReadConfig.menuAlpha
         set(value) {
-            appCtx.putPrefInt(PreferKey.menuAlpha, value)
+            ReadConfig.menuAlpha = value
         }
 
     var readSliderMode
-        get() = appCtx.getPrefString(PreferKey.readSliderMode, "0")
+        get() = ReadConfig.readSliderMode
         set(value) {
-            appCtx.putPrefString(PreferKey.readSliderMode, value)
+            ReadConfig.readSliderMode = value
         }
 
     var bookshelfRefreshingLimit: Int
-        get() = appCtx.getPrefInt(PreferKey.bookshelfRefreshingLimit, 0)
+        get() = BookshelfConfig.bookshelfRefreshingLimit
         set(value) {
-            appCtx.putPrefInt(PreferKey.bookshelfRefreshingLimit, value)
+            BookshelfConfig.bookshelfRefreshingLimit = value
         }
 
     var systemMediaControlCompatibilityChange: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.systemMediaControlCompatibilityChange, true)
+        get() = ReadConfig.systemMediaControlCompatibilityChange
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.systemMediaControlCompatibilityChange, value)
+            ReadConfig.systemMediaControlCompatibilityChange = value
         }
 
     var isPredictiveBackEnabled: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.isPredictiveBackEnabled, true)
+        get() = ThemeConfig.isPredictiveBackEnabled
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.isPredictiveBackEnabled, value)
+            ThemeConfig.isPredictiveBackEnabled = value
         }
 
     var shouldShowExpandButton: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.shouldShowExpandButton, false)
+        get() = BookshelfConfig.shouldShowExpandButton
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.shouldShowExpandButton, value)
+            BookshelfConfig.shouldShowExpandButton = value
         }
 
     var exploreLayoutState: Int
@@ -945,21 +921,21 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         }
 
     var defaultSourceChangeAll: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.defaultSourceChangeAll, true)
+        get() = ReadConfig.defaultSourceChangeAll
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.defaultSourceChangeAll, value)
+            ReadConfig.defaultSourceChangeAll = value
         }
 
     var sliderVibrator: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.sliderVibrator, false)
+        get() = ReadConfig.sliderVibrator
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.sliderVibrator, value)
+            ReadConfig.sliderVibrator = value
         }
 
     var selectVibrator: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.selectVibrator, false)
+        get() = ReadConfig.selectVibrator
         set(value) {
-            appCtx.putPrefBoolean(PreferKey.selectVibrator, value)
+            ReadConfig.selectVibrator = value
         }
 
     val audioPreDownloadNum: Int
@@ -975,8 +951,8 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         }
 
     var containerOpacity: Int
-        get() = appCtx.getPrefInt(PreferKey.containerOpacity, 100)
+        get() = ThemeConfig.containerOpacity
         set(value) {
-            appCtx.putPrefInt(PreferKey.containerOpacity, value)
+            ThemeConfig.containerOpacity = value
         }
 }

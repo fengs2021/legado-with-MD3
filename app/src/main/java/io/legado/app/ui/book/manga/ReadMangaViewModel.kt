@@ -30,6 +30,7 @@ import io.legado.app.model.ReadManga
 import io.legado.app.model.localBook.LocalBook
 import io.legado.app.model.webBook.WebBook
 import io.legado.app.ui.config.otherConfig.OtherConfig
+import io.legado.app.ui.config.readMangaConfig.ReadMangaConfig
 import io.legado.app.utils.ImageSaveUtils
 import io.legado.app.utils.mapParallelSafe
 import io.legado.app.utils.postEvent
@@ -324,11 +325,11 @@ class ReadMangaViewModel(
 
 
     fun getEffectiveScrollMode(): Int {
-        return ReadManga.book?.readConfig?.mangaScrollMode ?: AppConfig.mangaScrollMode
+        return ReadManga.book?.readConfig?.mangaScrollMode ?: ReadMangaConfig.mangaScrollMode
     }
 
     fun getEffectiveWebtoonSidePadding(): Int {
-        return ReadManga.book?.readConfig?.webtoonSidePaddingDp ?: AppConfig.webtoonSidePaddingDp
+        return ReadManga.book?.readConfig?.webtoonSidePaddingDp ?: ReadMangaConfig.webtoonSidePaddingDp
     }
 
     fun saveImageToGallery(url: String, folderName: String = "Legado") {
