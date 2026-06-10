@@ -7,7 +7,7 @@ on:
         description: '要构建的分支'
         required: true
         default: 'build-ai-beta14-force'
-      release_tag:
+        release_tag:
         description: 'Release 标签 (留空则不上传到 Release)'
         required: false
         default: ''
