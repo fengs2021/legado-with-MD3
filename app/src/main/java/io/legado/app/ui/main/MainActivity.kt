@@ -74,7 +74,6 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
 import org.koin.androidx.compose.koinViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -163,47 +162,6 @@ open class MainActivity : BaseComposeActivity(), VariableDialog.Callback {
     private val routeEvents = MutableSharedFlow<NavKey>(extraBufferCapacity = 1)
     private var bookInfoVariableSetter: ((String, String?) -> Unit)? = null
     internal var activeReadBookInputHandler: ReadBookInputHandler? = null
-
-    @Serializable
-    private sealed interface MainRoute : NavKey
-
-    @Serializable
-    private data object MainRouteHome : MainRoute
-
-    @Serializable
-    private data object MainRouteSettings : MainRoute
-
-    @Serializable
-    private data object MainRouteSettingsOther : MainRoute
-
-    @Serializable
-    private data object MainRouteSettingsRead : MainRoute
-
-    @Serializable
-    private data object MainRouteSettingsCover : MainRoute
-
-    @Serializable
-    private data object MainRouteSettingsTheme : MainRoute
-
-    @Serializable
-    private data object MainRouteSettingsBackup : MainRoute
-
-    private data object MainRouteAICorrection : MainRoute
-
-    @Serializable
-    private data object MainRouteImportLocal : MainRoute
-
-    @Serializable
-    private data object MainRouteImportRemote : MainRoute
-
-    @Serializable
-    private data class MainRouteCache(val groupId: Long) : MainRoute
-
-    @Serializable
-    private data class MainRouteSearch(
-        val key: String?,
-        val scopeRaw: String? = null
-    ) : MainRoute
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
