@@ -34,7 +34,7 @@ import io.legado.app.help.LauncherIconHelp
 import io.legado.app.help.book.isLocal
 import io.legado.app.help.book.upType
 import io.legado.app.help.config.LocalConfig
-import io.legado.app.help.config.OldThemeConfig
+import io.legado.app.help.config.ThemeConfigStore
 import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.model.BookCover
 import io.legado.app.model.localBook.LocalBook
@@ -45,8 +45,6 @@ import io.legado.app.utils.LogUtils
 import io.legado.app.utils.compress.ZipUtils
 import io.legado.app.utils.defaultSharedPreferences
 import io.legado.app.utils.fromJsonArray
-import io.legado.app.utils.getPrefBoolean
-import io.legado.app.utils.getPrefInt
 import io.legado.app.utils.getPrefString
 import io.legado.app.utils.isContentScheme
 import io.legado.app.utils.isJsonArray
@@ -275,12 +273,12 @@ object Restore : KoinComponent {
         }
         //恢复主题配置
         if (!BackupConfig.ignoreThemeConfig) {
-            File(path, OldThemeConfig.configFileName).takeIf {
+            File(path, ThemeConfigStore.configFileName).takeIf {
                 it.exists()
             }?.runCatching {
-                FileUtils.delete(OldThemeConfig.configFilePath)
-                copyTo(File(OldThemeConfig.configFilePath))
-                OldThemeConfig.upConfig()
+                FileUtils.delete(ThemeConfigStore.configFilePath)
+                copyTo(File(ThemeConfigStore.configFilePath))
+                ThemeConfigStore.upConfig()
             }?.onFailure {
                 AppLog.put("恢复主题出错\n${it.localizedMessage}", it)
             }
@@ -327,21 +325,13 @@ object Restore : KoinComponent {
             }
         }
 
-        ReadBookConfig.apply {
-            comicStyleSelect = appCtx.getPrefInt(PreferKey.comicStyleSelect)
-            readStyleSelect = appCtx.getPrefInt(PreferKey.readStyleSelect)
-            shareLayout = appCtx.getPrefBoolean(PreferKey.shareLayout)
-            hideStatusBar = appCtx.getPrefBoolean(PreferKey.hideStatusBar)
-            hideNavigationBar = appCtx.getPrefBoolean(PreferKey.hideNavigationBar)
-            autoReadSpeed = appCtx.getPrefInt(PreferKey.autoReadSpeed, 46)
-        }
         appCtx.toastOnUi(R.string.restore_success)
         withContext(Main) {
             delay(100)
             if (!BuildConfig.DEBUG) {
                 LauncherIconHelp.changeIcon(appCtx.getPrefString(PreferKey.launcherIcon))
             }
-            OldThemeConfig.applyDayNight(appCtx)
+            ThemeConfigStore.applyDayNight(appCtx)
         }
     }
 

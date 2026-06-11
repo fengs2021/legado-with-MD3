@@ -48,6 +48,7 @@ class SimpleSliderView @JvmOverloads constructor(
         set(value) {
             _max = value
             _progress = _progress.coerceAtMost(_max)
+            binding.slider.valueTo = _max.toFloat()
             updateValue()
         }
 
@@ -56,6 +57,7 @@ class SimpleSliderView @JvmOverloads constructor(
         set(value) {
             _min = value
             _progress = _progress.coerceAtLeast(_min)
+            binding.slider.valueFrom = _min.toFloat()
             updateValue()
         }
 
@@ -130,7 +132,7 @@ class SimpleSliderView @JvmOverloads constructor(
     private fun updateValue() {
         binding.tvSeekValue.text = valueFormat?.invoke(_progress) ?: _progress.toString()
         if (binding.slider.value.toInt() != _progress) {
-            binding.slider.value = _progress.toFloat()
+            binding.slider.value = _progress.toFloat().coerceIn(binding.slider.valueFrom, binding.slider.valueTo)
         }
     }
 

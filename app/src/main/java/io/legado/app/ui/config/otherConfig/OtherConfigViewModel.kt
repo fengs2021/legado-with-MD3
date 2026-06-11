@@ -9,8 +9,9 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.legado.app.constant.PreferKey
+import io.legado.app.data.repository.ReadAloudPreferences
+import io.legado.app.data.repository.ReadAloudSettingsRepository
 import io.legado.app.help.DirectLinkUpload
-import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.LocalConfig
 import io.legado.app.model.CheckSource
 import io.legado.app.receiver.SharedReceiverActivity
@@ -21,10 +22,14 @@ import io.legado.app.utils.restart
 import io.legado.app.utils.toastOnUi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import splitties.init.appCtx
 
-class OtherConfigViewModel : ViewModel() {
+class OtherConfigViewModel(
+    private val readAloudSettingsRepository: ReadAloudSettingsRepository
+) : ViewModel() {
 
     private val packageManager = appCtx.packageManager
     private val componentName = ComponentName(
@@ -35,6 +40,30 @@ class OtherConfigViewModel : ViewModel() {
     init {
         viewModelScope.launch(Dispatchers.IO) {
             OtherConfig.processText = isProcessTextEnabled()
+        }
+    }
+
+    val readAloudPreferences = readAloudSettingsRepository.preferences.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = ReadAloudPreferences()
+    )
+
+    fun setMediaButtonOnExit(value: Boolean) {
+        viewModelScope.launch {
+            readAloudSettingsRepository.setMediaButtonOnExit(value)
+        }
+    }
+
+    fun setReadAloudByMediaButton(value: Boolean) {
+        viewModelScope.launch {
+            readAloudSettingsRepository.setReadAloudByMediaButton(value)
+        }
+    }
+
+    fun setIgnoreAudioFocus(value: Boolean) {
+        viewModelScope.launch {
+            readAloudSettingsRepository.setIgnoreAudioFocus(value)
         }
     }
 
@@ -77,7 +106,6 @@ class OtherConfigViewModel : ViewModel() {
 
     fun saveUserAgent(input: String) {
         DownloadCacheConfig.userAgent = input
-        AppConfig.userAgent = DownloadCacheConfig.userAgent
     }
 
     fun updateLocalBookDir(path: String) {

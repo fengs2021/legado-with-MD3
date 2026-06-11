@@ -19,8 +19,17 @@ data class TextColumn(
     override var start: Float,
     override var end: Float,
     override val charData: String,
-    var color: Int? = null,
-    var fontPath: String? = null,
+    override val textColor: Int? = null,
+    override val bgColor: Int? = null,
+    override val underlineMode: Int = 0,
+    override val underlineColor: Int? = null,
+    override val underlineWidth: Float = 1f,
+    override val underlineOffset: Float = 2f,
+    override val underlineSvgPath: String = "",
+    override val bgImage: String = "",
+    override val bgImageFit: Int = 0,
+    override val bgImageScale: Float = 1f,
+    override val fontPath: String = "",
 ) : TextBaseColumn {
 
     override var textLine: TextLine = emptyTextLine
@@ -51,21 +60,23 @@ data class TextColumn(
         } else {
             ChapterProvider.contentPaint
         }
-        val textColor = color ?: if (!textLine.useUnderline && (textLine.isReadAloud || isSearchResult)) {
+        val drawColor = if (textLine.isReadAloud || isSearchResult) {
             ReadBookConfig.textAccentColor
-        } else if (textLine.isTitle && ReadBookConfig.titleColor != 0) {
-            ReadBookConfig.titleColor
         } else {
-            ReadBookConfig.textColor
+            textColor ?: if (textLine.isTitle && ReadBookConfig.titleColor != 0) {
+                ReadBookConfig.titleColor
+            } else {
+                ReadBookConfig.textColor
+            }
         }
         val needRestoreSize = textLine.titleTextSize != null
-        val needRestoreColor = textPaint.color != textColor
-        val customTypeface = fontPath?.let { getTypeface(it) }
+        val needRestoreColor = textPaint.color != drawColor
+        val customTypeface = getCustomTypeface()
         val needRestoreTypeface = customTypeface != null
         if (needRestoreSize) {
             val originalSize = textPaint.textSize
             textPaint.textSize = textLine.titleTextSize!!
-            if (needRestoreColor) textPaint.color = textColor
+            if (needRestoreColor) textPaint.color = drawColor
             if (needRestoreTypeface) textPaint.typeface = customTypeface
             val y = textLine.lineBase - textLine.lineTop
             drawText(canvas, y, textPaint)
@@ -73,7 +84,7 @@ data class TextColumn(
         } else if (needRestoreColor || needRestoreTypeface) {
             val originalColor = textPaint.color
             val originalTypeface = textPaint.typeface
-            if (needRestoreColor) textPaint.color = textColor
+            if (needRestoreColor) textPaint.color = drawColor
             if (needRestoreTypeface) textPaint.typeface = customTypeface
             val y = textLine.lineBase - textLine.lineTop
             drawText(canvas, y, textPaint)
@@ -98,30 +109,30 @@ data class TextColumn(
         }
     }
 
-    companion object {
-        private val typefaceCache = mutableMapOf<String, Typeface?>()
-
-        private fun getTypeface(fontPath: String): Typeface? {
-            return typefaceCache.getOrPut(fontPath) {
-                kotlin.runCatching {
-                    when {
-                        fontPath.isContentScheme() -> {
-                            appCtx.contentResolver
-                                .openFileDescriptor(fontPath.toUri(), "r")!!
-                                .use {
-                                    Typeface.Builder(it.fileDescriptor).build()
-                                }
-                        }
-
-                        fontPath.isNotEmpty() -> {
-                            Typeface.Builder(File(fontPath)).build()
-                        }
-
-                        else -> null
-                    }
-                }.getOrNull()
-            }
+    private fun getCustomTypeface(): Typeface? {
+        if (fontPath.isEmpty()) return null
+        return typefaceCache.getOrPut(fontPath) {
+            loadTypeface(fontPath)
         }
     }
 
+    companion object {
+        private val typefaceCache = HashMap<String, Typeface?>()
+
+        private fun loadTypeface(fontPath: String): Typeface? {
+            return runCatching {
+                when {
+                    fontPath.isContentScheme() -> {
+                        appCtx.contentResolver
+                            .openFileDescriptor(fontPath.toUri(), "r")!!
+                            .use { Typeface.Builder(it.fileDescriptor).build() }
+                    }
+                    fontPath.isNotEmpty() -> {
+                        Typeface.Builder(File(fontPath)).build()
+                    }
+                    else -> null
+                }
+            }.getOrNull()
+        }
+    }
 }
