@@ -19,7 +19,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import dev.chrisbanes.haze.HazeState
@@ -27,25 +30,24 @@ import dev.chrisbanes.haze.hazeSource
 import io.legado.app.R
 import io.legado.app.constant.AppLog
 import io.legado.app.constant.ReadMenuBlurMode
-import io.legado.app.help.IntentData
 import io.legado.app.help.IntentHelp
 import io.legado.app.model.ReadBook
-import io.legado.app.utils.toastOnUi
-import io.legado.app.ui.browser.WebViewActivity
 import io.legado.app.ui.book.info.BookInfoActivity
 import io.legado.app.ui.book.read.page.ContentTextView
 import io.legado.app.ui.book.read.page.ReadView
 import io.legado.app.ui.book.read.page.entities.PageDirection
-import io.legado.app.ui.book.searchContent.SearchContentActivity
-import io.legado.app.ui.book.searchContent.SearchResult
+import io.legado.app.ui.book.searchContent.SearchContentResult
 import io.legado.app.ui.book.source.edit.BookSourceEditActivity
 import io.legado.app.ui.book.toc.TocActivityResult
 import io.legado.app.ui.book.toc.rule.TxtTocRuleActivity
+import io.legado.app.ui.browser.WebViewActivity
 import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.ui.replace.ReplaceEditRoute
 import io.legado.app.ui.replace.ReplaceRuleActivity
 import io.legado.app.utils.StartActivityContract
 import io.legado.app.utils.takePersistablePermissionSafely
+import io.legado.app.utils.toastOnUi
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.launch
 
@@ -96,10 +98,13 @@ fun ReadBookRouteScreen(
     host: ReadBookRouteHost,
     controller: ReadBookController,
     onEffectsReady: () -> Unit = {},
+    onOpenSearch: (word: String?, bookUrl: String) -> Unit = { _, _ -> },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val readPreferences by viewModel.readPreferences.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val effectsReady = remember(viewModel) { CompletableDeferred<Unit>() }
     val menuBackdrop = rememberLayerBackdrop()
     val menuHazeState = remember { HazeState() }
     val useMenuHazeSource = state.menuConfig.readMenuTopBarBlurMode == ReadMenuBlurMode.Haze ||
@@ -210,17 +215,16 @@ fun ReadBookRouteScreen(
         }
     }
 
-    val searchContentLauncher = rememberLauncherForActivityResult(
-        StartActivityContract(SearchContentActivity::class.java)
-    ) { result ->
-        val data = result.data ?: return@rememberLauncherForActivityResult
-        val key = data.getLongExtra("key", System.currentTimeMillis())
-        val index = data.getIntExtra("index", 0)
-        val searchResult = IntentData.get<SearchResult>("searchResult$key")
-        val searchResultList = IntentData.get<List<SearchResult>>("searchResultList$key")
-        if (searchResult != null && searchResultList != null) {
-            viewModel.onIntent(ReadBookIntent.SetSearchResults(searchResultList, index, searchResult.query))
-        }
+    val importHttpTtsPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { viewModel.onIntent(ReadBookIntent.ImportHttpTtsFileSelected(it)) }
+    }
+
+    val exportHttpTtsPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let { viewModel.onIntent(ReadBookIntent.ExportHttpTtsToFile(it)) }
     }
 
     val bookInfoLauncher = rememberLauncherForActivityResult(
@@ -234,7 +238,10 @@ fun ReadBookRouteScreen(
     LaunchedEffect(viewModel) {
         launch {
             viewModel.effects
-                .onSubscription { onEffectsReady() }
+                .onSubscription {
+                    effectsReady.complete(Unit)
+                    onEffectsReady()
+                }
                 .collect { effect ->
                     try {
                         when (effect) {
@@ -281,18 +288,7 @@ fun ReadBookRouteScreen(
                                 )
                             }
                             is ReadBookEffect.OpenSearchActivity -> {
-                                val currentState = viewModel.uiState.value
-                                val lambda: (Intent.() -> Unit)? = { intent ->
-                                    intent.putExtra("bookUrl", effect.bookUrl)
-                                    intent.putExtra("searchWord", effect.word)
-                                    intent.putExtra("searchResultIndex", currentState.searchResultIndex)
-                                    currentState.searchResultList.firstOrNull()?.let {
-                                        if (it.query == currentState.searchContentQuery) {
-                                            IntentData.put("searchResultList", currentState.searchResultList)
-                                        }
-                                    }
-                                }
-                                searchContentLauncher.launch(lambda)
+                                onOpenSearch(effect.word, effect.bookUrl)
                             }
                             is ReadBookEffect.MenuSettingReplace -> {
                                 replaceLauncher.launch(Intent(context, ReplaceRuleActivity::class.java))
@@ -353,6 +349,18 @@ fun ReadBookRouteScreen(
                             is ReadBookEffect.TtsCacheCleared -> {
                                 context.toastOnUi(effect.message)
                             }
+                            is ReadBookEffect.OpenHttpTtsImportPicker -> {
+                                importHttpTtsPicker.launch(
+                                    arrayOf(
+                                        "application/json",
+                                        "text/plain"
+                                    )
+                                )
+                            }
+
+                            is ReadBookEffect.OpenHttpTtsExportPicker -> {
+                                exportHttpTtsPicker.launch("httpTTS.json")
+                            }
 
                             // All other effects — delegate to bridge (View/Window/Activity operations)
                             else -> controller.handleEffect(effect)
@@ -369,6 +377,30 @@ fun ReadBookRouteScreen(
     LaunchedEffect(state.menuVisible) {
         host.upSystemUiVisibility(host.isInMultiWindowModeCompat, !state.menuVisible)
     }
+
+    // ── Search result collection (from Navigation3 search route) ──────
+
+    LaunchedEffect(viewModel, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            SearchContentResult.results.collect { result ->
+                effectsReady.await()
+                if (result.bookUrl != ReadBook.book?.bookUrl) {
+                    SearchContentResult.resetReplayCache()
+                    return@collect
+                }
+                viewModel.onIntent(
+                    ReadBookIntent.SetSearchResults(result.searchResults, result.index, result.query)
+                )
+                result.searchResults.getOrNull(result.index)?.let { searchResult ->
+                    viewModel.onIntent(
+                        ReadBookIntent.NavigateToSearchResult(searchResult, result.index)
+                    )
+                }
+                SearchContentResult.resetReplayCache()
+            }
+        }
+    }
+
     // ── View layer + Compose UI ───────────────────────────────────────
 
     Box(Modifier.fillMaxSize()) {

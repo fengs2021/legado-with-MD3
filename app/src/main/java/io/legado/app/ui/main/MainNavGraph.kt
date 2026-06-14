@@ -41,17 +41,19 @@ import io.legado.app.ui.book.readRecord.ReadRecordScreen
 import io.legado.app.ui.book.search.SearchIntent
 import io.legado.app.ui.book.search.SearchScreen
 import io.legado.app.ui.book.search.SearchViewModel
+import io.legado.app.ui.book.searchContent.SearchContentScreen
+import io.legado.app.ui.book.searchContent.SearchContentViewModel
 import io.legado.app.ui.book.source.manage.BookSourceActivity
 import io.legado.app.ui.config.ConfigNavScreen
 import io.legado.app.ui.config.backupConfig.BackupConfigScreen
 import io.legado.app.ui.config.coverConfig.CoverConfigScreen
 import io.legado.app.ui.config.customTheme.CustomThemeScreen
 import io.legado.app.ui.config.downloadCacheConfig.DownloadCacheConfigScreen
+import io.legado.app.ui.config.labConfig.LabConfigScreen
 import io.legado.app.ui.config.otherConfig.OtherConfigScreen
 import io.legado.app.ui.config.readConfig.ReadConfigScreen
 import io.legado.app.ui.config.themeConfig.ThemeConfigScreen
 import io.legado.app.ui.config.themeManage.ThemeManageScreen
-import io.legado.app.ui.config.labConfig.LabConfigScreen
 import io.legado.app.ui.config.translation.TranslationConfigScreen
 import io.legado.app.ui.rss.article.MainRouteRssSort
 import io.legado.app.ui.rss.article.RssSortRouteScreen
@@ -69,6 +71,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 fun MainActivity.mainEntryProvider(
@@ -274,6 +277,7 @@ fun MainActivity.mainEntryProvider(
         }
         val effectsReady = remember(readBookViewModel) { CompletableDeferred<Unit>() }
         val readerResumeState = remember(controller, lifecycleOwner) { booleanArrayOf(false) }
+        val collectorReady = remember(readBookViewModel) { booleanArrayOf(false) }
         fun resumeReader() {
             if (readerResumeState[0]) return
             readerResumeState[0] = true
@@ -293,10 +297,20 @@ fun MainActivity.mainEntryProvider(
             host = controller,
             controller = controller,
             onEffectsReady = { effectsReady.complete(Unit) },
+            onOpenSearch = { word, bookUrl ->
+                onNavigateToRoute(
+                    MainRouteSearchContent(
+                        bookUrl = bookUrl,
+                        searchWord = word,
+                        searchResultIndex = readBookViewModel.uiState.value.searchResultIndex
+                    )
+                )
+            },
         )
 
         DisposableEffect(controller, lifecycleOwner, route.readAloud) {
             activeReadBookInputHandler = controller
+            activeReadBookRoute = route
             MainActivity.hasActiveReadBookRoute = true
             controller.onClose = { onNavigateBack() }
             controller.onStartContentLoadFinish = {
@@ -307,7 +321,9 @@ fun MainActivity.mainEntryProvider(
 
             val lifecycleObserver = LifecycleEventObserver { _, event ->
                 when (event) {
-                    Lifecycle.Event.ON_RESUME -> resumeReader()
+                    Lifecycle.Event.ON_RESUME -> {
+                        if (collectorReady[0]) resumeReader()
+                    }
                     Lifecycle.Event.ON_PAUSE -> pauseReader()
                     else -> Unit
                 }
@@ -320,6 +336,9 @@ fun MainActivity.mainEntryProvider(
                 if (activeReadBookInputHandler === controller) {
                     activeReadBookInputHandler = null
                 }
+                if (activeReadBookRoute == route) {
+                    activeReadBookRoute = null
+                }
                 MainActivity.hasActiveReadBookRoute = false
                 controller.clearTts()
             }
@@ -327,6 +346,7 @@ fun MainActivity.mainEntryProvider(
 
         LaunchedEffect(route, readBookViewModel, lifecycleOwner) {
             effectsReady.await()
+            collectorReady[0] = true
             readBookViewModel.initReadBookConfig(readIntent)
             readBookViewModel.initData(readIntent)
             controller.onRouteInitialized()
@@ -334,6 +354,17 @@ fun MainActivity.mainEntryProvider(
                 resumeReader()
             }
         }
+    }
+
+    entry<MainRouteSearchContent> { route ->
+        val viewModel = koinViewModel<SearchContentViewModel>(
+            key = route.bookUrl,
+            parameters = { parametersOf(route) }
+        )
+        SearchContentScreen(
+            viewModel = viewModel,
+            onBack = { onNavigateBack() },
+        )
     }
 
     entry<MainRouteSearch> { route ->
@@ -378,7 +409,16 @@ fun MainActivity.mainEntryProvider(
         RssSortRouteScreen(
             sourceUrl = route.sourceUrl,
             initialSortUrl = route.sortUrl,
+            initialSearchKey = route.key,
             onBackClick = { onNavigateBack() },
+            onSearch = { key ->
+                onNavigateToRoute(
+                    MainRouteRssSort(
+                        sourceUrl = route.sourceUrl,
+                        key = key
+                    )
+                )
+            },
             onOpenRead = { title, origin, link, openUrl ->
                 if (link?.contains("@js:") == true) {
                     onNavigateToRoute(

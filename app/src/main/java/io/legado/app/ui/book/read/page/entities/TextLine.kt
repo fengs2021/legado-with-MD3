@@ -9,11 +9,9 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Shader
 import android.os.Build
-import android.text.TextPaint
 import androidx.annotation.Keep
 import io.legado.app.help.PaintPool
 import io.legado.app.help.book.isImage
-import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.model.ReadBook
 import io.legado.app.ui.book.read.page.ContentTextView
@@ -22,6 +20,7 @@ import io.legado.app.ui.book.read.page.entities.column.BaseColumn
 import io.legado.app.ui.book.read.page.entities.column.TextBaseColumn
 import io.legado.app.ui.book.read.page.entities.column.TextColumn
 import io.legado.app.ui.book.read.page.provider.ChapterProvider
+import io.legado.app.ui.config.readConfig.ReadConfig
 import io.legado.app.utils.canvasrecorder.CanvasRecorderFactory
 import io.legado.app.utils.canvasrecorder.recordIfNeededThenDraw
 import io.legado.app.utils.dpToPx
@@ -77,12 +76,12 @@ data class TextLine(
     var textPage: TextPage = emptyTextPage
     var isLeftLine = true
     val useUnderline: Boolean
-        get() = AppConfig.useUnderline
+        get() = ReadConfig.useUnderline
 
     fun addColumn(column: BaseColumn) {
         if (column !is TextColumn) {
             onlyTextColumn = false
-        } else if (column.textColor != null || column.bgColor != null || column.underlineMode != 0 || column.bgImage.isNotEmpty()) {
+        } else if (column.textColor != null || column.bgColor != null || column.underlineMode != 0 || column.bgImage.isNotEmpty() || column.fontPath.isNotEmpty()) {
             onlyTextColumn = false
         }
         column.textLine = this
@@ -160,7 +159,7 @@ data class TextLine(
     }
 
     fun draw(view: ContentTextView, canvas: Canvas) {
-        if (AppConfig.optimizeRender) {
+        if (ReadConfig.optimizeRender) {
             canvasRecorder.recordIfNeededThenDraw(canvas, view.width, height.toInt()) {
                 drawTextLine(view, this)
             }
@@ -233,10 +232,13 @@ data class TextLine(
      * 绘制下划线
      */
     private fun drawUnderline(canvas: Canvas, dottedLine: Boolean) {
-        val paint = ChapterProvider.contentPaint
+        val paint = PaintPool.obtain()
+        paint.set(ChapterProvider.contentPaint)
+        paint.clearShadowLayer()
         paint.color = ReadBookConfig.durConfig.curUnderlineColor()
         paint.strokeWidth = ReadBookConfig.underlineHeight.toFloat()
-        paint.pathEffect = if (dottedLine && !AppConfig.isEInkMode)
+        paint.style = Paint.Style.STROKE
+        paint.pathEffect = if (dottedLine && !ReadConfig.isEInkMode)
             ChapterProvider.dashEffect
         else
             null
@@ -253,6 +255,7 @@ data class TextLine(
             lineEnd
         }
         canvas.drawLine(startX, lineY, endX, lineY, paint)
+        PaintPool.recycle(paint)
     }
 
     /**
@@ -413,6 +416,7 @@ data class TextLine(
     ) {
         val paint = PaintPool.obtain()
         paint.set(ChapterProvider.contentPaint)
+        paint.clearShadowLayer()
         paint.color = underlineColor
         paint.strokeWidth = underlineWidth.dpToPx()
         paint.style = Paint.Style.STROKE
@@ -557,7 +561,7 @@ data class TextLine(
     }
 
     fun checkFastDraw(): Boolean {
-        if (!AppConfig.optimizeRender || exceed || !onlyTextColumn || textPage.isMsgPage) {
+        if (!ReadConfig.optimizeRender || exceed || !onlyTextColumn || textPage.isMsgPage) {
             return false
         }
         if (wordSpacing != 0f && (!atLeastApi26 || !wordSpacingWorking)) {

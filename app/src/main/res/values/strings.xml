@@ -124,6 +124,7 @@
     <string name="version">Version</string>
     <string name="local">Local</string>
     <string name="search">Search</string>
+    <string name="search_placeholder">Search…</string>
     <string name="input_search_key">Input search keyword</string>
     <string name="origin_format">Origin: %s</string>
     <string name="read_dur_progress">Origin: %s</string>
@@ -372,6 +373,7 @@
     <string name="padding_bottom">Bottom</string>
     <string name="padding_left">Left</string>
     <string name="padding_right">Right</string>
+    <string name="padding_format">Top: %1$d  Bottom: %2$d  Left: %3$d  Right: %4$d</string>
     <string name="check_book_source">Check book sources</string>
     <string name="check_select_source">Check the selected source</string>
     <string name="progress_show">%1$s      Progress %2$d/%3$d</string>
@@ -932,6 +934,13 @@
     <string name="wrong_format">Wrong format</string>
     <string name="error">Error</string>
     <string name="show_brightness_view">Show Brightness Widget</string>
+    <string name="brightness_bar_off">Off</string>
+    <string name="brightness_bar_horizontal">Horizontal</string>
+    <string name="brightness_bar_vertical">Vertical</string>
+    <string name="brightness_bar_position">Brightness Bar Position</string>
+    <string name="brightness_bar_left">Left</string>
+    <string name="brightness_bar_right">Right</string>
+    <string name="brightness_follow_system">Follow System</string>
     <string name="language">Language</string>
     <string name="import_rss_source">Import rss source</string>
     <string name="donate_summary">Your donation makes this app better</string>
@@ -1356,6 +1365,7 @@
     <string name="preview_image_by_click">Click to preview image</string>
     <string name="default_home_page">Default Homepage</string>
     <string name="screen_portrait_reversed">Portrait Reversed</string>
+    <string name="screen_landscape_reversed">Landscape Reversed</string>
     <string name="del_ruby_tag">Delete ruby tag</string>
     <string name="del_h_tag">Delete h tag</string>
     <string name="adjust_chapter_page">Adjust of chapter page</string>
@@ -1752,6 +1762,7 @@
     <string name="search_empty_scope_switch_all">%1$s group search returned no results. Switch to all groups?</string>
     <string name="search_type">Search type</string>
     <string name="search_has_more">Pull up or tap button to load more</string>
+    <string name="search_book_source_count">%1$d</string>
     <string name="search_layout_list">List layout</string>
     <string name="search_layout_source_grouped">Source grouped</string>
     <string name="download_cache_config">Download &amp; Cache</string>

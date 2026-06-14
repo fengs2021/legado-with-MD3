@@ -40,6 +40,7 @@ sealed interface ReadBookMenuRoute {
     data object ReadAloud : ReadBookMenuRoute
     data object AutoRead : ReadBookMenuRoute
     data object PaddingConfig : ReadBookMenuRoute
+    data object HeaderFooterConfig : ReadBookMenuRoute
     data class Bookmark(val bookmark: io.legado.app.data.entities.Bookmark) : ReadBookMenuRoute
 }
 
@@ -196,6 +197,10 @@ data class ReadMenuConfig(
     val readMenuCustomIcons: ImmutableMap<String, String> = persistentMapOf(),
     val titleBarButtons: ImmutableList<ReadBookButtonConfigItem> = persistentListOf(),
     val bottomBarButtons: ImmutableList<ReadBookButtonConfigItem> = persistentListOf(),
+    val showBrightnessView: String = "1",
+    val brightnessVwPos: String = "1",
+    val readBrightness: Int = 100,
+    val brightnessAuto: Boolean = false,
 )
 
 @Immutable
@@ -254,7 +259,10 @@ sealed interface ReadBookIntent {
     data class SetSearchResults(val results: List<SearchResult>, val index: Int, val query: String? = null) : ReadBookIntent
     data class SetSearchResultIndex(val index: Int) : ReadBookIntent
     data class SetShowingSearchResult(val value: Boolean) : ReadBookIntent
+    data class NavigateSearchResultByOffset(val offset: Int) : ReadBookIntent
     data class NavigateToSearchResult(val result: SearchResult, val index: Int) : ReadBookIntent
+    data object RestoreLastBookProgress : ReadBookIntent
+    data object KeepCurrentBookProgress : ReadBookIntent
 
     // Read aloud
     data object ToggleReadAloud : ReadBookIntent
@@ -300,7 +308,7 @@ sealed interface ReadBookIntent {
 
     // Brightness
     data class SetBrightness(val value: Int) : ReadBookIntent
-    data object ToggleBrightnessAuto : ReadBookIntent
+    data class ToggleBrightnessAuto(val auto: Boolean) : ReadBookIntent
 
     // Seek bar jump
     data class SeekToChapter(val index: Int) : ReadBookIntent
@@ -425,7 +433,8 @@ sealed interface ReadBookIntent {
     data class TextActionDict(val text: String) : ReadBookIntent
 
     // Screen / selection config
-    data object KeepLightChanged : ReadBookIntent
+    data class KeepLightChanged(val value: String) : ReadBookIntent
+    data class SetOrientation(val value: String) : ReadBookIntent
     data class TextSelectAbleChanged(val enabled: Boolean) : ReadBookIntent
 
     // Media / TTS
@@ -449,7 +458,10 @@ sealed interface ReadBookIntent {
     data class ApplySpeakEnginePerBook(val value: String?) : ReadBookIntent
     data class OpenHttpTtsLogin(val engineId: Long) : ReadBookIntent
     data class ImportHttpTtsJson(val json: String) : ReadBookIntent
+    data object ImportHttpTtsFile : ReadBookIntent
+    data class ImportHttpTtsFileSelected(val uri: Uri) : ReadBookIntent
     data object ExportAllHttpTts : ReadBookIntent
+    data class ExportHttpTtsToFile(val uri: Uri) : ReadBookIntent
     data class SetReadAloudIgnoreAudioFocus(val value: Boolean) : ReadBookIntent
     data class SetReadAloudPauseOnPhoneCall(val value: Boolean) : ReadBookIntent
     data class SetReadAloudWakeLock(val value: Boolean) : ReadBookIntent
@@ -505,7 +517,11 @@ sealed interface ReadBookEffect {
 
     // ReadView operations (require Activity/View reference)
     data class UpdateReadViewConfig(val actions: Set<ConfigUpdateAction>) : ReadBookEffect
-    data class UpContent(val relativePosition: Int, val resetPageOffset: Boolean) : ReadBookEffect
+    data class UpContent(
+        val relativePosition: Int,
+        val resetPageOffset: Boolean,
+        val success: (() -> Unit)? = null,
+    ) : ReadBookEffect
     data class UpPageAnim(val upRecorder: Boolean) : ReadBookEffect
     data object UpTime : ReadBookEffect
     data class UpBattery(val level: Int) : ReadBookEffect
@@ -522,7 +538,7 @@ sealed interface ReadBookEffect {
     data object CancelSelect : ReadBookEffect
     data object UpSystemUiVisibility : ReadBookEffect
     data class SetBrightness(val value: Int) : ReadBookEffect
-    data object ToggleBrightnessAuto : ReadBookEffect
+    data class ToggleBrightnessAuto(val auto: Boolean, val value: Int) : ReadBookEffect
 
     // Read aloud / auto page
     data object ToggleReadAloud : ReadBookEffect
@@ -531,7 +547,16 @@ sealed interface ReadBookEffect {
 
     // Search
     data class OpenSearchActivity(val word: String?, val bookUrl: String) : ReadBookEffect
-    data class NavigateToSearchResult(val result: SearchResult) : ReadBookEffect
+    data class NavigateToSearchResult(
+        val result: SearchResult,
+        val chapterIndex: Int,
+        val pageIndex: Int,
+        val lineIndex: Int,
+        val startCharIndex: Int,
+        val endRelativePage: Int,
+        val endLineIndex: Int,
+        val endCharIndex: Int,
+    ) : ReadBookEffect
     data object ExitSearch : ReadBookEffect
 
     // Source actions
@@ -585,6 +610,8 @@ sealed interface ReadBookEffect {
     data class OpenMenuCustomIconPicker(val id: String) : ReadBookEffect
     data class OpenTitleBarCustomIconPicker(val id: String) : ReadBookEffect
     data object OpenSystemTtsSettings : ReadBookEffect
+    data object OpenHttpTtsImportPicker : ReadBookEffect
+    data object OpenHttpTtsExportPicker : ReadBookEffect
     data class OpenHttpTtsLogin(val engineId: Long) : ReadBookEffect
 
     // Day/night toggle
@@ -652,6 +679,7 @@ sealed interface ReadBookSheet {
 sealed interface ReadBookDialog {
     data class ConfirmRestoreProgress(val progress: BookProgress) : ReadBookDialog
     data class SureSyncProgress(val progress: BookProgress) : ReadBookDialog
+    data object RestoreLastBookProgress : ReadBookDialog
     data object ConfirmSkipToChapter : ReadBookDialog
     data class ConfirmChapterPay(val chapterTitle: String) : ReadBookDialog
 }
@@ -765,6 +793,9 @@ sealed interface ConfigUpdate {
     }
     data class TipFooterRight(val value: Int) : ConfigUpdate {
         override val actions = setOf(ConfigUpdateAction.UpdateStyle, ConfigUpdateAction.UpdateContent)
+    }
+    data class HeaderFont(val path: String) : ConfigUpdate {
+        override val actions = setOf(ConfigUpdateAction.UpdateStyle)
     }
     data class HeaderFontSize(val value: Int) : ConfigUpdate {
         override val actions = setOf(ConfigUpdateAction.UpdateStyle)
@@ -1019,6 +1050,9 @@ sealed interface ConfigUpdate {
     data class TitleBarMode(val value: String) : ConfigUpdate {
         override val actions = emptySet<ConfigUpdateAction>()
     }
+    data class ReadBodyToLh(val value: Boolean) : ConfigUpdate {
+        override val actions = setOf(ConfigUpdateAction.ReloadContent)
+    }
     data class TextFullJustify(val value: Boolean) : ConfigUpdate {
         override val actions = setOf(ConfigUpdateAction.ReloadContent)
     }
@@ -1031,7 +1065,15 @@ sealed interface ConfigUpdate {
     data class UseZhLayout(val value: Boolean) : ConfigUpdate {
         override val actions = setOf(ConfigUpdateAction.ReloadContent)
     }
-    data class ShowBrightnessView(val value: Boolean) : ConfigUpdate {
+    data class ShowBrightnessView(val value: String) : ConfigUpdate {
+        override val actions = emptySet<ConfigUpdateAction>()
+    }
+
+    data class BrightnessVwPos(val value: String) : ConfigUpdate {
+        override val actions = emptySet<ConfigUpdateAction>()
+    }
+
+    data class BrightnessAuto(val value: Boolean) : ConfigUpdate {
         override val actions = emptySet<ConfigUpdateAction>()
     }
     data class UseUnderlineGlobal(val value: Boolean) : ConfigUpdate {
@@ -1041,12 +1083,55 @@ sealed interface ConfigUpdate {
         override val actions = emptySet<ConfigUpdateAction>()
     }
     data class DoubleHorizontalPage(val value: String) : ConfigUpdate {
-        override val actions = emptySet<ConfigUpdateAction>()
+        override val actions = setOf(
+            ConfigUpdateAction.UpdateLayout,
+            ConfigUpdateAction.ReloadContent,
+        )
     }
     data class ProgressBarBehavior(val value: String) : ConfigUpdate {
         override val actions = emptySet<ConfigUpdateAction>()
     }
+    data class MouseWheelPage(val value: Boolean) : ConfigUpdate {
+        override val actions = emptySet<ConfigUpdateAction>()
+    }
+    data class VolumeKeyPage(val value: Boolean) : ConfigUpdate {
+        override val actions = emptySet<ConfigUpdateAction>()
+    }
+    data class VolumeKeyPageOnPlay(val value: Boolean) : ConfigUpdate {
+        override val actions = emptySet<ConfigUpdateAction>()
+    }
+    data class KeyPageOnLongPress(val value: Boolean) : ConfigUpdate {
+        override val actions = emptySet<ConfigUpdateAction>()
+    }
+    data class SliderVibrator(val value: Boolean) : ConfigUpdate {
+        override val actions = emptySet<ConfigUpdateAction>()
+    }
+    data class SelectVibrator(val value: Boolean) : ConfigUpdate {
+        override val actions = emptySet<ConfigUpdateAction>()
+    }
+    data class AutoChangeSource(val value: Boolean) : ConfigUpdate {
+        override val actions = emptySet<ConfigUpdateAction>()
+    }
+    data class SelectText(val value: Boolean) : ConfigUpdate {
+        override val actions = emptySet<ConfigUpdateAction>()
+    }
     data class NoAnimScrollPage(val value: Boolean) : ConfigUpdate {
+        override val actions = emptySet<ConfigUpdateAction>()
+    }
+    data class OptimizeRender(val value: Boolean) : ConfigUpdate {
+        override val actions = setOf(
+            ConfigUpdateAction.UpdateChapterStyle,
+            ConfigUpdateAction.ReloadContent,
+            ConfigUpdateAction.SubmitRenderTask,
+        )
+    }
+    data class ClickImgWay(val value: String) : ConfigUpdate {
+        override val actions = emptySet<ConfigUpdateAction>()
+    }
+    data class DisableReturnKey(val value: Boolean) : ConfigUpdate {
+        override val actions = emptySet<ConfigUpdateAction>()
+    }
+    data class ExpandTextMenu(val value: Boolean) : ConfigUpdate {
         override val actions = emptySet<ConfigUpdateAction>()
     }
     data class ShowReadTitleAddition(val value: Boolean) : ConfigUpdate {
@@ -1056,5 +1141,10 @@ sealed interface ConfigUpdate {
     // --- Auto read ---
     data class AutoReadSpeed(val value: Int) : ConfigUpdate {
         override val actions = emptySet<ConfigUpdateAction>()
+    }
+
+    // --- Chinese converter ---
+    data class ChineseConverterType(val value: Int) : ConfigUpdate {
+        override val actions = setOf(ConfigUpdateAction.ReloadContent)
     }
 }

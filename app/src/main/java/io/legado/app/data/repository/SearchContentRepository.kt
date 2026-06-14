@@ -7,6 +7,7 @@ import io.legado.app.help.book.BookHelp
 import io.legado.app.help.book.ContentProcessor
 import io.legado.app.help.book.isLocal
 import io.legado.app.help.config.AppConfig
+import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.ui.book.searchContent.SearchResult
 import io.legado.app.utils.ChineseUtils
 import kotlinx.coroutines.Dispatchers
@@ -21,8 +22,13 @@ class SearchContentRepository {
     private var lastSearchResults: List<SearchResult>? = null
     private var lastQueryKey: String? = null
 
-    fun getCache(bookUrl: String, query: String): List<SearchResult>? {
-        val key = "$bookUrl-$query"
+    fun getCache(
+        bookUrl: String,
+        query: String,
+        replaceEnabled: Boolean,
+        regexReplace: Boolean
+    ): List<SearchResult>? {
+        val key = searchKey(bookUrl, query, replaceEnabled, regexReplace)
         return if (lastQueryKey == key) lastSearchResults else null
     }
 
@@ -61,9 +67,18 @@ class SearchContentRepository {
             }
         }
         lastSearchResults = allResults
-        lastQueryKey = "${book.bookUrl}-$query"
+        lastQueryKey = searchKey(book.bookUrl, query, replaceEnabled, regexReplace)
         emit(ArrayList(allResults))
     }.flowOn(Dispatchers.Default)
+
+    private fun searchKey(
+        bookUrl: String,
+        query: String,
+        replaceEnabled: Boolean,
+        regexReplace: Boolean
+    ): String {
+        return "$bookUrl-$query-$replaceEnabled-$regexReplace-${ReadBookConfig.titleMode}"
+    }
 
     private suspend fun searchChapter(
         query: String,
@@ -82,22 +97,40 @@ class SearchContentRepository {
             else -> chapter.title
         }
 
-        val mContent = contentProcessor.getContent(
-            book, chapter, chapterContent, useReplace = replaceEnabled
-        ).toString()
+        val bodyContent = contentProcessor.getContent(
+            book,
+            chapter,
+            chapterContent,
+            includeTitle = false,
+            useReplace = replaceEnabled
+        )
+        val includeTitle = ReadBookConfig.titleMode != 2 ||
+                chapter.isVolume ||
+                bodyContent.textList.isEmpty()
+        val mContent = if (includeTitle) {
+            val title = chapter.getDisplayTitle(
+                contentProcessor.getTitleReplaceRules(),
+                useReplace = replaceEnabled && book.getUseReplaceRule()
+            )
+            listOf(title).plus(bodyContent.textList).joinToString("\n")
+        } else {
+            bodyContent.toString()
+        }
 
-        val positions = searchPosition(mContent, query, regexReplace)
+        val matches = searchPosition(mContent, query, regexReplace)
 
-        positions.forEachIndexed { index, position ->
-            val construct = getResultAndQueryIndex(mContent, position, query)
+        matches.forEachIndexed { index, match ->
+            val construct = getResultAndQueryIndex(mContent, match.position, match.length)
             val result = SearchResult(
+                bookUrl = book.bookUrl,
                 resultCountWithinChapter = index,
                 resultText = construct.second,
                 chapterTitle = chapter.title,
                 query = query,
                 chapterIndex = chapter.index,
                 queryIndexInResult = construct.first,
-                queryIndexInChapter = position,
+                queryIndexInChapter = match.position,
+                matchLength = match.length,
                 isRegex = regexReplace
             )
             searchResultsWithinChapter.add(result)
@@ -105,34 +138,34 @@ class SearchContentRepository {
         return searchResultsWithinChapter
     }
 
-    private fun searchPosition(content: String, pattern: String, regexReplace: Boolean): List<Int> {
-        val position: MutableList<Int> = mutableListOf()
+    private fun searchPosition(content: String, pattern: String, regexReplace: Boolean): List<SearchMatch> {
+        val positions: MutableList<SearchMatch> = mutableListOf()
         if (regexReplace) { // 正则表达式搜索
             try {
                 Regex(pattern).findAll(content).forEach { match ->
-                    position.add(match.range.first)
+                    positions.add(SearchMatch(match.range.first, match.value.length))
                 }
             } catch (e: Exception) {
-                return position
+                return positions
             }
         } else {
             var index = content.indexOf(pattern)
             while (index >= 0) {
-                position.add(index)
+                positions.add(SearchMatch(index, pattern.length))
                 index = content.indexOf(pattern, index + pattern.length)
             }
         }
-        return position
+        return positions
     }
 
     private fun getResultAndQueryIndex(
         content: String,
         queryIndexInContent: Int,
-        query: String
+        matchLength: Int
     ): Pair<Int, String> {
         val length = 12
         var po1 = queryIndexInContent - length
-        var po2 = queryIndexInContent + query.length + length
+        var po2 = queryIndexInContent + matchLength + length
         if (po1 < 0) {
             po1 = 0
         }
@@ -143,5 +176,10 @@ class SearchContentRepository {
         val newText = content.substring(po1, po2)
         return queryIndexInResult to newText
     }
+
+    private data class SearchMatch(
+        val position: Int,
+        val length: Int,
+    )
 
 }

@@ -7,7 +7,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
@@ -23,7 +22,6 @@ import io.legado.app.ui.widget.components.modalBottomSheet.AppModalBottomSheet
 import io.legado.app.ui.widget.components.settingItem.TinyClickableSettingItem
 import io.legado.app.ui.widget.components.settingItem.TinyDropdownSettingItem
 import io.legado.app.ui.widget.components.settingItem.TinySwitchSettingItem
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
@@ -38,7 +36,6 @@ fun MoreConfigSheet(
     val preferences by readSettingsRepository.preferences.collectAsStateWithLifecycle(
         initialValue = ReadPreferences()
     )
-    val scope = rememberCoroutineScope()
 
     AppModalBottomSheet(
         show = show,
@@ -56,10 +53,10 @@ fun MoreConfigSheet(
             ScreenSettings(
                 preferences = preferences,
                 onScreenOrientationChange = {
-                    scope.launch { readSettingsRepository.setScreenOrientation(it) }
+                    onIntent(ReadBookIntent.SetOrientation(it))
                 },
                 onKeepLightChange = {
-                    scope.launch { readSettingsRepository.setKeepLight(it) }
+                    onIntent(ReadBookIntent.KeepLightChanged(it))
                 },
                 onHideStatusBarChange = {
                     onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.HideStatusBar(it)))
@@ -71,7 +68,7 @@ fun MoreConfigSheet(
                     onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.PaddingDisplayCutouts(it)))
                 },
                 onReadBodyToLhChange = {
-                    scope.launch { readSettingsRepository.setReadBodyToLh(it) }
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.ReadBodyToLh(it)))
                 },
                 onTextFullJustifyChange = {
                     onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TextFullJustify(it)))
@@ -84,9 +81,6 @@ fun MoreConfigSheet(
                 },
                 onUseZhLayoutChange = {
                     onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.UseZhLayout(it)))
-                },
-                onShowBrightnessViewChange = {
-                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.ShowBrightnessView(it)))
                 },
                 onUseUnderlineChange = {
                     onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.UseUnderlineGlobal(it)))
@@ -104,16 +98,16 @@ fun MoreConfigSheet(
                     onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.ProgressBarBehavior(it)))
                 },
                 onMouseWheelPageChange = {
-                    scope.launch { readSettingsRepository.setMouseWheelPage(it) }
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.MouseWheelPage(it)))
                 },
                 onVolumeKeyPageChange = {
-                    scope.launch { readSettingsRepository.setVolumeKeyPage(it) }
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.VolumeKeyPage(it)))
                 },
                 onVolumeKeyPageOnPlayChange = {
-                    scope.launch { readSettingsRepository.setVolumeKeyPageOnPlay(it) }
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.VolumeKeyPageOnPlay(it)))
                 },
                 onKeyPageOnLongPressChange = {
-                    scope.launch { readSettingsRepository.setKeyPageOnLongPress(it) }
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.KeyPageOnLongPress(it)))
                 },
             )
 
@@ -122,30 +116,33 @@ fun MoreConfigSheet(
             OtherSettings(
                 preferences = preferences,
                 onSliderVibratorChange = {
-                    scope.launch { readSettingsRepository.setSliderVibrator(it) }
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.SliderVibrator(it)))
                 },
                 onSelectVibratorChange = {
-                    scope.launch { readSettingsRepository.setSelectVibrator(it) }
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.SelectVibrator(it)))
                 },
                 onAutoChangeSourceChange = {
-                    scope.launch { readSettingsRepository.setAutoChangeSource(it) }
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.AutoChangeSource(it)))
                 },
                 onSelectTextChange = {
-                    scope.launch { readSettingsRepository.setSelectText(it) }
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.SelectText(it)))
                 },
                 onNoAnimScrollPageChange = {
                     onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.NoAnimScrollPage(it)))
                 },
+                onOptimizeRenderChange = {
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.OptimizeRender(it)))
+                },
                 onClickImgWayChange = {
-                    scope.launch { readSettingsRepository.setClickImgWay(it) }
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.ClickImgWay(it)))
                 },
                 onOpenClickRegionalConfig = onOpenClickRegionalConfig,
                 onDisableReturnKeyChange = {
-                    scope.launch { readSettingsRepository.setDisableReturnKey(it) }
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.DisableReturnKey(it)))
                 },
                 onOpenPageKeyConfig = onOpenPageKeyConfig,
                 onExpandTextMenuChange = {
-                    scope.launch { readSettingsRepository.setExpandTextMenu(it) }
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.ExpandTextMenu(it)))
                 },
                 onShowReadTitleAdditionChange = {
                     onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.ShowReadTitleAddition(it)))
@@ -168,7 +165,6 @@ private fun ScreenSettings(
     onTextBottomJustifyChange: (Boolean) -> Unit,
     onAdaptSpecialStyleChange: (Boolean) -> Unit,
     onUseZhLayoutChange: (Boolean) -> Unit,
-    onShowBrightnessViewChange: (Boolean) -> Unit,
     onUseUnderlineChange: (Boolean) -> Unit,
 ) {
     val screenDirectionEntries = stringArrayResource(R.array.screen_direction_title)
@@ -229,11 +225,6 @@ private fun ScreenSettings(
         title = stringResource(R.string.use_zh_layout),
         checked = preferences.useZhLayout,
         onCheckedChange = onUseZhLayoutChange,
-    )
-    TinySwitchSettingItem(
-        title = stringResource(R.string.show_brightness_view),
-        checked = preferences.showBrightnessView,
-        onCheckedChange = onShowBrightnessViewChange,
     )
     TinySwitchSettingItem(
         title = stringResource(R.string.use_underline),
@@ -301,6 +292,7 @@ private fun OtherSettings(
     onAutoChangeSourceChange: (Boolean) -> Unit,
     onSelectTextChange: (Boolean) -> Unit,
     onNoAnimScrollPageChange: (Boolean) -> Unit,
+    onOptimizeRenderChange: (Boolean) -> Unit,
     onClickImgWayChange: (String) -> Unit,
     onOpenClickRegionalConfig: () -> Unit,
     onDisableReturnKeyChange: (Boolean) -> Unit,
@@ -335,6 +327,11 @@ private fun OtherSettings(
         title = stringResource(R.string.no_anim_scroll_page),
         checked = preferences.noAnimScrollPage,
         onCheckedChange = onNoAnimScrollPageChange,
+    )
+    TinySwitchSettingItem(
+        title = stringResource(R.string.enable_optimize_render),
+        checked = preferences.optimizeRender,
+        onCheckedChange = onOptimizeRenderChange,
     )
     TinyDropdownSettingItem(
         title = stringResource(R.string.click_image_way),

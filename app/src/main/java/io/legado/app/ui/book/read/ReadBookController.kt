@@ -9,6 +9,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowInsets
+import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.HapticFeedbackConstantsCompat
@@ -23,7 +24,6 @@ import io.legado.app.constant.BookType
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.BookProgress
 import io.legado.app.help.TTS
-import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.help.storage.Backup
 import io.legado.app.lib.dialogs.SelectItem
@@ -40,8 +40,10 @@ import io.legado.app.service.BaseReadAloudService
 import io.legado.app.ui.book.read.page.ContentTextView
 import io.legado.app.ui.book.read.page.ReadView
 import io.legado.app.ui.book.read.page.entities.PageDirection
+import io.legado.app.ui.book.read.page.entities.TextChapter
 import io.legado.app.ui.book.read.page.provider.ChapterProvider
 import io.legado.app.ui.book.read.page.provider.TextPageFactory
+import io.legado.app.ui.config.readConfig.ReadConfig
 import io.legado.app.ui.login.SourceLoginJsExtensions
 import io.legado.app.ui.widget.PopupAction
 import io.legado.app.utils.ColorUtils
@@ -54,11 +56,13 @@ import io.legado.app.utils.longToastOnUi
 import io.legado.app.utils.navigationBarGravity
 import io.legado.app.utils.setLightStatusBar
 import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
+import io.legado.app.utils.sysBattery
 import io.legado.app.utils.sysScreenOffTime
 import io.legado.app.utils.throttle
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.visible
 import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.launch
 
 /**
@@ -112,6 +116,7 @@ class ReadBookController(
     }
     private val popupAction by lazy { PopupAction(activity) }
     private var screenTimeOut: Long = 0
+    private var pendingSearchResultMark: IntArray? = null
     // justInitData moved to ViewModel (set on InitData intent)
 
     val isAutoPage: Boolean get() = refs?.readView?.isAutoPage == true
@@ -164,6 +169,7 @@ class ReadBookController(
             }
         }
         newRefs.readView.upTime()
+        newRefs.readView.upBattery(activity.sysBattery)
     }
 
     fun onRouteInitialized() {
@@ -177,6 +183,7 @@ class ReadBookController(
         setOrientation()
         upSystemUiVisibility()
         refs?.readView?.upTime()
+        refs?.readView?.upBattery(activity.sysBattery)
         screenOffTimerStart()
     }
 
@@ -338,7 +345,7 @@ class ReadBookController(
         r.textMenuPosition.x = x
         r.textMenuPosition.y = top
 
-        if (AppConfig.selectVibrator) {
+        if (ReadConfig.selectVibrator) {
             r.root.performHapticFeedback(HapticFeedbackConstantsCompat.TEXT_HANDLE_MOVE)
         }
     }
@@ -348,7 +355,7 @@ class ReadBookController(
         r.cursorRight.x = x
         r.cursorRight.y = y
         r.cursorRight.visible(true)
-        if (AppConfig.selectVibrator) {
+        if (ReadConfig.selectVibrator) {
             r.root.performHapticFeedback(HapticFeedbackConstantsCompat.TEXT_HANDLE_MOVE)
         }
     }
@@ -593,6 +600,10 @@ class ReadBookController(
 
             is ReadBookEffect.UpContent -> {
                 refs?.readView?.upContent(effect.relativePosition, effect.resetPageOffset)
+                effect.success?.invoke()
+                refs?.readView?.post {
+                    consumePendingSearchResultMark()
+                }
                 if (effect.relativePosition == 0) onUnhandledEffect(ReadBookEffect.UpSeekBar)
             }
 
@@ -605,7 +616,10 @@ class ReadBookController(
                 ReadBook.loadContent(false)
             }
 
-            is ReadBookEffect.CancelSelect -> refs?.readView?.cancelSelect()
+            is ReadBookEffect.CancelSelect -> {
+                pendingSearchResultMark = null
+                refs?.readView?.cancelSelect()
+            }
             is ReadBookEffect.MenuImageStyleChanged -> refs?.readView?.upPageAnim()
 
             // ── Simple Activity-API effects ──
@@ -613,7 +627,7 @@ class ReadBookController(
             is ReadBookEffect.LongToast -> activity.longToastOnUi(effect.message)
             is ReadBookEffect.SetBrightness -> {
                 val lp = activity.window.attributes
-                lp.screenBrightness = effect.value / 255f
+                lp.screenBrightness = effect.value / 100f
                 activity.window.attributes = lp
             }
 
@@ -676,10 +690,17 @@ class ReadBookController(
             }
 
             is ReadBookEffect.UpScreenTimeOut -> {
-                screenOffTimerStart()
+                upScreenTimeOut()
             }
 
-            is ReadBookEffect.ToggleBrightnessAuto -> { /* TODO */
+            is ReadBookEffect.ToggleBrightnessAuto -> {
+                val lp = activity.window.attributes
+                if (effect.auto) {
+                    lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                } else {
+                    lp.screenBrightness = effect.value / 100f
+                }
+                activity.window.attributes = lp
             }
 
             // ── Phase 4: Activity-dependent effects ──
@@ -692,15 +713,39 @@ class ReadBookController(
 
             is ReadBookEffect.TextActionSpeak -> speak(effect.text)
             is ReadBookEffect.NavigateToSearchResult -> {
-                // Navigate handled by ReadView — no external callback needed
+                if (effect.pageIndex < 0) {
+                    // Chapter not loaded — open it, then mark in the success callback
+                    ReadBook.openChapter(
+                        effect.chapterIndex,
+                        0
+                    ) {
+                        val tc = ReadBook.curTextChapter ?: return@openChapter
+                        val query = effect.result.query
+                        val pos = viewModel.searchResultPositions(tc, effect.result, query)
+                        if (pos[0] < 0) return@openChapter
+                        activity.lifecycleScope.launch(Main) {
+                            markSearchResultAfterNavigation(
+                                intArrayOf(pos[0], pos[1], pos[2], pos[3], pos[4], pos[5])
+                            )
+                        }
+                    }
+                } else {
+                    // Same chapter — navigate to page, then mark
+                    val tc = ReadBook.curTextChapter ?: return
+                    markSearchResultAfterNavigation(
+                        intArrayOf(
+                            effect.pageIndex, effect.lineIndex,
+                            effect.startCharIndex, effect.endRelativePage,
+                            effect.endLineIndex, effect.endCharIndex
+                        )
+                    )
+                }
             }
 
             is ReadBookEffect.ExitSearch -> {
-                if (viewModel.uiState.value.isShowingSearchResult) {
-                    viewModel.onIntent(ReadBookIntent.SetShowingSearchResult(false))
-                    ReadBook.clearSearchResult()
-                    refs?.readView?.cancelSelect(true)
-                }
+                pendingSearchResultMark = null
+                ReadBook.clearSearchResult()
+                refs?.readView?.cancelSelect(clearSearchResult = true)
             }
 
             is ReadBookEffect.SyncBookProgress -> {
@@ -771,6 +816,8 @@ class ReadBookController(
             is ReadBookEffect.OpenMenuCustomIconPicker,
             is ReadBookEffect.OpenTitleBarCustomIconPicker,
             is ReadBookEffect.OpenSystemTtsSettings,
+            is ReadBookEffect.OpenHttpTtsImportPicker,
+            is ReadBookEffect.OpenHttpTtsExportPicker,
             is ReadBookEffect.OpenHttpTtsLogin,
             is ReadBookEffect.TtsCacheCleared,
             is ReadBookEffect.ExportJson,
@@ -930,17 +977,17 @@ class ReadBookController(
     }
 
     override fun mouseWheelPage(direction: PageDirection) {
-        if (menuLayoutIsVisible || !AppConfig.mouseWheelPage) {
+        if (menuLayoutIsVisible || !ReadConfig.mouseWheelPage) {
             return
         }
         keyPageDebounce(direction, mouseWheel = true, longPress = false)
     }
 
     private fun volumeKeyPage(direction: PageDirection, longPress: Boolean): Boolean {
-        if (!AppConfig.volumeKeyPage) {
+        if (!ReadConfig.volumeKeyPage) {
             return false
         }
-        if (!AppConfig.volumeKeyPageOnPlay && BaseReadAloudService.isPlay()) {
+        if (!ReadConfig.volumeKeyPageOnPlay && BaseReadAloudService.isPlay()) {
             return false
         }
         handleKeyPage(direction, longPress)
@@ -948,7 +995,7 @@ class ReadBookController(
     }
 
     override fun handleKeyPage(direction: PageDirection, longPress: Boolean) {
-        if (AppConfig.keyPageOnLongPress || direction == PageDirection.NONE) {
+        if (ReadConfig.keyPageOnLongPress || direction == PageDirection.NONE) {
             keyPage(direction)
         } else {
             keyPageDebounce(direction, longPress = longPress)
@@ -1052,12 +1099,60 @@ class ReadBookController(
     }
 
     fun setOrientation() {
-        when (AppConfig.screenOrientation) {
+        when (ReadConfig.screenOrientation) {
             "0" -> activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             "1" -> activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             "2" -> activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
             "3" -> activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
             "4" -> activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+            "5" -> activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+        }
+    }
+
+    // ── Search result navigation helpers ─────────────────────────────
+
+    private fun markSearchResultAfterNavigation(pos: IntArray) {
+        if (pos[0] < 0) return
+        val readView = refs?.readView ?: return
+        pendingSearchResultMark = pos
+        ReadBook.skipToPage(pos[0]) {
+            readView.post {
+                consumePendingSearchResultMark()
+            }
+        }
+    }
+
+    private fun consumePendingSearchResultMark(): Boolean {
+        val pos = pendingSearchResultMark ?: return false
+        val readView = refs?.readView ?: return false
+        if (ReadBook.durPageIndex != pos[0] || readView.curPage.textPage.index != pos[0]) {
+            return false
+        }
+        pendingSearchResultMark = null
+        markSearchResultOnPage(pos)
+        return true
+    }
+
+    /**
+     * Mark search result columns on the current page for highlighting.
+     * @param pos array of [pageIndex, lineIndex, startCharIndex, endRelativePage, endLineIndex, endCharIndex]
+     */
+    private fun markSearchResultOnPage(pos: IntArray) {
+        val readView = refs?.readView ?: return
+        val lineIndex = pos[1]
+        val startCharIndex = pos[2]
+        val endRelativePage = pos[3]
+        val endLineIndex = pos[4]
+        val endCharIndex = pos[5]
+        ReadBook.clearSearchResult()
+        readView.cancelSelect(clearSearchResult = true)
+        isSelectingSearchResult = true
+        try {
+            readView.curPage.selectStartMoveIndex(0, lineIndex, startCharIndex)
+            readView.curPage.selectEndMoveIndex(endRelativePage, endLineIndex, endCharIndex)
+            readView.isTextSelected = true
+        } finally {
+            isSelectingSearchResult = false
         }
     }
 }
