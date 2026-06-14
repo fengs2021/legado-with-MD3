@@ -1266,7 +1266,7 @@ object ReadBook : CoroutineScope by MainScope(), KoinComponent {
         val b = book ?: return
         launch(IO) {
             // 对当前章节之后预下载范围内的章节进行预修正
-            val maxChapterIndex = min(durChapterIndex + AppConfig.preDownloadNum, chapterSize)
+            val maxChapterIndex = min(durChapterIndex + ReadConfig.preDownloadNum, chapterSize)
             for (i in durChapterIndex.plus(1)..maxChapterIndex) {
                 val chapter = appDb.bookChapterDao.getChapter(b.bookUrl, i) ?: continue
                 val cacheKey = "${b.bookUrl}#${i}"
