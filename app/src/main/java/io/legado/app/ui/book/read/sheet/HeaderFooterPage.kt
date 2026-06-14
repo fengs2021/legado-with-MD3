@@ -1,37 +1,61 @@
 package io.legado.app.ui.book.read.sheet
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.legado.app.R
+import io.legado.app.data.repository.ReadPreferences
+import io.legado.app.data.repository.ReadSettingsRepository
 import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.ui.book.read.ConfigUpdate
 import io.legado.app.ui.book.read.ReadBookIntent
+import io.legado.app.ui.theme.LegadoTheme
+import io.legado.app.ui.widget.components.FontSelectSheet
 import io.legado.app.ui.widget.components.dialog.ColorPickerSheet
 import io.legado.app.ui.widget.components.settingItem.TinyClickableSettingItem
 import io.legado.app.ui.widget.components.settingItem.TinyColorSettingItem
@@ -41,6 +65,7 @@ import io.legado.app.ui.widget.components.settingItem.TinySwitchSettingItem
 import io.legado.app.ui.widget.components.tabRow.CardTabRow
 import io.legado.app.utils.getCompatColor
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 // Color picker IDs
 private const val COLOR_HEADER = 7
@@ -49,7 +74,6 @@ private const val COLOR_DIVIDER = 9
 
 @Composable
 internal fun HeaderFooterPage(
-    onOpenFontSelect: () -> Unit,
     modifier: Modifier = Modifier,
     onIntent: (ReadBookIntent) -> Unit,
 ) {
@@ -63,6 +87,9 @@ internal fun HeaderFooterPage(
     )
     val pagerState = rememberPagerState(pageCount = { 3 })
     var selectedTab by remember { mutableIntStateOf(0) }
+
+    val pageHeights = remember { mutableStateMapOf<Int, Int>() }
+    val animatedHeight by rememberPagerAnimatedHeight(pagerState, pageHeights)
 
     // Header state
     var headerMode by remember { mutableIntStateOf(ReadBookConfig.headerMode) }
@@ -86,6 +113,43 @@ internal fun HeaderFooterPage(
     var showColorPicker by remember { mutableStateOf(false) }
     var colorPickerId by remember { mutableIntStateOf(0) }
     var colorPickerInitial by remember { mutableIntStateOf(0) }
+    var showFontSelect by remember { mutableStateOf(false) }
+
+    var expandHeaderPadding by remember { mutableStateOf(false) }
+    var expandFooterPadding by remember { mutableStateOf(false) }
+
+    val headerScrollState = rememberScrollState()
+    val footerScrollState = rememberScrollState()
+
+    LaunchedEffect(expandHeaderPadding, headerScrollState.maxValue) {
+        if (expandHeaderPadding) {
+            headerScrollState.scrollTo(headerScrollState.maxValue)
+        }
+    }
+
+    LaunchedEffect(expandFooterPadding, footerScrollState.maxValue) {
+        if (expandFooterPadding) {
+            footerScrollState.scrollTo(footerScrollState.maxValue)
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            onIntent(ReadBookIntent.SaveReadStyleConfig)
+        }
+    }
+
+    // Header padding state
+    var headerPaddingTop by remember { mutableFloatStateOf(ReadBookConfig.headerPaddingTop.toFloat()) }
+    var headerPaddingBottom by remember { mutableFloatStateOf(ReadBookConfig.headerPaddingBottom.toFloat()) }
+    var headerPaddingLeft by remember { mutableFloatStateOf(ReadBookConfig.headerPaddingLeft.toFloat()) }
+    var headerPaddingRight by remember { mutableFloatStateOf(ReadBookConfig.headerPaddingRight.toFloat()) }
+
+    // Footer padding state
+    var footerPaddingTop by remember { mutableFloatStateOf(ReadBookConfig.footerPaddingTop.toFloat()) }
+    var footerPaddingBottom by remember { mutableFloatStateOf(ReadBookConfig.footerPaddingBottom.toFloat()) }
+    var footerPaddingLeft by remember { mutableFloatStateOf(ReadBookConfig.footerPaddingLeft.toFloat()) }
+    var footerPaddingRight by remember { mutableFloatStateOf(ReadBookConfig.footerPaddingRight.toFloat()) }
 
     val tipNames = remember { ReadBookConfig.tipNames }
     val tipValues = remember { ReadBookConfig.tipValues }
@@ -131,22 +195,38 @@ internal fun HeaderFooterPage(
             selectedTabIndex = selectedTab,
             onTabSelected = { index ->
                 selectedTab = index
-                scope.launch { pagerState.animateScrollToPage(index) }
+                scope.launch {
+                    pagerState.animateScrollToPage(
+                        page = index,
+                        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                    )
+                }
             },
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
         )
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clipToBounds()
+                .pagerHeight(animatedHeight),
         ) { page ->
-            when (page) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onSizeChanged { size ->
+                        pageHeights[page] = size.height
+                    }
+            ) {
+                when (page) {
                 0 -> {
                     // Header tab
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp)
-                            .verticalScroll(rememberScrollState()),
+                            .verticalScroll(headerScrollState),
                     ) {
                         TinySwitchSettingItem(
                             title = stringResource(R.string.showLine),
@@ -217,6 +297,56 @@ internal fun HeaderFooterPage(
                                 showColorPicker = true
                             },
                         )
+                        Spacer(Modifier.height(8.dp))
+                        TinyClickableSettingItem(
+                            title = stringResource(R.string.padding),
+                            description = stringResource(
+                                R.string.padding_format,
+                                headerPaddingTop.toInt(),
+                                headerPaddingBottom.toInt(),
+                                headerPaddingLeft.toInt(),
+                                headerPaddingRight.toInt(),
+                            ),
+                            trailingContent = {
+                                Icon(
+                                    imageVector = if (expandHeaderPadding) Icons.Default.ExpandMore else Icons.Default.ChevronRight,
+                                    contentDescription = null,
+                                    tint = LegadoTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            },
+                            onClick = {
+                                expandHeaderPadding = !expandHeaderPadding
+                            },
+                        )
+                        AnimatedVisibility(
+                            visible = expandHeaderPadding,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut(),
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                PaddingSliders(
+                                    top = headerPaddingTop, bottom = headerPaddingBottom,
+                                    left = headerPaddingLeft, right = headerPaddingRight,
+                                    onTopChange = {
+                                        headerPaddingTop = it
+                                        onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.HeaderPaddingTop(it.toInt())))
+                                    },
+                                    onBottomChange = {
+                                        headerPaddingBottom = it
+                                        onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.HeaderPaddingBottom(it.toInt())))
+                                    },
+                                    onLeftChange = {
+                                        headerPaddingLeft = it
+                                        onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.HeaderPaddingLeft(it.toInt())))
+                                    },
+                                    onRightChange = {
+                                        headerPaddingRight = it
+                                        onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.HeaderPaddingRight(it.toInt())))
+                                    },
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -226,7 +356,7 @@ internal fun HeaderFooterPage(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp)
-                            .verticalScroll(rememberScrollState()),
+                            .verticalScroll(footerScrollState),
                     ) {
                         TinySwitchSettingItem(
                             title = stringResource(R.string.showLine),
@@ -297,6 +427,56 @@ internal fun HeaderFooterPage(
                                 showColorPicker = true
                             },
                         )
+                        Spacer(Modifier.height(8.dp))
+                        TinyClickableSettingItem(
+                            title = stringResource(R.string.padding),
+                            description = stringResource(
+                                R.string.padding_format,
+                                footerPaddingTop.toInt(),
+                                footerPaddingBottom.toInt(),
+                                footerPaddingLeft.toInt(),
+                                footerPaddingRight.toInt(),
+                            ),
+                            trailingContent = {
+                                Icon(
+                                    imageVector = if (expandFooterPadding) Icons.Default.ExpandMore else Icons.Default.ChevronRight,
+                                    contentDescription = null,
+                                    tint = LegadoTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            },
+                            onClick = {
+                                expandFooterPadding = !expandFooterPadding
+                            },
+                        )
+                        AnimatedVisibility(
+                            visible = expandFooterPadding,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut(),
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                PaddingSliders(
+                                    top = footerPaddingTop, bottom = footerPaddingBottom,
+                                    left = footerPaddingLeft, right = footerPaddingRight,
+                                    onTopChange = {
+                                        footerPaddingTop = it
+                                        onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.FooterPaddingTop(it.toInt())))
+                                    },
+                                    onBottomChange = {
+                                        footerPaddingBottom = it
+                                        onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.FooterPaddingBottom(it.toInt())))
+                                    },
+                                    onLeftChange = {
+                                        footerPaddingLeft = it
+                                        onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.FooterPaddingLeft(it.toInt())))
+                                    },
+                                    onRightChange = {
+                                        footerPaddingRight = it
+                                        onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.FooterPaddingRight(it.toInt())))
+                                    },
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -348,7 +528,7 @@ internal fun HeaderFooterPage(
                             title = stringResource(R.string.header_font),
                             description = stringResource(R.string.select_font),
                             imageVector = Icons.Default.TextFields,
-                            onClick = onOpenFontSelect,
+                            onClick = { showFontSelect = true },
                         )
                         TinySliderSettingItem(
                             title = stringResource(R.string.header_font_size),
@@ -365,31 +545,58 @@ internal fun HeaderFooterPage(
             }
         }
     }
+}
 
     // Color picker
-    if (showColorPicker) {
-        ColorPickerSheet(
-            show = true,
-            initialColor = colorPickerInitial,
-            onDismissRequest = { showColorPicker = false },
-            onColorSelected = { color ->
-                when (colorPickerId) {
-                    COLOR_HEADER -> {
-                        onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TipHeaderColor(color)))
-                    }
-
-                    COLOR_FOOTER -> {
-                        onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TipFooterColor(color)))
-                    }
-
-                    COLOR_DIVIDER -> {
-                        onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TipDividerColor(color)))
-                    }
+    ColorPickerSheet(
+        show = showColorPicker,
+        initialColor = colorPickerInitial,
+        onDismissRequest = { showColorPicker = false },
+        onColorSelected = { color ->
+            when (colorPickerId) {
+                COLOR_HEADER -> {
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TipHeaderColor(color)))
                 }
-                showColorPicker = false
-            },
-        )
-    }
+
+                COLOR_FOOTER -> {
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TipFooterColor(color)))
+                }
+
+                COLOR_DIVIDER -> {
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TipDividerColor(color)))
+                }
+            }
+            showColorPicker = false
+        },
+    )
+
+    // Font selector for header/footer
+    val readSettingsRepository: ReadSettingsRepository = koinInject()
+    val preferences by readSettingsRepository.preferences.collectAsStateWithLifecycle(
+        initialValue = ReadPreferences()
+    )
+    val fontFolderUri = preferences.fontFolder.takeIf { it.isNotEmpty() }?.toUri()
+    val systemTypefaces = stringArrayResource(R.array.system_typefaces)
+
+    FontSelectSheet(
+        show = showFontSelect,
+        title = stringResource(R.string.select_font),
+        fontFolderUri = fontFolderUri,
+        selectedFontPath = ReadBookConfig.headerFont,
+        onDismissRequest = { showFontSelect = false },
+        onSelectFont = {
+            onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.HeaderFont(it.uri.toString())))
+            onIntent(ReadBookIntent.SaveReadStyleConfig)
+            showFontSelect = false
+        },
+        onSelectSystemTypeface = {
+            onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.HeaderFont("")))
+            onIntent(ReadBookIntent.SaveReadStyleConfig)
+            showFontSelect = false
+        },
+        onOpenFolderPicker = { /* handled by FontSelectSheet internally */ },
+        systemTypefaces = systemTypefaces,
+    )
 }
 
 @Composable

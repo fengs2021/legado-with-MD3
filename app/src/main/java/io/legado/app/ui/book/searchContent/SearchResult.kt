@@ -11,6 +11,7 @@ import android.text.style.UnderlineSpan
 import io.legado.app.help.config.AppConfig
 
 data class SearchResult(
+    val bookUrl: String = "",
     val resultCount: Int = 0,
     val resultCountWithinChapter: Int = 0,
     val resultText: String = "",
@@ -21,6 +22,7 @@ data class SearchResult(
     val pageIndex: Int = 0,
     val queryIndexInResult: Int = 0,
     val queryIndexInChapter: Int = 0,
+    val matchLength: Int = query.length,
     val isRegex: Boolean = false,
     val progressPercent: Float = 0f
 ) {

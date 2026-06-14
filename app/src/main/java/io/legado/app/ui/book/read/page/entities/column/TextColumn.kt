@@ -75,12 +75,14 @@ data class TextColumn(
         val needRestoreTypeface = customTypeface != null
         if (needRestoreSize) {
             val originalSize = textPaint.textSize
+            val originalTypeface = if (needRestoreTypeface) textPaint.typeface else null
             textPaint.textSize = textLine.titleTextSize!!
             if (needRestoreColor) textPaint.color = drawColor
             if (needRestoreTypeface) textPaint.typeface = customTypeface
             val y = textLine.lineBase - textLine.lineTop
             drawText(canvas, y, textPaint)
             textPaint.textSize = originalSize
+            if (needRestoreTypeface) textPaint.typeface = originalTypeface
         } else if (needRestoreColor || needRestoreTypeface) {
             val originalColor = textPaint.color
             val originalTypeface = textPaint.typeface
@@ -110,14 +112,18 @@ data class TextColumn(
     }
 
     private fun getCustomTypeface(): Typeface? {
-        if (fontPath.isEmpty()) return null
-        return typefaceCache.getOrPut(fontPath) {
-            loadTypeface(fontPath)
-        }
+        return getTypeface(fontPath)
     }
 
     companion object {
         private val typefaceCache = HashMap<String, Typeface?>()
+
+        internal fun getTypeface(fontPath: String): Typeface? {
+            if (fontPath.isEmpty()) return null
+            return typefaceCache.getOrPut(fontPath) {
+                loadTypeface(fontPath)
+            }
+        }
 
         private fun loadTypeface(fontPath: String): Typeface? {
             return runCatching {

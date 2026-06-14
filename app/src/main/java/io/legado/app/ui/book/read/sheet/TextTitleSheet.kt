@@ -30,16 +30,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.legado.app.R
+import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.ui.book.read.ConfigUpdate
 import io.legado.app.ui.book.read.ReadBookIntent
-import io.legado.app.help.config.ReadBookConfig
+import io.legado.app.ui.config.readConfig.ReadConfig
 import io.legado.app.ui.widget.components.dialog.ColorPickerSheet
 import io.legado.app.ui.widget.components.settingItem.TinyClickableSettingItem
 import io.legado.app.ui.widget.components.settingItem.TinyColorSettingItem
@@ -47,58 +47,12 @@ import io.legado.app.ui.widget.components.settingItem.TinyDropdownSettingItem
 import io.legado.app.ui.widget.components.settingItem.TinySliderSettingItem
 import io.legado.app.ui.widget.components.settingItem.TinySwitchSettingItem
 import io.legado.app.ui.widget.components.tabRow.CardTabRow
-import io.legado.app.ui.widget.components.modalBottomSheet.AppModalBottomSheet
 import kotlinx.coroutines.launch
 
 // Color picker IDs
 private const val COLOR_TEXT = 1
 private const val COLOR_ACCENT = 2
 private const val COLOR_TITLE = 4
-
-// ========== Text & Title Sheet ==========
-
-@Composable
-internal fun TextTitlePage(
-    show: Boolean,
-    onDismissRequest: () -> Unit,
-    onOpenShadowSet: () -> Unit,
-    onOpenUnderlineConfig: () -> Unit,
-    onOpenHighlightRule: () -> Unit,
-    onOpenFontSelect: () -> Unit,
-    onIntent: (ReadBookIntent) -> Unit,
-) {
-    val scope = rememberCoroutineScope()
-    val tabTitles = listOf(
-        stringResource(R.string.read_config_text_effects),
-        stringResource(R.string.read_config_layout_spacing),
-        stringResource(R.string.read_config_title_settings),
-    )
-    val pagerState = rememberPagerState(pageCount = { 3 })
-    var selectedTab by remember { mutableIntStateOf(0) }
-
-    LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.settledPage }.collect { selectedTab = it }
-    }
-
-    AppModalBottomSheet(
-        show = show,
-        onDismissRequest = onDismissRequest,
-        title = stringResource(R.string.read_config_text_effects),
-    ) {
-        ReadStyleTextTitleContent(
-            tabTitles = tabTitles,
-            selectedTab = selectedTab,
-            onSelectedTabChange = { selectedTab = it },
-            pagerState = pagerState,
-            onOpenShadowSet = onOpenShadowSet,
-            onOpenUnderlineConfig = onOpenUnderlineConfig,
-            onOpenHighlightRule = onOpenHighlightRule,
-            onOpenFontSelect = onOpenFontSelect,
-            animateToPage = { page -> scope.launch { pagerState.animateScrollToPage(page) } },
-            onIntent = onIntent,
-        )
-    }
-}
 
 @Composable
 fun ReadStyleTextTitleContent(
@@ -304,6 +258,19 @@ internal fun TextEffectsPage(
             imageVector = Icons.Default.TextFields,
             onClick = onOpenFontSelect,
         )
+
+        val chineseConvertEntries = stringArrayResource(R.array.chinese_mode)
+        val chineseConvertValues = remember { arrayOf("0", "1", "2") }
+        TinyDropdownSettingItem(
+            title = stringResource(R.string.chinese_converter),
+            selectedValue = ReadConfig.chineseConverterType.toString(),
+            displayEntries = chineseConvertEntries,
+            entryValues = chineseConvertValues,
+            onValueChange = {
+                onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.ChineseConverterType(it.toInt())))
+            },
+        )
+
         Spacer(Modifier.height(8.dp))
 
         // Colors
@@ -368,25 +335,23 @@ internal fun TextEffectsPage(
     }
 
     // Color picker
-    if (showColorPicker) {
-        ColorPickerSheet(
-            show = true,
-            initialColor = colorPickerInitial,
-            onDismissRequest = { showColorPicker = false },
-            onColorSelected = { color ->
-                when (colorPickerId) {
-                    COLOR_TEXT -> {
-                        onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TextColor(color)))
-                    }
-
-                    COLOR_ACCENT -> {
-                        onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TextAccentColor(color)))
-                    }
+    ColorPickerSheet(
+        show = showColorPicker,
+        initialColor = colorPickerInitial,
+        onDismissRequest = { showColorPicker = false },
+        onColorSelected = { color ->
+            when (colorPickerId) {
+                COLOR_TEXT -> {
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TextColor(color)))
                 }
-                showColorPicker = false
-            },
-        )
-    }
+
+                COLOR_ACCENT -> {
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TextAccentColor(color)))
+                }
+            }
+            showColorPicker = false
+        },
+    )
 }
 
 // ========== Title Settings (sub-page) ==========
@@ -395,8 +360,14 @@ internal fun TextEffectsPage(
 internal fun TitleSettingsPage(
     onIntent: (ReadBookIntent) -> Unit,
 ) {
-    var titleMode by remember { mutableIntStateOf(ReadBookConfig.titleMode) }
-    var titleBold by remember { mutableIntStateOf(ReadBookConfig.titleBold) }
+    var titleMode by remember(ReadBookConfig.titleMode) { mutableIntStateOf(ReadBookConfig.titleMode) }
+    var titleBold by remember(ReadBookConfig.titleBold) { mutableIntStateOf(ReadBookConfig.titleBold) }
+    var titleSegScaling by remember(ReadBookConfig.titleSegScaling) { mutableFloatStateOf(ReadBookConfig.titleSegScaling) }
+    var titleLineSpacingExtra by remember(ReadBookConfig.titleLineSpacingExtra) { mutableIntStateOf(ReadBookConfig.titleLineSpacingExtra) }
+    var titleLineSpacingSub by remember(ReadBookConfig.titleLineSpacingSub) { mutableIntStateOf(ReadBookConfig.titleLineSpacingSub) }
+    var titleSize by remember(ReadBookConfig.titleSize) { mutableIntStateOf(ReadBookConfig.titleSize) }
+    var titleTopSpacing by remember(ReadBookConfig.titleTopSpacing) { mutableIntStateOf(ReadBookConfig.titleTopSpacing) }
+    var titleBottomSpacing by remember(ReadBookConfig.titleBottomSpacing) { mutableIntStateOf(ReadBookConfig.titleBottomSpacing) }
 
     var showColorPicker by remember { mutableStateOf(false) }
     var colorPickerId by remember { mutableIntStateOf(0) }
@@ -464,69 +435,73 @@ internal fun TitleSettingsPage(
         // Title spacing sliders
         TinySliderSettingItem(
             title = stringResource(R.string.subtitle_scale),
-            value = ReadBookConfig.titleSegScaling * 10,
+            value = titleSegScaling * 10,
             valueRange = 0f..100f,
             onValueChange = { value ->
-                onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TitleSegScaling(value / 10f)))
+                titleSegScaling = value / 10f
+                onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TitleSegScaling(titleSegScaling)))
             },
         )
         TinySliderSettingItem(
             title = stringResource(R.string.heading_spacing),
-            value = ReadBookConfig.titleLineSpacingExtra.toFloat(),
+            value = titleLineSpacingExtra.toFloat(),
             valueRange = 0f..100f,
             onValueChange = { value ->
-                onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TitleLineSpacingExtra(value.toInt())))
+                titleLineSpacingExtra = value.toInt()
+                onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TitleLineSpacingExtra(titleLineSpacingExtra)))
             },
         )
         TinySliderSettingItem(
             title = stringResource(R.string.subtitle_margin),
-            value = ReadBookConfig.titleLineSpacingSub.toFloat(),
+            value = titleLineSpacingSub.toFloat(),
             valueRange = 0f..100f,
             onValueChange = { value ->
-                onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TitleLineSpacingSub(value.toInt())))
+                titleLineSpacingSub = value.toInt()
+                onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TitleLineSpacingSub(titleLineSpacingSub)))
             },
         )
         TinySliderSettingItem(
             title = stringResource(R.string.title_font_size),
-            value = ReadBookConfig.titleSize.toFloat(),
+            value = titleSize.toFloat(),
             valueRange = 0f..100f,
             onValueChange = { value ->
-                onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TitleSize(value.toInt())))
+                titleSize = value.toInt()
+                onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TitleSize(titleSize)))
             },
         )
         TinySliderSettingItem(
             title = stringResource(R.string.title_margin_top),
-            value = ReadBookConfig.titleTopSpacing.toFloat(),
+            value = titleTopSpacing.toFloat(),
             valueRange = 0f..100f,
             onValueChange = { value ->
-                onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TitleTopSpacing(value.toInt())))
+                titleTopSpacing = value.toInt()
+                onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TitleTopSpacing(titleTopSpacing)))
             },
         )
         TinySliderSettingItem(
             title = stringResource(R.string.title_margin_bottom),
-            value = ReadBookConfig.titleBottomSpacing.toFloat(),
+            value = titleBottomSpacing.toFloat(),
             valueRange = 0f..100f,
             onValueChange = { value ->
-                onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TitleBottomSpacing(value.toInt())))
+                titleBottomSpacing = value.toInt()
+                onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TitleBottomSpacing(titleBottomSpacing)))
             },
         )
 
     }
 
     // Color picker
-    if (showColorPicker) {
-        ColorPickerSheet(
-            show = true,
-            initialColor = colorPickerInitial,
-            onDismissRequest = { showColorPicker = false },
-            onColorSelected = { color ->
-                when (colorPickerId) {
-                    COLOR_TITLE -> {
-                        onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TitleColor(color)))
-                    }
+    ColorPickerSheet(
+        show = showColorPicker,
+        initialColor = colorPickerInitial,
+        onDismissRequest = { showColorPicker = false },
+        onColorSelected = { color ->
+            when (colorPickerId) {
+                COLOR_TITLE -> {
+                    onIntent(ReadBookIntent.UpdateConfig(ConfigUpdate.TitleColor(color)))
                 }
-                showColorPicker = false
-            },
-        )
-    }
+            }
+            showColorPicker = false
+        },
+    )
 }

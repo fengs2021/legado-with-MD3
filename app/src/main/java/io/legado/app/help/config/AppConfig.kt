@@ -85,7 +85,7 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             ReadConfig.optimizeRender = value
         }
     val recordLog get() = OtherConfig.recordLog
-    var webServiceAutoStart = appCtx.getPrefBoolean(PreferKey.webServiceAutoStart, false)
+    val webServiceAutoStart get() = OtherConfig.webServiceAutoStart
 
     // -- lyc 版本特性 --
     val adaptSpecialStyle get() = ReadConfig.adaptSpecialStyle
@@ -99,6 +99,7 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         ReadConfig.optimizeRender = preferences.optimizeRender
         ReadConfig.adaptSpecialStyle = preferences.adaptSpecialStyle
         ReadConfig.useUnderline = preferences.useUnderline
+        ReadConfig.chineseConverterType = preferences.chineseConverterType
         clickActionTL = preferences.clickActionTL
         clickActionTC = preferences.clickActionTC
         clickActionTR = preferences.clickActionTR
@@ -131,6 +132,8 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         ReadConfig.defaultSourceChangeAll = preferences.defaultSourceChangeAll
         ReadConfig.sliderVibrator = preferences.sliderVibrator
         ReadConfig.selectVibrator = preferences.selectVibrator
+        ReadConfig.brightnessVwPos = preferences.brightnessVwPos
+        ReadConfig.readBrightness = preferences.readBrightness
     }
 
     fun updateReadBarStyleCache(value: Int) {
@@ -242,12 +245,6 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             } else {
                 appCtx.putPrefInt(PreferKey.brightness, value)
             }
-        }
-
-    var permissionChecked: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.permissionChecked, false)
-        set(value) {
-            appCtx.putPrefBoolean(PreferKey.permissionChecked, value)
         }
 
     val textSelectAble: Boolean
@@ -391,11 +388,8 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
 
     val speechRatePlay: Int get() = if (ttsFlowSys) defaultSpeechRate else ttsSpeechRate
 
-    var chineseConverterType: Int
-        get() = appCtx.getPrefInt(PreferKey.chineseConverterType)
-        set(value) {
-            appCtx.putPrefInt(PreferKey.chineseConverterType, value)
-        }
+    val chineseConverterType: Int
+        get() = ReadConfig.chineseConverterType
 
     var systemTypefaces: Int
         get() = appCtx.getPrefInt(PreferKey.systemTypefaces)
@@ -471,16 +465,10 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             appCtx.putPrefBoolean(PreferKey.parallelExportBook, value)
         }
 
-    var changeSourceCheckAuthor: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.changeSourceCheckAuthor)
-        set(value) {
-            appCtx.putPrefBoolean(PreferKey.changeSourceCheckAuthor, value)
-        }
-
     var ttsEngine: String?
-        get() = appCtx.getPrefString(PreferKey.ttsEngine)
+        get() = io.legado.app.ui.config.readConfig.ReadConfig.ttsEngine
         set(value) {
-            appCtx.putPrefString(PreferKey.ttsEngine, value)
+            io.legado.app.ui.config.readConfig.ReadConfig.ttsEngine = value
         }
 
     var webPort: Int
@@ -509,24 +497,6 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
 
     val autoChangeSource: Boolean
         get() = ReadConfig.autoChangeSource
-
-    var changeSourceLoadInfo: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.changeSourceLoadInfo)
-        set(value) {
-            appCtx.putPrefBoolean(PreferKey.changeSourceLoadInfo, value)
-        }
-
-    var changeSourceLoadToc: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.changeSourceLoadToc)
-        set(value) {
-            appCtx.putPrefBoolean(PreferKey.changeSourceLoadToc, value)
-        }
-
-    var changeSourceLoadWordCount: Boolean
-        get() = appCtx.getPrefBoolean(PreferKey.changeSourceLoadWordCount)
-        set(value) {
-            appCtx.putPrefBoolean(PreferKey.changeSourceLoadWordCount, value)
-        }
 
     var openBookInfoByClickTitle: Boolean
         get() = appCtx.getPrefBoolean(PreferKey.openBookInfoByClickTitle, true)
@@ -639,18 +609,6 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
 
     val paddingDisplayCutouts
         get() = ReadConfig.paddingDisplayCutouts
-
-    var searchScope: String
-        get() = appCtx.getPrefString("searchScope") ?: ""
-        set(value) {
-            appCtx.putPrefString("searchScope", value)
-        }
-
-    var searchGroup: String
-        get() = appCtx.getPrefString("searchGroup") ?: ""
-        set(value) {
-            appCtx.putPrefString("searchGroup", value)
-        }
 
     var pageTouchSlop: Int
         get() = ReadConfig.pageTouchSlop
@@ -853,10 +811,10 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
         }
 
     val hasLightBg: Boolean
-        get() = !appCtx.getPrefString(PreferKey.bgImage).isNullOrEmpty()
+        get() = !ThemeConfig.bgImageLight.isNullOrEmpty()
 
     val hasDarkBg: Boolean
-        get() = !appCtx.getPrefString(PreferKey.bgImageN).isNullOrEmpty()
+        get() = !ThemeConfig.bgImageDark.isNullOrEmpty()
 
     val hasImageBg: Boolean
         get() = hasLightBg && hasDarkBg

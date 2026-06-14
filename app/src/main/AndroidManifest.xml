@@ -239,11 +239,6 @@
             android:name=".ui.book.toc.TocActivity"
             android:enableOnBackInvokedCallback="true"
             android:launchMode="singleTop" />
-        <!-- 正文搜索 -->
-        <activity
-            android:name=".ui.book.searchContent.SearchContentActivity"
-            android:enableOnBackInvokedCallback="true"
-            android:launchMode="singleTop" />
         <!-- 订阅源调试 -->
         <activity
             android:name=".ui.rss.source.debug.RssSourceDebugActivity"
@@ -270,6 +265,11 @@
         <!-- 字典管理 -->
         <activity
             android:name=".ui.dict.rule.DictRuleActivity"
+            android:enableOnBackInvokedCallback="true"
+            android:configChanges="orientation|screenSize"
+            android:hardwareAccelerated="true" />
+        <activity
+            android:name=".ui.dict.DictActivity"
             android:enableOnBackInvokedCallback="true"
             android:configChanges="orientation|screenSize"
             android:hardwareAccelerated="true" />
